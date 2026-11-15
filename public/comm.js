@@ -63,29 +63,57 @@ window.createComm = function(role) {
   // MODE 2: Multi-Channel Cloud Mesh (GitHub Pages)
   // Combines BroadcastChannel + MQTT + PeerJS
   // ==========================================
-  const LOTTO_NICKNAMES = {
-    1: 'Кол',
-    2: 'Гусь',
-    3: 'Троица',
-    7: 'Семёрка / Топор',
-    10: 'Бычий глаз',
-    11: 'Барабанные палочки',
-    12: 'Дюжина',
-    13: 'Чёртова дюжина',
-    18: 'В первый раз',
-    20: 'Гусь в шляпе',
-    21: 'Очко',
-    22: 'Утята / Гуси-лебеди',
-    25: 'Четвертак',
-    33: 'Кудрявый',
-    44: 'Стульчики',
-    50: 'Полтинник',
-    55: 'Перчатки',
-    69: 'Туда-сюда',
-    77: 'Топорики',
-    88: 'Бабушка',
-    90: 'Дед'
-  };
+  const LOTTO_NICKNAMES = {};
+
+  function recordLocalGameWin({ winnerName, winnerPid, roomCode, mode, size, turn, totalBarrels, winningTracks, playerCount }) {
+    if (!winnerName || typeof localStorage === 'undefined') return;
+    try {
+      let db = { leaderboard: {}, history: [] };
+      const raw = localStorage.getItem('muzloto_db_stats');
+      if (raw) db = JSON.parse(raw);
+      if (!db.leaderboard) db.leaderboard = {};
+      if (!Array.isArray(db.history)) db.history = [];
+
+      const now = Date.now();
+      const dateStr = new Date(now).toLocaleString('ru-RU', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const record = {
+        id: 'win_' + now + '_' + Math.random().toString(36).slice(2, 6),
+        roomCode: roomCode || '—',
+        winnerName,
+        winnerPid: winnerPid || null,
+        mode: mode === 'line' ? 'Линия' : 'Вся карточка',
+        turn: turn || 1,
+        totalBarrels: totalBarrels || 25,
+        timestamp: now,
+        dateStr,
+        winningTracks: Array.isArray(winningTracks) ? winningTracks : [],
+        playerCount: playerCount || 1
+      };
+
+      db.history.unshift(record);
+      if (db.history.length > 200) db.history = db.history.slice(0, 200);
+
+      if (!db.leaderboard[winnerName]) {
+        db.leaderboard[winnerName] = {
+          name: winnerName,
+          wins: 0,
+          games: 0,
+          lastWin: now,
+          lastWinDate: dateStr
+        };
+      }
+      db.leaderboard[winnerName].wins += 1;
+      db.leaderboard[winnerName].games = Math.max(db.leaderboard[winnerName].games + 1, db.leaderboard[winnerName].wins);
+      db.leaderboard[winnerName].lastWin = now;
+      db.leaderboard[winnerName].lastWinDate = dateStr;
+
+      localStorage.setItem('muzloto_db_stats', JSON.stringify(db));
+    } catch(e) {}
+  }
 
   let roomCode = null;
   const players = new Map(); // pid -> { name, card, marks, conn, sendFn }
@@ -339,6 +367,24 @@ window.createComm = function(role) {
           card: cardOut(roomState, p),
           winIndices: winInfo.winIndices
         };
+        try {
+          const winTracks = (winInfo.winIndices || []).map(idx => {
+            const trId = p.card[idx];
+            const tr = roomState.tracks.find(t => t.id === trId);
+            return tr ? `${tr.artist} — ${tr.title}` : trId;
+          });
+          recordLocalGameWin({
+            winnerName: p.name,
+            winnerPid: p.pid,
+            roomCode: roomState.code,
+            mode: roomState.mode,
+            size: roomState.size,
+            turn: roomState.called.length,
+            totalBarrels: roomState.tracks.length,
+            winningTracks: winTracks,
+            playerCount: players.size
+          });
+        } catch(e) {}
         sendToPlayer(p.pid, {
           type: 'bingo:ack',
           targetPid: p.pid,
@@ -491,7 +537,7 @@ window.createComm = function(role) {
       const trackObj = roomState.tracks.find(t => t.id === nextId);
       const turnNumber = roomState.called.length;
       const kegNum = trackObj.kegNum;
-      const nickname = LOTTO_NICKNAMES[kegNum] || null;
+      const nickname = null;
 
       roomState.currentTrack = {
         ...trackObj,

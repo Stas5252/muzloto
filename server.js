@@ -14,30 +14,78 @@ const io = new Server(srv, { maxHttpBufferSize: 2e6, cors: { origin: '*' } });
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Russian Lotto Traditional Nicknames for Barrels
-const LOTTO_NICKNAMES = {
-  1: 'Кол',
-  2: 'Гусь',
-  3: 'Троица',
-  7: 'Семёрка / Топор',
-  10: 'Бычий глаз',
-  11: 'Барабанные палочки',
-  12: 'Дюжина',
-  13: 'Чёртова дюжина',
-  18: 'В первый раз',
-  20: 'Гусь в шляпе',
-  21: 'Очко',
-  22: 'Утята / Гуси-лебеди',
-  25: 'Четвертак',
-  33: 'Кудрявый',
-  44: 'Стульчики',
-  50: 'Полтинник',
-  55: 'Перчатки',
-  69: 'Туда-сюда',
-  77: 'Топорики',
-  88: 'Бабушка',
-  90: 'Дед'
-};
+// Persistent Leaderboard & Match History Database
+const DB_PATH = path.join(__dirname, 'data', 'stats.json');
+
+function loadStatsDb() {
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+    }
+  } catch (e) {
+    console.warn('Failed to load stats DB:', e.message);
+  }
+  return { leaderboard: {}, history: [] };
+}
+
+function saveStatsDb(data) {
+  try {
+    const dir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (e) {
+    console.warn('Failed to save stats DB:', e.message);
+  }
+}
+
+function recordGameWin({ winnerName, winnerPid, roomCode, mode, size, turn, totalBarrels, winningTracks, playerCount }) {
+  if (!winnerName) return null;
+  const db = loadStatsDb();
+  if (!db.leaderboard) db.leaderboard = {};
+  if (!Array.isArray(db.history)) db.history = [];
+
+  const now = Date.now();
+  const dateStr = new Date(now).toLocaleString('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+
+  const record = {
+    id: 'win_' + now + '_' + Math.random().toString(36).slice(2, 6),
+    roomCode: roomCode || '—',
+    winnerName,
+    winnerPid: winnerPid || null,
+    mode: mode === 'line' ? 'Линия' : 'Вся карточка',
+    turn: turn || 1,
+    totalBarrels: totalBarrels || 25,
+    timestamp: now,
+    dateStr,
+    winningTracks: Array.isArray(winningTracks) ? winningTracks : [],
+    playerCount: playerCount || 1
+  };
+
+  db.history.unshift(record);
+  if (db.history.length > 200) db.history = db.history.slice(0, 200);
+
+  if (!db.leaderboard[winnerName]) {
+    db.leaderboard[winnerName] = {
+      name: winnerName,
+      wins: 0,
+      games: 0,
+      lastWin: now,
+      lastWinDate: dateStr
+    };
+  }
+  db.leaderboard[winnerName].wins += 1;
+  db.leaderboard[winnerName].games = Math.max(db.leaderboard[winnerName].games + 1, db.leaderboard[winnerName].wins);
+  db.leaderboard[winnerName].lastWin = now;
+  db.leaderboard[winnerName].lastWinDate = dateStr;
+
+  saveStatsDb(db);
+  return record;
+}
+
+const LOTTO_NICKNAMES = {};
 
 const getPacks = () => {
   try {
@@ -75,6 +123,26 @@ app.get('/api/info', (req, res) => {
 
 app.get('/api/packs', (req, res) => {
   res.json(getPacks());
+});
+
+app.get('/api/stats', (req, res) => {
+  const db = loadStatsDb();
+  const leaderboardArr = Object.values(db.leaderboard || {})
+    .sort((a, b) => b.wins - a.wins || (b.lastWin || 0) - (a.lastWin || 0));
+  res.json({
+    leaderboard: leaderboardArr,
+    history: db.history || []
+  });
+});
+
+app.post('/api/stats/win', (req, res) => {
+  const record = recordGameWin(req.body);
+  res.json({ ok: true, record });
+});
+
+app.post('/api/stats/reset', (req, res) => {
+  saveStatsDb({ leaderboard: {}, history: [] });
+  res.json({ ok: true });
 });
 
 const searchCache = new Map();
@@ -336,7 +404,7 @@ io.on('connection', s => {
     const trackObj = r.tracks.find(t => t.id === nextId);
     const turnNumber = r.called.length;
     const kegNum = trackObj.kegNum;
-    const nickname = LOTTO_NICKNAMES[kegNum] || null;
+    const nickname = null;
 
     r.currentTrack = {
       ...trackObj,
@@ -498,6 +566,29 @@ io.on('connection', s => {
         card: cardOut(r, p),
         winIndices: winInfo.winIndices
       };
+
+      // Record to persistent Leaderboard database
+      try {
+        const winTracks = (winInfo.winIndices || []).map(idx => {
+          const trId = p.card[idx];
+          const tr = r.tracks.find(t => t.id === trId);
+          return tr ? `${tr.artist} — ${tr.title}` : trId;
+        });
+        recordGameWin({
+          winnerName: p.name,
+          winnerPid: p.pid,
+          roomCode: r.code,
+          mode: r.mode,
+          size: r.size,
+          turn: r.called.length,
+          totalBarrels: r.tracks.length,
+          winningTracks: winTracks,
+          playerCount: r.players.size
+        });
+      } catch(e) {
+        console.warn('Failed to record win:', e.message);
+      }
+
       push(r);
       ack({ ok: true, winner: p.name, pid: p.pid });
     } else {

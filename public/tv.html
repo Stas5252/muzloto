@@ -66,6 +66,17 @@
         </div>
       </div>
       <div class="row" style="gap:8px;">
+        <button id="btn-open-leaderboard" class="btn btn-secondary btn-sm" title="Таблица лидеров и история побед">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H7"/>
+            <path d="M14 14.66V17c0 .55.45 1 1 1h2"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+          </svg>
+          <span>Зал славы</span>
+        </button>
         <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display:none;" title="Завершить текущую игру и выйти в меню">
           <span>Выйти в меню</span>
         </button>
@@ -90,8 +101,8 @@
 
           <div class="pack-card active" data-id="new_school">
             <div>
-              <div class="pack-icon">🔥</div>
-              <div class="pack-title">🔥 Новая школа: Крид, Дора, SODA LUV</div>
+              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[NEW SCHOOL]</div>
+              <div class="pack-title">Новая школа: Крид, Дора, SODA LUV</div>
               <div class="pack-desc">Егор Крид, Дора, SODA LUV, Toxi$, Big Baby Tape, OG Buda, Инстасамка, Macan</div>
             </div>
             <div class="row" style="justify-content:space-between; margin-top:8px;">
@@ -102,7 +113,7 @@
 
           <div class="pack-card " data-id="rock">
             <div>
-              <div class="pack-icon">🎸</div>
+              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[ROCK LEGENDS]</div>
               <div class="pack-title">Русский Рок & Легенды</div>
               <div class="pack-desc">Культовые гитарные риффы и песни, которые поёт вся страна</div>
             </div>
@@ -114,7 +125,7 @@
 
           <div class="pack-card " data-id="retro">
             <div>
-              <div class="pack-icon">🪩</div>
+              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[RETRO 90S]</div>
               <div class="pack-title">Хиты 90-х и 2000-х</div>
               <div class="pack-desc">Ностальгия, дискотеки и треки из магнитофонов и первых MP3-плееров</div>
             </div>
@@ -126,7 +137,7 @@
 
           <div class="pack-card " data-id="world">
             <div>
-              <div class="pack-icon">🌍</div>
+              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[POP HITS]</div>
               <div class="pack-title">Мировые Поп-Хиты</div>
               <div class="pack-desc">Платиновые синглы, взрывавшие стадионы и мировые радиостанции</div>
             </div>
@@ -138,7 +149,7 @@
 
           <div class="pack-card " data-id="charts">
             <div>
-              <div class="pack-icon">⚡</div>
+              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[CHARTS]</div>
               <div class="pack-title">Современные Чарты</div>
               <div class="pack-desc">Свежие бэнгеры, тренды TikTok и главные стриминговые хиты</div>
             </div>
@@ -150,7 +161,7 @@
 
           <div class="pack-card " data-id="ost">
             <div>
-              <div class="pack-icon">🎬</div>
+              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[SOUNDTRACKS]</div>
               <div class="pack-title">Кино & Саундтреки</div>
               <div class="pack-desc">Узнаваемые с первых секунд мелодии из любимых фильмов и сериалов</div>
             </div>
@@ -584,7 +595,6 @@
                   <div class="lotto-keg-number" id="lotto-keg-number">?</div>
                 </div>
               </div>
-              <div class="keg-nickname" id="keg-nickname-text" style="display:none;"></div>
             </div>
 
             <!-- Square Album Cover Artwork with Title & Artist directly underneath -->
@@ -592,7 +602,7 @@
               <div class="tv-album-cover-box" id="tv-album-cover-box">
                 <img id="tv-stage-cover" class="tv-stage-cover-img" src="" alt="Обложка трека">
                 <div class="tv-stage-cover-placeholder" id="tv-stage-cover-placeholder">
-                  <span style="font-size:3.5rem;">🎵</span>
+                  <div style="font-size:0.85rem; font-weight:800; letter-spacing:0.12em; color:#f59e0b; opacity:0.8;">MUZLOTO</div>
                 </div>
               </div>
               <div class="tv-track-meta">
@@ -613,13 +623,8 @@
             <div class="eq-bar"></div>
           </div>
 
-          <!-- Playback progress status -->
-          <div style="margin: 8px 0 16px 0; font-family:var(--font-mono); font-size:1.15rem; color:#fbbf24; font-weight:800;">
-            Статус: <span id="stage-timer">Звучит музыка · Танцуем!</span>
-          </div>
-
           <!-- Host Stage Controls (DJ Panel) -->
-          <div class="row" style="justify-content:center; gap:14px;">
+          <div class="row" style="justify-content:center; gap:14px; margin-top:14px;">
             <button id="btn-next-keg" class="btn btn-gold" style="padding:14px 34px; font-size:1.15rem;">
               <span>Следующий бочонок →</span>
             </button>
@@ -636,7 +641,7 @@
         <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h3 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.05em; color:#fbbf24;">
-              📋 Табло выпавших бочонков (<span id="board-count">0</span>):
+              Табло выпавших бочонков (<span id="board-count">0</span>):
             </h3>
             <span style="font-size:0.8rem; color:var(--text-muted);">Игроки могут сверить все номера, вышедшие из мешка</span>
           </div>
@@ -663,16 +668,83 @@
 
       <div id="showcase-card-grid" class="card-showcase-grid size-3"></div>
 
-      <div class="row" style="gap:16px; margin-top:20px;">
+      <div class="row" style="gap:16px; margin-top:20px; flex-wrap:wrap; justify-content:center;">
         <button id="btn-showcase-newround" class="btn btn-gold" style="padding:14px 32px; font-size:1.1rem;">
           <span>Новый раунд</span>
         </button>
         <button id="btn-showcase-continue" class="btn btn-secondary">
           <span>Продолжить игру</span>
         </button>
+        <button id="btn-showcase-leaderboard" class="btn btn-secondary">
+          <span>Зал славы</span>
+        </button>
         <button id="btn-showcase-lobby" class="btn btn-secondary">
           <span>В лобби</span>
         </button>
+      </div>
+    </div>
+
+    <!-- MODAL: LEADERBOARD & GAME HISTORY DATABASE -->
+    <div id="modal-leaderboard" class="leaderboard-modal-overlay" style="display:none;">
+      <div class="leaderboard-modal-card">
+        <div class="leaderboard-modal-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+              <path d="M4 22h16"/>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H7"/>
+              <path d="M14 14.66V17c0 .55.45 1 1 1h2"/>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+            </svg>
+            <h2 style="margin:0; font-size:1.25rem;">Зал славы & Статистика побед</h2>
+          </div>
+          <button id="btn-close-leaderboard" class="btn btn-secondary btn-sm" style="padding:6px 14px;">✕</button>
+        </div>
+
+        <div class="leaderboard-tabs">
+          <button class="leaderboard-tab-btn active" data-tab="tab-leaders">Топ игроков</button>
+          <button class="leaderboard-tab-btn" data-tab="tab-history">История партий</button>
+        </div>
+
+        <div class="leaderboard-modal-body">
+          <!-- Tab 1: Leaderboard -->
+          <div id="tab-leaders" class="leaderboard-tab-pane">
+            <div id="leaderboard-empty" style="display:none; text-align:center; padding:36px; color:var(--text-muted);">
+              <div style="font-size:2rem; margin-bottom:10px; color:#fbbf24;">★</div>
+              <div style="font-size:1.05rem; font-weight:700; color:#fff; margin-bottom:4px;">Побед пока нет</div>
+              <div style="font-size:0.85rem;">Сыграйте партию и закройте карточку до победного БИНГО!</div>
+            </div>
+            <table id="leaderboard-table" class="leaderboard-table" style="display:none;">
+              <thead>
+                <tr>
+                  <th style="width:50px;">#</th>
+                  <th>Игрок</th>
+                  <th style="text-align:center;">Побед</th>
+                  <th style="text-align:center;">Сыграно</th>
+                  <th style="text-align:right;">Последняя победа</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Tab 2: Match History -->
+          <div id="tab-history" class="leaderboard-tab-pane" style="display:none;">
+            <div id="history-empty" style="display:none; text-align:center; padding:36px; color:var(--text-muted);">
+              <div style="font-size:1.05rem; font-weight:700; color:#fff; margin-bottom:4px;">История матчей пуста</div>
+              <div style="font-size:0.85rem;">Все завершённые партии будут сохраняться здесь автоматически.</div>
+            </div>
+            <div id="history-list"></div>
+          </div>
+        </div>
+
+        <div style="padding:14px 24px; border-top:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2);">
+          <button id="btn-clear-stats" class="btn btn-secondary btn-sm" style="color:#ef4444; border-color:rgba(239,68,68,0.2); font-size:0.8rem;">
+            Сбросить статистику
+          </button>
+          <span id="stats-total-count" style="font-size:0.8rem; color:var(--text-muted);"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -1753,11 +1825,20 @@
       const container = $('curated-packs-list');
       if (!container) return;
 
+      const packTags = {
+        new_school: 'NEW SCHOOL',
+        rock: 'ROCK LEGENDS',
+        retro: 'RETRO 90S',
+        world: 'POP HITS',
+        charts: 'CHARTS',
+        ost: 'SOUNDTRACKS'
+      };
+
       container.innerHTML = Object.values(allPacks).map(p => `
         <div class="pack-card ${p.id === 'new_school' ? 'active' : ''}" data-id="${p.id}">
           <div>
-            <div class="pack-icon">${p.icon}</div>
-            <div class="pack-title">${escapeHtml(p.title)}</div>
+            <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[${packTags[p.id] || 'COLLECTION'}]</div>
+            <div class="pack-title">${escapeHtml(p.title.replace(/^[^\w\u0400-\u04FF]+\s*/, ''))}</div>
             <div class="pack-desc">${escapeHtml(p.desc)}</div>
           </div>
           <div class="row" style="justify-content:space-between; margin-top:8px;">
@@ -2105,14 +2186,6 @@
         // Show RANDOM KEG NUMBER immediately
         $('lotto-keg-number').textContent = res.kegNum;
 
-        // Show Lotto Nickname if any
-        if (res.nickname) {
-          $('keg-nickname-text').textContent = `«${res.nickname}»`;
-          $('keg-nickname-text').style.display = 'block';
-        } else {
-          $('keg-nickname-text').style.display = 'none';
-        }
-
         // Show Album Cover & Title IMMEDIATELY
         const coverImg = $('tv-stage-cover');
         const placeholder = $('tv-stage-cover-placeholder');
@@ -2137,7 +2210,6 @@
         // Play Audio (Party format: plays completely!)
         mainAudio.src = res.track.preview;
         const playFormat = $('opt-play-format') ? $('opt-play-format').value : 'party';
-        $('stage-timer').textContent = '🎶 Звучит музыка · Танцуем!';
 
         mainAudio.onloadedmetadata = () => {
           mainAudio.currentTime = 0;
@@ -2146,17 +2218,15 @@
             $('equalizer-wave').classList.add('active');
             $('lotto-keg-ball').classList.add('playing');
             $('tv-album-cover-box').classList.add('playing');
-            $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
+            $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
           }).catch(e => console.warn(e));
         };
 
         if (playFormat === 'timer25') {
           let timeLeft = 25;
-          $('stage-timer').textContent = timeLeft + ' сек';
           trackTimer = setInterval(() => {
             if (!mainAudio.paused) {
               timeLeft--;
-              $('stage-timer').textContent = Math.max(0, timeLeft) + ' сек';
               if (timeLeft <= 0) {
                 clearInterval(trackTimer);
                 onTrackFinished();
@@ -2172,14 +2242,12 @@
     }
 
     function onTrackFinished() {
-      $('stage-timer').textContent = 'Трек завершился · Нажмите «СЛЕДУЮЩИЙ БОЧОНОК»';
       $('equalizer-wave').classList.remove('active');
       $('lotto-keg-ball').classList.remove('playing');
       $('tv-album-cover-box').classList.remove('playing');
 
       if (autoNext) {
-        $('stage-timer').textContent = 'Следующий бочонок через 5 сек...';
-        trackTimer = setTimeout(nextBarrel, 5000);
+        trackTimer = setTimeout(nextBarrel, 4000);
       }
     }
 
@@ -2299,6 +2367,25 @@
         $('win-showcase-modal').style.display = 'flex';
         playFanfare();
         startConfetti();
+
+        // Record to persistent Database!
+        try {
+          const winTracks = (state.winnerDetails && state.winnerDetails.winIndices) ? 
+            state.winnerDetails.winIndices.map(idx => {
+              const cardItem = state.winnerDetails.card && state.winnerDetails.card[idx];
+              return cardItem ? `${cardItem.artist} — ${cardItem.title}` : `Бочонок #${idx+1}`;
+            }) : [];
+          recordWinInDb({
+            winnerName: state.winner,
+            winnerPid: state.winnerPid || (state.winnerDetails ? state.winnerDetails.pid : null),
+            roomCode: currentRoomCode || '—',
+            mode: state.mode === 'line' ? 'Линия' : 'Вся карточка',
+            turn: state.turn || (state.called ? state.called.length : 1),
+            totalBarrels: selectedTracks.length,
+            winningTracks: winTracks,
+            playerCount: (state.players && state.players.length) ? state.players.length : 1
+          });
+        } catch(e) {}
       }
     });
 
@@ -2454,16 +2541,9 @@
 
           const restoredTrack = state.currentTrack || (savedKeg && savedKeg.track ? savedKeg.track : null) || (state.calledHistory && state.calledHistory.length > 0 ? state.calledHistory[state.calledHistory.length - 1] : null);
           const restoredKegNum = (state.currentTrack && state.currentTrack.kegNum) || (savedKeg && savedKeg.kegNum) || (restoredTrack && restoredTrack.kegNum) || null;
-          const restoredNickname = (state.currentTrack && state.currentTrack.nickname) || (savedKeg && savedKeg.nickname) || (restoredTrack && restoredTrack.nickname) || '';
 
           if (restoredKegNum) {
             $('lotto-keg-number').textContent = restoredKegNum;
-          }
-          if (restoredNickname) {
-            $('keg-nickname-text').textContent = `«${restoredNickname}»`;
-            $('keg-nickname-text').style.display = 'block';
-          } else {
-            $('keg-nickname-text').style.display = 'none';
           }
 
           if (restoredTrack) {
@@ -2485,7 +2565,6 @@
             if (restoredTrack.preview) {
               mainAudio.src = restoredTrack.preview;
             }
-            $('stage-timer').textContent = 'Игра восстановлена · Нажмите «СЛЕДУЮЩИЙ БОЧОНОК»';
           }
         } else {
           $('sec-setup').style.display = 'none';
@@ -2494,6 +2573,208 @@
         }
       });
     }
+
+    // ==========================================
+    // STATS & LEADERBOARD DATABASE MANAGER
+    // ==========================================
+    async function fetchStatsDb() {
+      // 1. Try server API
+      try {
+        const res = await fetch('/api/stats');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && (data.leaderboard || data.history)) return data;
+        }
+      } catch(e) {}
+
+      // 2. Fallback to localStorage
+      try {
+        const raw = localStorage.getItem('muzloto_db_stats');
+        if (raw) {
+          const db = JSON.parse(raw);
+          const leaderboardArr = Object.values(db.leaderboard || {})
+            .sort((a, b) => b.wins - a.wins || (b.lastWin || 0) - (a.lastWin || 0));
+          return {
+            leaderboard: leaderboardArr,
+            history: db.history || []
+          };
+        }
+      } catch(e) {}
+
+      return { leaderboard: [], history: [] };
+    }
+
+    async function recordWinInDb(winnerDetails) {
+      if (!winnerDetails || !winnerDetails.winnerName) return;
+      // Record locally
+      try {
+        let db = { leaderboard: {}, history: [] };
+        const raw = localStorage.getItem('muzloto_db_stats');
+        if (raw) db = JSON.parse(raw);
+        if (!db.leaderboard) db.leaderboard = {};
+        if (!Array.isArray(db.history)) db.history = [];
+
+        const now = Date.now();
+        const dateStr = new Date(now).toLocaleString('ru-RU', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+
+        const record = {
+          id: 'win_' + now + '_' + Math.random().toString(36).slice(2, 6),
+          roomCode: winnerDetails.roomCode || currentRoomCode || '—',
+          winnerName: winnerDetails.winnerName,
+          winnerPid: winnerDetails.winnerPid || null,
+          mode: winnerDetails.mode || 'Вся карточка',
+          turn: winnerDetails.turn || 1,
+          totalBarrels: winnerDetails.totalBarrels || 25,
+          timestamp: now,
+          dateStr,
+          winningTracks: winnerDetails.winningTracks || [],
+          playerCount: winnerDetails.playerCount || 1
+        };
+
+        db.history.unshift(record);
+        if (db.history.length > 200) db.history = db.history.slice(0, 200);
+
+        const wName = winnerDetails.winnerName;
+        if (!db.leaderboard[wName]) {
+          db.leaderboard[wName] = {
+            name: wName,
+            wins: 0,
+            games: 0,
+            lastWin: now,
+            lastWinDate: dateStr
+          };
+        }
+        db.leaderboard[wName].wins += 1;
+        db.leaderboard[wName].games = Math.max(db.leaderboard[wName].games + 1, db.leaderboard[wName].wins);
+        db.leaderboard[wName].lastWin = now;
+        db.leaderboard[wName].lastWinDate = dateStr;
+
+        localStorage.setItem('muzloto_db_stats', JSON.stringify(db));
+      } catch(e) {}
+
+      // Also send to server API if available
+      try {
+        await fetch('/api/stats/win', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(winnerDetails)
+        });
+      } catch(e) {}
+    }
+
+    async function openLeaderboardModal() {
+      const modal = $('modal-leaderboard');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      await renderLeaderboardUI();
+    }
+
+    function closeLeaderboardModal() {
+      const modal = $('modal-leaderboard');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function renderLeaderboardUI() {
+      const stats = await fetchStatsDb();
+      const leaders = stats.leaderboard || [];
+      const history = stats.history || [];
+
+      // Leaders Tab
+      const lTable = $('leaderboard-table');
+      const lEmpty = $('leaderboard-empty');
+      const lTbody = $('leaderboard-tbody');
+
+      if (!leaders.length) {
+        lTable.style.display = 'none';
+        lEmpty.style.display = 'block';
+      } else {
+        lEmpty.style.display = 'none';
+        lTable.style.display = 'table';
+        lTbody.innerHTML = leaders.map((item, idx) => {
+          let rankClass = 'rank-other';
+          if (idx === 0) rankClass = 'rank-1';
+          else if (idx === 1) rankClass = 'rank-2';
+          else if (idx === 2) rankClass = 'rank-3';
+          return `
+            <tr>
+              <td><span class="rank-pill ${rankClass}">${idx + 1}</span></td>
+              <td style="font-weight:700; color:#fff;">${escapeHtml(item.name)}</td>
+              <td style="text-align:center; font-weight:800; color:#fbbf24;">${item.wins}</td>
+              <td style="text-align:center; color:var(--text-muted);">${item.games || item.wins}</td>
+              <td style="text-align:right; font-size:0.82rem; color:var(--text-faint);">${item.lastWinDate || '—'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // History Tab
+      const hList = $('history-list');
+      const hEmpty = $('history-empty');
+
+      if (!history.length) {
+        hEmpty.style.display = 'block';
+        hList.innerHTML = '';
+      } else {
+        hEmpty.style.display = 'none';
+        hList.innerHTML = history.map(item => `
+          <div class="history-card">
+            <div>
+              <div style="font-weight:800; font-size:1.05rem; color:#fff; display:flex; align-items:center; gap:8px;">
+                <span>${escapeHtml(item.winnerName)}</span>
+                <span class="badge" style="margin:0; font-size:0.7rem; padding:2px 8px; background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3);">
+                  ПОБЕДА
+                </span>
+              </div>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;">
+                Режим: ${escapeHtml(item.mode)} · За ${item.turn} ходов · Комната #${escapeHtml(item.roomCode)}
+              </div>
+              ${item.winningTracks && item.winningTracks.length ? `
+                <div style="font-size:0.75rem; color:var(--text-faint); margin-top:4px;">
+                  Собранные треки: ${escapeHtml(item.winningTracks.slice(0, 3).join(', '))}${item.winningTracks.length > 3 ? '...' : ''}
+                </div>
+              ` : ''}
+            </div>
+            <div style="text-align:right; font-size:0.8rem; color:var(--text-faint); font-family:var(--font-mono);">
+              ${escapeHtml(item.dateStr || '')}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const totalWins = leaders.reduce((acc, l) => acc + (l.wins || 0), 0);
+      $('stats-total-count').textContent = `Всего сыграно победных партий: ${totalWins}`;
+    }
+
+    $('btn-open-leaderboard').onclick = openLeaderboardModal;
+    $('btn-close-leaderboard').onclick = closeLeaderboardModal;
+    if ($('btn-showcase-leaderboard')) {
+      $('btn-showcase-leaderboard').onclick = openLeaderboardModal;
+    }
+
+    // Modal tabs
+    document.querySelectorAll('.leaderboard-tab-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.leaderboard-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.leaderboard-tab-pane').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        const tabId = btn.dataset.tab;
+        if ($(tabId)) $(tabId).style.display = 'block';
+      };
+    });
+
+    // Clear stats
+    $('btn-clear-stats').onclick = async () => {
+      if (confirm('Сбросить всю историю побед и рейтинг игроков?')) {
+        try {
+          localStorage.removeItem('muzloto_db_stats');
+          await fetch('/api/stats/reset', { method: 'POST' });
+        } catch(e) {}
+        renderLeaderboardUI();
+      }
+    };
 
     loadCuratedPacks().then(() => {
       checkHostSessionRestore();

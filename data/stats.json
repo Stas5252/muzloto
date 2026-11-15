@@ -1,0 +1,30 @@
+{
+  "leaderboard": {
+    "Алина": {
+      "name": "Алина",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794784511808,
+      "lastWinDate": "16.11.2026, 03:15"
+    }
+  },
+  "history": [
+    {
+      "id": "win_1794784511808_ty8i",
+      "roomCode": "3665",
+      "winnerName": "Алина",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 8,
+      "totalBarrels": 30,
+      "timestamp": 1794784511808,
+      "dateStr": "16.11.2026, 03:15",
+      "winningTracks": [
+        "Artist 8 — Song 8",
+        "Artist 9 — Song 9",
+        "Artist 11 — Song 11"
+      ],
+      "playerCount": 11
+    }
+  ]
+}
