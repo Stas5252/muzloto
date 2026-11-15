@@ -55,6 +55,30 @@ window.createComm = function(role) {
   // ==========================================
   // MODE 2: PeerJS (Serverless for GitHub Pages)
   // ==========================================
+  const LOTTO_NICKNAMES = {
+    1: 'Кол',
+    2: 'Гусь',
+    3: 'Троица',
+    7: 'Семёрка / Топор',
+    10: 'Бычий глаз',
+    11: 'Барабанные палочки',
+    12: 'Дюжина',
+    13: 'Чёртова дюжина',
+    18: 'В первый раз',
+    20: 'Гусь в шляпе',
+    21: 'Очко',
+    22: 'Утята / Гуси-лебеди',
+    25: 'Четвертак',
+    33: 'Кудрявый',
+    44: 'Стульчики',
+    50: 'Полтинник',
+    55: 'Перчатки',
+    69: 'Туда-сюда',
+    77: 'Топорики',
+    88: 'Бабушка',
+    90: 'Дед'
+  };
+
   let peer = null;
   let roomCode = null;
   const players = new Map(); // pid -> { name, sid, card, marks, conn }
@@ -291,11 +315,13 @@ window.createComm = function(role) {
       const trackObj = roomState.tracks.find(t => t.id === nextId);
       const turnNumber = roomState.called.length;
       const kegNum = trackObj.kegNum;
+      const nickname = LOTTO_NICKNAMES[kegNum] || null;
 
       roomState.currentTrack = {
         ...trackObj,
         turn: turnNumber,
-        kegNum
+        kegNum,
+        nickname
       };
 
       broadcastState();
@@ -305,6 +331,7 @@ window.createComm = function(role) {
           turn: turnNumber,
           n: turnNumber,
           kegNum,
+          nickname,
           total: roomState.order.length,
           remaining: roomState.order.length - turnNumber,
           track: roomState.currentTrack

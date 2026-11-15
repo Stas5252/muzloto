@@ -14,13 +14,13 @@
       z-index: 10001;
     }
     .keg-nickname {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 800;
       color: #fef08a;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-top: 4px;
-      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
     }
     #lobby-qr-container {
       display: flex;
@@ -30,6 +30,19 @@
       padding: 12px;
       border-radius: 16px;
       box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+    }
+    .party-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(236,72,153,0.2) 100%);
+      border: 1px solid rgba(245,158,11,0.4);
+      color: #fef08a;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-transform: uppercase;
     }
   </style>
 </head>
@@ -43,7 +56,7 @@
         <span style="font-size:2.2rem; filter:drop-shadow(0 0 16px rgba(245,158,11,0.6));">🎱</span>
         <div>
           <div style="font-weight:900; font-size:1.5rem; color:#fff; letter-spacing:-0.02em;">МУЗЛОТО <span style="font-size:0.85rem; color:#fbbf24; font-weight:700; background:rgba(245,158,11,0.15); padding:2px 8px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">ТВ-ШОУ</span></div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">Настоящее русское лото под любимую музыку</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Настоящее русское лото под любимую музыку · Режим вечеринки</div>
         </div>
       </div>
       <div class="row">
@@ -59,7 +72,7 @@
           <span>Шаг 1 · Загрузка бочонков в мешок</span>
         </div>
         <h2>Выберите готовый пак или найдите треки в интернете</h2>
-        <p>Каждой песне присваивается свой номер бочонка. В игре бочонки вытягиваются из мешка <b>совершенно случайно</b>, как в настоящем лото!</p>
+        <p>Каждой песне присваивается свой номер бочонка. В игре бочонки выпадают <b>совершенно случайно</b>. Треки играют полностью, чтобы гости могли танцевать и подпевать!</p>
 
         <!-- Curated Packs Quick Buttons -->
         <div style="margin: 20px 0 10px 0;">
@@ -99,14 +112,14 @@
           <button id="btn-clear-tracks" class="btn btn-secondary btn-sm" style="display:none;">Очистить все</button>
         </div>
 
-        <div class="selected-tracks-list" id="selected-tracks-container" style="max-height:300px;">
+        <div class="selected-tracks-list" id="selected-tracks-container" style="max-height:280px;">
           <div style="padding: 24px; text-align: center; color: var(--text-faint);">
             Список пока пуст. Выберите готовый пак выше или воспользуйтесь поиском.
           </div>
         </div>
 
-        <!-- Rules & Timer settings -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+        <!-- Rules & Party Mode settings -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
           <label>
             Размер сетки
             <select id="opt-size">
@@ -122,19 +135,18 @@
             </select>
           </label>
           <label>
-            Длительность фрагмента
-            <select id="opt-clip">
-              <option value="15">15 секунд</option>
-              <option value="20" selected>20 секунд</option>
-              <option value="25">25 секунд</option>
-              <option value="30">30 секунд</option>
+            Формат воспроизведения
+            <select id="opt-play-format">
+              <option value="party" selected>🔥 Вечеринка: трек играет полностью, меняем руками</option>
+              <option value="loop">🪩 Дискотека: играет по кругу, пока танцуют</option>
+              <option value="timer25">⏱ Быстрый квиз: фрагмент 25 сек</option>
             </select>
           </label>
           <label>
-            Авто-вскрытие ответа
+            Показ названия
             <select id="opt-reveal">
-              <option value="auto" selected>Вскрывать после окончания музыки</option>
-              <option value="manual">Только по кнопке ведущего</option>
+              <option value="manual" selected>Скрывать (открывать кнопкой «Вскрыть»)</option>
+              <option value="auto">Вскрывать автоматически</option>
             </select>
           </label>
         </div>
@@ -195,19 +207,20 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:14px;">
           <div class="row">
             <span class="badge" style="margin-bottom:0; background:rgba(245,158,11,0.2); border-color:#fbbf24; color:#fef08a;" id="game-turn-badge">Ход 1</span>
-            <span style="color:var(--text-main); font-weight:700; font-size:1.1rem;" id="game-remaining-text">В мешке осталось: 25 бочонков</span>
+            <span class="party-badge">🎉 Танцуем & Поём</span>
+            <span style="color:var(--text-main); font-weight:700; font-size:1.05rem;" id="game-remaining-text">В мешке: 25 бочонков</span>
           </div>
           <div class="row">
             <label style="flex-direction:row; align-items:center; gap:8px; cursor:pointer;">
-              <input type="checkbox" id="chk-auto-next" checked style="width:20px; height:20px; accent-color:var(--accent-gold);">
-              <span style="color:#fff; font-size:0.95rem;">Автоматический ход</span>
+              <input type="checkbox" id="chk-auto-next" style="width:18px; height:18px; accent-color:var(--accent-gold);">
+              <span style="color:var(--text-muted); font-size:0.9rem;">Авто-переход</span>
             </label>
           </div>
         </div>
 
         <!-- The Central Lotto Barrel Stage (ZERO SPOILERS!) -->
         <div class="lotto-stage">
-          <!-- 3D Glowing Lotto Barrel showing the RANDOM KEG NUMBER -->
+          <!-- 3D Glowing Lotto Barrel showing the RANDOM KEG NUMBER with DROP ANIMATION -->
           <div class="lotto-keg-container">
             <div class="lotto-keg-halo"></div>
             <div class="lotto-keg-ball" id="lotto-keg-ball">
@@ -230,11 +243,11 @@
             <div class="eq-bar"></div>
           </div>
 
-          <!-- Song Reveal Banner (Hidden during playback, revealed after time/click!) -->
+          <!-- Song Reveal Banner (Hidden during playback, revealed after host clicks or song ends) -->
           <div class="song-reveal-banner hidden-mode" id="song-reveal-box">
             <div id="box-hidden-content">
               <div class="mystery-prompt">🎲 ВЫПАЛ БОЧОНОК № <span id="mystery-keg-num">?</span>!</div>
-              <div class="mystery-subprompt">Слушайте песню и проверяйте номер <span id="mystery-keg-subnum">?</span> на своих карточках 🎧</div>
+              <div class="mystery-subprompt">Танцуйте, пойте и проверяйте номер <span id="mystery-keg-subnum">?</span> на своих карточках 🎧</div>
             </div>
             <div id="box-revealed-content" style="display:none;">
               <div style="font-size:0.85rem; color:#fef08a; text-transform:uppercase; font-weight:800; letter-spacing:0.1em; margin-bottom:4px;">
@@ -245,18 +258,18 @@
             </div>
           </div>
 
-          <!-- Timer -->
-          <div style="margin: 12px 0 16px 0; font-family:var(--font-mono); font-size:1.3rem; color:#fbbf24; font-weight:800;">
-            Время фрагмента: <span id="stage-timer">20</span> сек
+          <!-- Playback progress status -->
+          <div style="margin: 12px 0 16px 0; font-family:var(--font-mono); font-size:1.15rem; color:#fbbf24; font-weight:800;">
+            Статус: <span id="stage-timer">Звучит трек</span>
           </div>
 
-          <!-- Host Stage Controls -->
+          <!-- Host Stage Controls (DJ Panel) -->
           <div class="row" style="justify-content:center; gap:14px;">
-            <button id="btn-reveal-now" class="btn btn-gold" style="padding:12px 28px;">
-              <span>Вскрыть бочонок 👁</span>
+            <button id="btn-next-keg" class="btn btn-gold" style="padding:14px 34px; font-size:1.15rem;">
+              <span>🎲 СЛЕДУЮЩИЙ БОЧОНОК ⏭</span>
             </button>
-            <button id="btn-next-keg" class="btn" style="padding:12px 28px;">
-              <span>Тянуть следующий бочонок 🎲</span>
+            <button id="btn-reveal-now" class="btn" style="padding:12px 24px;">
+              <span>Вскрыть название 👁</span>
             </button>
             <button id="btn-pause-keg" class="btn btn-secondary">
               <span>Пауза ⏸</span>
@@ -276,7 +289,7 @@
             <span style="font-size:0.8rem; color:var(--text-muted);">Игроки могут сверить все номера, вышедшие из мешка</span>
           </div>
           <div class="call-board" id="call-board-container">
-            <span style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «Тянуть следующий бочонок».</span>
+            <span style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>
           </div>
         </div>
       </div>
@@ -325,15 +338,33 @@
     let allPacks = {};
     let selectedTracks = [];
     let previewAudioBtn = null;
-    let autoNext = true;
+    let autoNext = false; // Manual control by default for partying!
     let trackTimer = null;
     let currentRoomCode = null;
     let currentCallingTrack = null;
     let isRevealed = false;
-    let qrGenerator = null;
 
-    // Web Audio Fanfare
+    // Web Audio Synthesis for Barrel Drop Knock & Fanfare
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBarrelDropSound() {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        // Wood knock / drum sound
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.18);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch(e) {}
+    }
+
     function playFanfare() {
       try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -483,7 +514,6 @@
       searchSpinner.style.display = 'block';
       searchDebounce = setTimeout(async () => {
         try {
-          // Direct iTunes API with CORS works natively in both Node and GitHub Pages!
           const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=25`;
           const res = await fetch(url);
           const data = await res.json();
@@ -650,6 +680,13 @@
         currentCallingTrack = res.track;
         isRevealed = false;
 
+        // Animate 3D Barrel Drop!
+        const kegBall = $('lotto-keg-ball');
+        kegBall.classList.remove('drop-anim');
+        void kegBall.offsetWidth; // trigger reflow
+        kegBall.classList.add('drop-anim');
+        playBarrelDropSound();
+
         // Show RANDOM KEG NUMBER (e.g. 22, 7, 14...)
         $('lotto-keg-number').textContent = res.kegNum;
         $('mystery-keg-num').textContent = res.kegNum;
@@ -657,7 +694,7 @@
         $('revealed-keg-num').textContent = res.kegNum;
 
         $('game-turn-badge').textContent = `Ход ${res.turn}`;
-        $('game-remaining-text').textContent = `В мешке осталось: ${res.remaining} бочонков`;
+        $('game-remaining-text').textContent = `В мешке: ${res.remaining} бочонков`;
 
         // Lotto Nickname if any
         if (res.nickname) {
@@ -673,14 +710,14 @@
         $('box-revealed-content').style.display = 'none';
         $('btn-reveal-now').style.display = 'inline-flex';
 
-        // Play Audio
+        // Play Audio (Party format: plays completely!)
         mainAudio.src = res.track.preview;
-        const clipSec = parseInt($('opt-clip').value, 10);
-        let timeLeft = clipSec;
-        $('stage-timer').textContent = timeLeft;
+        const playFormat = $('opt-play-format').value;
+        $('stage-timer').textContent = '🎶 Звучит музыка · Танцуем!';
 
         mainAudio.onloadedmetadata = () => {
           mainAudio.currentTime = 0;
+          mainAudio.loop = (playFormat === 'loop');
           mainAudio.play().then(() => {
             $('equalizer-wave').classList.add('active');
             $('lotto-keg-ball').classList.add('playing');
@@ -688,28 +725,34 @@
           }).catch(e => console.warn(e));
         };
 
-        clearInterval(trackTimer);
-        trackTimer = setInterval(() => {
-          if (!mainAudio.paused) {
-            timeLeft--;
-            $('stage-timer').textContent = Math.max(0, timeLeft);
-            if (timeLeft <= 0) {
-              clearInterval(trackTimer);
-              onTimeExpired();
+        if (playFormat === 'timer25') {
+          let timeLeft = 25;
+          $('stage-timer').textContent = timeLeft + ' сек';
+          trackTimer = setInterval(() => {
+            if (!mainAudio.paused) {
+              timeLeft--;
+              $('stage-timer').textContent = Math.max(0, timeLeft) + ' сек';
+              if (timeLeft <= 0) {
+                clearInterval(trackTimer);
+                onTrackFinished();
+              }
             }
-          }
-        }, 1000);
+          }, 1000);
+        } else {
+          mainAudio.onended = () => {
+            onTrackFinished();
+          };
+        }
       });
     }
 
-    function onTimeExpired() {
-      mainAudio.pause();
-      $('equalizer-wave').classList.remove('active');
-      $('lotto-keg-ball').classList.remove('playing');
-
+    function onTrackFinished() {
       if ($('opt-reveal').value === 'auto') {
         revealAnswer();
       }
+      $('stage-timer').textContent = 'Трек завершился · Нажмите «СЛЕДУЮЩИЙ БОЧОНОК»';
+      $('equalizer-wave').classList.remove('active');
+      $('lotto-keg-ball').classList.remove('playing');
 
       if (autoNext) {
         $('stage-timer').textContent = 'Следующий бочонок через 5 сек...';
