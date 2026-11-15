@@ -65,7 +65,10 @@
           <div style="font-size:0.8rem; color:var(--text-muted);">Музыкальное лото · Режим живого эфира</div>
         </div>
       </div>
-      <div class="row">
+      <div class="row" style="gap:8px;">
+        <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display:none;" title="Завершить текущую игру и выйти в меню">
+          <span>Выйти в меню</span>
+        </button>
         <a href="index.html" class="btn btn-secondary btn-sm">На главную</a>
       </div>
     </header>
@@ -224,14 +227,30 @@
           </div>
         </div>
 
-        <!-- The Central Lotto Barrel Stage (ZERO SPOILERS!) -->
+        <!-- The Central Lotto Barrel & Spinning Vinyl Stage -->
         <div class="lotto-stage">
-          <!-- 3D Glowing Lotto Barrel showing the RANDOM KEG NUMBER with DROP ANIMATION -->
-          <div class="lotto-keg-container">
-            <div class="lotto-keg-halo"></div>
-            <div class="lotto-keg-ball" id="lotto-keg-ball">
-              <div class="lotto-keg-label">БОЧОНОК</div>
-              <div class="lotto-keg-number" id="lotto-keg-number">?</div>
+          <div class="vinyl-stage-wrap">
+            <!-- 3D Glowing Lotto Barrel showing the RANDOM KEG NUMBER with DROP ANIMATION -->
+            <div class="lotto-keg-container">
+              <div class="lotto-keg-halo"></div>
+              <div class="lotto-keg-ball" id="lotto-keg-ball">
+                <div class="lotto-keg-label">БОЧОНОК</div>
+                <div class="lotto-keg-number" id="lotto-keg-number">?</div>
+              </div>
+            </div>
+
+            <!-- Authentic Spinning Vinyl Record with Album Cover Art -->
+            <div class="vinyl-record-container">
+              <div class="vinyl-disc" id="tv-vinyl-disc">
+                <div class="vinyl-label" id="tv-vinyl-label">
+                  <img class="vinyl-label-img" id="tv-vinyl-cover" src="" alt="Обложка альбома" style="display:none;">
+                  <div class="vinyl-label-placeholder" id="tv-vinyl-mystery">
+                    <span style="font-size:0.65rem; font-weight:800; letter-spacing:0.12em; opacity:0.85;">МУЗЛОТО</span>
+                    <span style="font-size:1.6rem; font-weight:900;" id="tv-vinyl-keg-num">?</span>
+                  </div>
+                  <div class="vinyl-spindle-hole"></div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -627,6 +646,8 @@
       comm.hostCreate({ tracks: selectedTracks, size, mode }, async r => {
         if (r.error) return alert(r.error);
         currentRoomCode = r.code;
+        $('btn-reset-session').style.display = 'inline-flex';
+        localStorage.setItem('muzloto_active_host_code', r.code);
 
         let base = location.origin + location.pathname.replace(/\/tv\.html.*$/, '');
         if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
@@ -661,6 +682,16 @@
     $('btn-back-setup').onclick = () => {
       $('sec-lobby').style.display = 'none';
       $('sec-setup').style.display = 'block';
+    };
+
+    $('btn-reset-session').onclick = () => {
+      if (confirm('Завершить текущую игру и выйти в меню выбора треков?')) {
+        localStorage.removeItem('muzloto_active_host_code');
+        if (currentRoomCode) {
+          localStorage.removeItem('muzloto_mesh_room_' + currentRoomCode);
+        }
+        location.reload();
+      }
     };
 
     // START GAME
@@ -711,6 +742,20 @@
         $('mystery-keg-num').textContent = res.kegNum;
         $('mystery-keg-subnum').textContent = res.kegNum;
         $('revealed-keg-num').textContent = res.kegNum;
+        $('tv-vinyl-keg-num').textContent = res.kegNum;
+
+        // Update Vinyl Record Display
+        const vinylCover = $('tv-vinyl-cover');
+        const vinylMystery = $('tv-vinyl-mystery');
+        if ($('opt-reveal').value === 'auto') {
+          vinylCover.src = res.track.art || getTvCoverArt('');
+          vinylCover.style.display = 'block';
+          vinylMystery.style.display = 'none';
+        } else {
+          vinylCover.src = res.track.art || getTvCoverArt('');
+          vinylCover.style.display = 'none';
+          vinylMystery.style.display = 'flex';
+        }
 
         $('game-turn-badge').textContent = `Ход ${res.turn}`;
         $('game-remaining-text').textContent = `В мешке: ${res.remaining} бочонков`;
@@ -740,6 +785,7 @@
           mainAudio.play().then(() => {
             $('equalizer-wave').classList.add('active');
             $('lotto-keg-ball').classList.add('playing');
+            $('tv-vinyl-disc').classList.add('spinning');
             $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
           }).catch(e => console.warn(e));
         };
@@ -772,6 +818,7 @@
       $('stage-timer').textContent = 'Трек завершился · Нажмите «СЛЕДУЮЩИЙ БОЧОНОК»';
       $('equalizer-wave').classList.remove('active');
       $('lotto-keg-ball').classList.remove('playing');
+      $('tv-vinyl-disc').classList.remove('spinning');
 
       if (autoNext) {
         $('stage-timer').textContent = 'Следующий бочонок через 5 сек...';
@@ -790,6 +837,14 @@
       if (coverImg) {
         coverImg.onerror = function() { this.onerror = null; this.src = getTvCoverArt(''); };
         coverImg.src = currentCallingTrack.art || getTvCoverArt('');
+      }
+
+      const vinylCover = $('tv-vinyl-cover');
+      const vinylMystery = $('tv-vinyl-mystery');
+      if (vinylCover && vinylMystery) {
+        vinylCover.src = currentCallingTrack.art || getTvCoverArt('');
+        vinylCover.style.display = 'block';
+        vinylMystery.style.display = 'none';
       }
 
       $('stage-artist').textContent = currentCallingTrack.artist;
@@ -821,17 +876,25 @@
         mainAudio.play();
         $('equalizer-wave').classList.add('active');
         $('lotto-keg-ball').classList.add('playing');
+        $('tv-vinyl-disc').classList.add('spinning');
         $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
       } else {
         mainAudio.pause();
         $('equalizer-wave').classList.remove('active');
         $('lotto-keg-ball').classList.remove('playing');
+        $('tv-vinyl-disc').classList.remove('spinning');
         $('btn-pause-keg').querySelector('span').textContent = 'Продолжить';
       }
     }
 
     function replayAudio() {
       mainAudio.currentTime = 0;
+      mainAudio.play();
+      $('equalizer-wave').classList.add('active');
+      $('lotto-keg-ball').classList.add('playing');
+      $('tv-vinyl-disc').classList.add('spinning');
+      $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
+    }
       mainAudio.play();
       $('equalizer-wave').classList.add('active');
       $('lotto-keg-ball').classList.add('playing');
@@ -992,7 +1055,96 @@
       return String(s || '').replace(/'/g, '&#39;');
     }
 
-    loadCuratedPacks();
+    async function checkHostSessionRestore() {
+      const savedCode = localStorage.getItem('muzloto_active_host_code');
+      if (!savedCode) return;
+
+      comm.hostRestore(savedCode, async res => {
+        if (!res || res.error || !res.state) {
+          localStorage.removeItem('muzloto_active_host_code');
+          return;
+        }
+
+        currentRoomCode = savedCode;
+        const state = res.state;
+        selectedTracks = (res.room && res.room.tracks) ? res.room.tracks : (state.tracks || selectedTracks);
+
+        $('btn-reset-session').style.display = 'inline-flex';
+
+        let base = location.origin + location.pathname.replace(/\/tv\.html.*$/, '');
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+          try {
+            const info = await (await fetch('/api/info')).json();
+            if (info.lan) base = `http://${info.lan}:${info.port || location.port || 3000}`;
+          } catch(e) {}
+        }
+        const joinLink = `${base}/play.html?room=${savedCode}`;
+
+        $('lobby-room-code').textContent = savedCode;
+        $('lobby-url-text').textContent = joinLink.replace(/^https?:\/\//, '');
+
+        const qrContainer = $('lobby-qr-container');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: joinLink,
+          width: 240,
+          height: 240,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        if (state.state === 'playing' || state.state === 'finished' || (state.calledCount && state.calledCount > 0)) {
+          $('sec-setup').style.display = 'none';
+          $('sec-lobby').style.display = 'none';
+          $('sec-game').style.display = 'block';
+
+          $('game-turn-badge').textContent = `Ход ${state.turn || state.calledCount}`;
+          $('game-remaining-text').textContent = `В мешке: ${state.remainingCount} бочонков`;
+          updateBoard(state.calledHistory || []);
+
+          if (state.currentTrack) {
+            currentCallingTrack = state.currentTrack;
+            $('lotto-keg-number').textContent = state.currentTrack.kegNum;
+            $('mystery-keg-num').textContent = state.currentTrack.kegNum;
+            $('mystery-keg-subnum').textContent = state.currentTrack.kegNum;
+            $('revealed-keg-num').textContent = state.currentTrack.kegNum;
+            $('tv-vinyl-keg-num').textContent = state.currentTrack.kegNum;
+
+            if (state.currentTrack.nickname) {
+              $('keg-nickname-text').textContent = `«${state.currentTrack.nickname}»`;
+              $('keg-nickname-text').style.display = 'block';
+            }
+            $('stage-artist').textContent = state.currentTrack.artist;
+            $('stage-title').textContent = state.currentTrack.title;
+            const coverImg = $('stage-cover-art');
+            if (coverImg) {
+              coverImg.onerror = function() { this.onerror = null; this.src = getTvCoverArt(''); };
+              coverImg.src = state.currentTrack.art || getTvCoverArt('');
+            }
+
+            const vinylCover = $('tv-vinyl-cover');
+            const vinylMystery = $('tv-vinyl-mystery');
+            if (vinylCover && vinylMystery) {
+              vinylCover.src = state.currentTrack.art || getTvCoverArt('');
+              vinylCover.style.display = 'block';
+              vinylMystery.style.display = 'none';
+            }
+
+            mainAudio.src = state.currentTrack.preview;
+            $('stage-timer').textContent = 'Игра восстановлена · Нажмите «СЛЕДУЮЩИЙ БОЧОНОК»';
+          }
+        } else {
+          $('sec-setup').style.display = 'none';
+          $('sec-lobby').style.display = 'block';
+          $('sec-game').style.display = 'none';
+        }
+      });
+    }
+
+    loadCuratedPacks().then(() => {
+      checkHostSessionRestore();
+    });
   </script>
 </body>
 </html>

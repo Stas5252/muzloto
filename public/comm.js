@@ -43,6 +43,7 @@ window.createComm = function(role) {
 
     if (role === 'host') {
       adapter.hostCreate = (data, cb) => socket.emit('host:create', data, cb);
+      adapter.hostRestore = (savedCode, cb) => socket.emit('host:restore', { code: savedCode }, cb);
       adapter.hostStart = cb => socket.emit('host:start', {}, cb);
       adapter.hostNext = cb => socket.emit('host:next', {}, cb);
       adapter.hostNewRound = cb => socket.emit('host:newround', {}, cb);
@@ -161,6 +162,7 @@ window.createComm = function(role) {
       calledCount: r.called.length,
       totalCount: r.tracks.length,
       remainingCount: r.tracks.length - r.called.length,
+      called: [...r.called],
       calledHistory: r.called.map((id, idx) => {
         const tr = r.tracks.find(t => t.id === id);
         return {
@@ -211,6 +213,26 @@ window.createComm = function(role) {
         try { p.conn.send({ type: 'state', data: pubData }); } catch(e) {}
       }
     }
+
+    saveMeshHostLocally();
+  }
+
+  function saveMeshHostLocally() {
+    if (!roomCode || typeof localStorage === 'undefined') return;
+    try {
+      const serializablePlayers = [...players.entries()].map(([pid, p]) => [pid, {
+        name: p.name,
+        pid: p.pid,
+        card: p.card,
+        marks: [...p.marks]
+      }]);
+      const dataToSave = {
+        roomState,
+        players: serializablePlayers
+      };
+      localStorage.setItem('muzloto_mesh_room_' + roomCode, JSON.stringify(dataToSave));
+      localStorage.setItem('muzloto_active_host_code', roomCode);
+    } catch(e) {}
   }
 
   function sendToPlayer(targetPid, message) {
@@ -263,6 +285,10 @@ window.createComm = function(role) {
       if (!p || roomState.state !== 'playing') return;
       const trackId = (typeof msg.id === 'object' && msg.id !== null) ? msg.id.id : msg.id;
       if (!trackId || !p.card.includes(trackId)) return;
+
+      // Server-side Anti-Cheat: cannot mark an uncalled barrel!
+      const willAddMark = (typeof msg.marked === 'boolean') ? msg.marked : !p.marks.has(trackId);
+      if (willAddMark && !roomState.called.includes(trackId)) return;
 
       if (typeof msg.marked === 'boolean') {
         if (msg.marked) p.marks.add(trackId);
@@ -360,24 +386,28 @@ window.createComm = function(role) {
         winnerDetails: null
       };
 
-      // 1. Instant local callback: Transition to lobby immediately!
+      // Setup multi-channels and announce lobby
+      setupHostChannels(code);
       if (cb) cb({ code });
       broadcastState();
+    };
 
-      // 2. BroadcastChannel setup (instant tab communication on same browser)
+    function setupHostChannels(code) {
+      // 1. BroadcastChannel setup (instant tab communication on same browser)
       try {
         if (typeof BroadcastChannel !== 'undefined') {
+          if (broadcastChan) try { broadcastChan.close(); } catch(e) {}
           broadcastChan = new BroadcastChannel('muzloto_' + code);
           broadcastChan.onmessage = ev => {
-            const msg = ev.data;
-            handleHostMessage(msg);
+            handleHostMessage(ev.data);
           };
         }
       } catch(e) { console.warn('BroadcastChannel error:', e); }
 
-      // 3. MQTT WebSockets setup (bypasses all NATs, cellular networks, firewalls)
+      // 2. MQTT WebSockets setup (bypasses all NATs, cellular networks, firewalls)
       try {
         if (typeof mqtt !== 'undefined') {
+          if (mqttClient) try { mqttClient.end(); } catch(e) {}
           const clientId = 'host_' + Math.random().toString(16).slice(2, 10);
           mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000 });
           mqttClient.on('connect', () => {
@@ -393,9 +423,10 @@ window.createComm = function(role) {
         }
       } catch(e) { console.warn('MQTT setup error:', e); }
 
-      // 4. PeerJS WebRTC channel setup
+      // 3. PeerJS WebRTC channel setup
       try {
         if (typeof Peer !== 'undefined') {
+          if (peerInstance) try { peerInstance.destroy(); } catch(e) {}
           const peerId = 'muzloto_' + code;
           peerInstance = new Peer(peerId);
           peerInstance.on('connection', conn => {
@@ -406,6 +437,31 @@ window.createComm = function(role) {
           peerInstance.on('error', err => console.warn('PeerJS notice:', err));
         }
       } catch(e) { console.warn('PeerJS error:', e); }
+    }
+
+    adapter.hostRestore = (savedCode, cb) => {
+      const code = String(savedCode).trim();
+      const savedStr = localStorage.getItem('muzloto_mesh_room_' + code);
+      if (!savedStr) return cb && cb({ error: 'Сессия не найдена' });
+      try {
+        const data = JSON.parse(savedStr);
+        roomState = data.roomState;
+        roomCode = roomState.code;
+        players.clear();
+        if (Array.isArray(data.players)) {
+          for (const [pid, p] of data.players) {
+            players.set(pid, {
+              ...p,
+              marks: new Set(p.marks || [])
+            });
+          }
+        }
+        setupHostChannels(roomCode);
+        broadcastState();
+        cb && cb({ ok: true, state: makePub(roomState) });
+      } catch(e) {
+        cb && cb({ error: e.message });
+      }
     };
 
     adapter.hostStart = cb => {

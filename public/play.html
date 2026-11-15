@@ -147,8 +147,11 @@
             <div class="mono" style="font-size:0.72rem; color:#fbbf24; letter-spacing:0.04em;" id="room-code-badge">Комната #----</div>
           </div>
         </div>
-        <div class="badge" id="mode-badge" style="margin-bottom:0; font-size:0.72rem; padding: 4px 10px; background:rgba(245,158,11,0.14); border-color:rgba(245,158,11,0.35); color:#fef08a; font-weight:700;">
-          Линия
+        <div class="row" style="gap:8px; align-items:center;">
+          <div class="badge" id="mode-badge" style="margin-bottom:0; font-size:0.72rem; padding: 4px 10px; background:rgba(245,158,11,0.14); border-color:rgba(245,158,11,0.35); color:#fef08a; font-weight:700;">
+            Вся карточка
+          </div>
+          <button id="btn-leave-room" class="btn btn-secondary btn-sm" style="display:none; padding:4px 8px; font-size:0.72rem; color:var(--text-muted);" title="Сменить имя или комнату">Выйти</button>
         </div>
       </div>
 
@@ -216,14 +219,15 @@
     let myPlayerPid = null;
     let myCard = [];
     let myMarks = new Set();
+    let calledTrackIds = new Set();
     let currentGameState = 'lobby';
-    let currentMode = 'line';
+    let currentMode = 'full';
     let gridSize = 3;
 
     $('input-room').value = urlParams.get('room') || '';
     $('input-name').value = localStorage.getItem('muzloto_player_name') || '';
 
-    // Web Audio Tap Sound
+    // Web Audio Sounds
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playTapSound(isMarking) {
       try {
@@ -238,6 +242,23 @@
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.15);
+      } catch(e) {}
+    }
+
+    function playRefusalSound() {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(75, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.21);
       } catch(e) {}
     }
 
@@ -304,11 +325,13 @@
 
         sessionStorage.setItem(sessionKey, res.pid);
         sessionStorage.setItem('muzloto_session_pid', res.pid);
+        sessionStorage.setItem('muzloto_player_card_' + code, JSON.stringify(res));
         localStorage.setItem('muzloto_player_name', name);
+        localStorage.setItem('muzloto_joined_room', code);
         joinedCode = code;
         myPlayerName = name;
         myPlayerPid = res.pid;
-        currentMode = res.mode;
+        currentMode = res.mode || 'full';
 
         $('player-display-name').textContent = name;
         $('player-avatar-initial').textContent = (name.charAt(0) || 'И').toUpperCase();
@@ -317,6 +340,7 @@
 
         $('sec-join').style.display = 'none';
         $('sec-play').style.display = 'flex';
+        $('btn-leave-room').style.display = 'inline-flex';
 
         renderCard(res);
       });
@@ -355,6 +379,7 @@
       }).join('');
 
       updateProgress();
+      updateReadyToStamp();
 
       grid.querySelectorAll('.bingo-cell').forEach(cell => {
         cell.onclick = () => {
@@ -365,12 +390,32 @@
           const id = cell.dataset.id;
           const willMark = !cell.classList.contains('marked');
 
+          // Strict Anti-Cheat: cannot stamp an uncalled barrel!
+          if (willMark && !calledTrackIds.has(id)) {
+            toast('Этот бочонок ещё не выпал на ТВ! Жульничать нельзя 😉');
+            playRefusalSound();
+            cell.classList.add('cell-shake');
+            setTimeout(() => cell.classList.remove('cell-shake'), 400);
+            return;
+          }
+
           if (willMark) {
             cell.classList.add('marked');
+            cell.classList.remove('ready-to-stamp');
             myMarks.add(id);
           } else {
             cell.classList.remove('marked');
+            if (calledTrackIds.has(id)) cell.classList.add('ready-to-stamp');
             myMarks.delete(id);
+          }
+
+          // Persist marks in sessionStorage so refresh retains them immediately
+          if (joinedCode) {
+            try {
+              const cached = JSON.parse(sessionStorage.getItem('muzloto_player_card_' + joinedCode) || '{}');
+              cached.marks = [...myMarks];
+              sessionStorage.setItem('muzloto_player_card_' + joinedCode, JSON.stringify(cached));
+            } catch(e) {}
           }
 
           comm.playerMark({ id, marked: willMark });
@@ -458,6 +503,13 @@
       if (!joinedCode) return;
       currentGameState = state.state;
 
+      if (state.called && Array.isArray(state.called)) {
+        calledTrackIds = new Set(state.called);
+      } else if (state.calledHistory && Array.isArray(state.calledHistory)) {
+        calledTrackIds = new Set(state.calledHistory.map(h => h.id));
+      }
+      updateReadyToStamp();
+
       const banner = $('game-banner-status');
       const bannerSub = $('game-banner-sub');
       const meta = $('game-banner-meta');
@@ -503,6 +555,99 @@
         bingoBtn.querySelector('span').textContent = 'Раунд завершён';
       }
     });
+
+    function updateReadyToStamp() {
+      const grid = $('bingo-grid');
+      if (!grid) return;
+      grid.querySelectorAll('.bingo-cell').forEach(cell => {
+        const id = cell.dataset.id;
+        if (calledTrackIds.has(id) && !cell.classList.contains('marked')) {
+          cell.classList.add('ready-to-stamp');
+        } else {
+          cell.classList.remove('ready-to-stamp');
+        }
+      });
+    }
+
+    function checkPlayerAutoRestore() {
+      const urlRoom = urlParams.get('room');
+      const savedCode = urlRoom || localStorage.getItem('muzloto_joined_room');
+      const savedName = localStorage.getItem('muzloto_player_name');
+      if (!savedCode || !savedName) return;
+
+      const cachedCardJson = sessionStorage.getItem('muzloto_player_card_' + savedCode);
+      if (cachedCardJson) {
+        try {
+          const cached = JSON.parse(cachedCardJson);
+          joinedCode = savedCode;
+          myPlayerName = savedName;
+          myPlayerPid = cached.pid || sessionStorage.getItem('muzloto_session_pid_' + savedCode);
+          currentMode = cached.mode || 'full';
+
+          $('player-display-name').textContent = savedName;
+          $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
+          $('room-code-badge').textContent = `Комната #${savedCode}`;
+          $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : 'Линия';
+
+          $('sec-join').style.display = 'none';
+          $('sec-play').style.display = 'flex';
+          $('btn-leave-room').style.display = 'inline-flex';
+
+          renderCard(cached);
+        } catch(e) {}
+      }
+
+      const sessionKey = 'muzloto_session_pid_' + savedCode;
+      let sessionPid = sessionStorage.getItem(sessionKey) || sessionStorage.getItem('muzloto_session_pid');
+      if (!sessionPid) {
+        sessionPid = 'p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+        sessionStorage.setItem(sessionKey, sessionPid);
+      }
+
+      comm.playerJoin({ code: savedCode, name: savedName, pid: sessionPid }, res => {
+        if (res.error) {
+          localStorage.removeItem('muzloto_joined_room');
+          $('sec-join').style.display = 'block';
+          $('sec-play').style.display = 'none';
+          $('btn-leave-room').style.display = 'none';
+          return;
+        }
+
+        sessionStorage.setItem(sessionKey, res.pid);
+        sessionStorage.setItem('muzloto_session_pid', res.pid);
+        sessionStorage.setItem('muzloto_player_card_' + savedCode, JSON.stringify(res));
+        localStorage.setItem('muzloto_joined_room', savedCode);
+
+        joinedCode = savedCode;
+        myPlayerName = savedName;
+        myPlayerPid = res.pid;
+        currentMode = res.mode || 'full';
+
+        $('player-display-name').textContent = savedName;
+        $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
+        $('room-code-badge').textContent = `Комната #${savedCode}`;
+        $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : 'Линия';
+
+        $('sec-join').style.display = 'none';
+        $('sec-play').style.display = 'flex';
+        $('btn-leave-room').style.display = 'inline-flex';
+
+        renderCard(res);
+      });
+    }
+
+    function leaveRoom() {
+      if (!confirm('Выйти из текущей комнаты?')) return;
+      localStorage.removeItem('muzloto_joined_room');
+      if (joinedCode) sessionStorage.removeItem('muzloto_player_card_' + joinedCode);
+      joinedCode = null;
+      $('sec-join').style.display = 'block';
+      $('sec-play').style.display = 'none';
+      $('btn-leave-room').style.display = 'none';
+    }
+
+    $('btn-leave-room').onclick = leaveRoom;
+    checkPlayerAutoRestore();
 
     comm.on('card', data => {
       stopConfetti();

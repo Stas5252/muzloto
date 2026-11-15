@@ -211,6 +211,7 @@ const pub = r => ({
   calledCount: r.called.length,
   totalCount: r.tracks.length,
   remainingCount: r.tracks.length - r.called.length,
+  called: [...r.called],
   calledHistory: r.called.map((id, idx) => {
     const tr = r.tracks.find(t => t.id === id);
     return {
@@ -283,6 +284,23 @@ io.on('connection', s => {
     s.join(code);
     ack({ code });
     push(rooms[code]);
+  });
+
+  s.on('host:restore', (d, ack) => {
+    if (typeof d === 'function') { ack = d; d = {}; }
+    if (!ack) ack = () => {};
+    const code = String(d && d.code);
+    const r = rooms[code];
+    if (!r) return ack({ error: 'Комната не найдена' });
+    s.data.host = code;
+    s.join(code);
+    ack({ ok: true, state: pub(r), room: {
+      code: r.code,
+      size: r.size,
+      mode: r.mode,
+      tracks: r.tracks
+    }});
+    push(r);
   });
 
   s.on('host:start', (_, ack) => {
@@ -425,6 +443,12 @@ io.on('connection', s => {
     }
 
     if (!id || !p.card.includes(id)) return;
+
+    // Server-side Anti-Cheat: cannot mark an uncalled barrel!
+    const willAddMark = (explicitMark !== null) ? explicitMark : !p.marks.has(id);
+    if (willAddMark && !r.called.includes(id)) {
+      return;
+    }
 
     if (explicitMark !== null) {
       if (explicitMark) p.marks.add(id);
