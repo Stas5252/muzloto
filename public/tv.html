@@ -364,6 +364,7 @@
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
   <script src="comm.js"></script>
+  <script src="packs-data.js"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -421,43 +422,73 @@
       } catch(e) {}
     }
 
-    async function loadCuratedPacks() {
-      try {
-        const res = await fetch('packs.json');
-        allPacks = await res.json();
-        const container = $('curated-packs-list');
-        container.innerHTML = Object.values(allPacks).map(p => `
-          <div class="pack-card ${p.id === 'new_school' ? 'active' : ''}" data-id="${p.id}">
-            <div>
-              <div class="pack-icon">${p.icon}</div>
-              <div class="pack-title">${escapeHtml(p.title)}</div>
-              <div class="pack-desc">${escapeHtml(p.desc)}</div>
-            </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">${p.tracks.length} бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
+    function renderPacksUI(packs) {
+      if (!packs || !Object.keys(packs).length) return;
+      allPacks = packs;
+      const container = $('curated-packs-list');
+      if (!container) return;
+
+      container.innerHTML = Object.values(allPacks).map(p => `
+        <div class="pack-card ${p.id === 'new_school' ? 'active' : ''}" data-id="${p.id}">
+          <div>
+            <div class="pack-icon">${p.icon}</div>
+            <div class="pack-title">${escapeHtml(p.title)}</div>
+            <div class="pack-desc">${escapeHtml(p.desc)}</div>
           </div>
-        `).join('');
+          <div class="row" style="justify-content:space-between; margin-top:8px;">
+            <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">${p.tracks.length} бочонков</span>
+            <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
+          </div>
+        </div>
+      `).join('');
 
-        container.querySelectorAll('.pack-card').forEach(card => {
-          card.onclick = () => {
-            const packId = card.dataset.id;
-            const pack = allPacks[packId];
-            if (pack && pack.tracks) {
-              setTracks(pack.tracks);
-              container.querySelectorAll('.pack-card').forEach(c => c.classList.remove('active'));
-              card.classList.add('active');
-            }
-          };
-        });
+      container.querySelectorAll('.pack-card').forEach(card => {
+        card.onclick = () => {
+          const packId = card.dataset.id;
+          const pack = allPacks[packId];
+          if (pack && pack.tracks) {
+            setTracks(pack.tracks);
+            container.querySelectorAll('.pack-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+          }
+        };
+      });
 
+      if (!selectedTracks || selectedTracks.length === 0) {
         const defaultPack = allPacks['new_school'] || Object.values(allPacks)[0];
-        if (defaultPack) {
+        if (defaultPack && defaultPack.tracks) {
           setTracks(defaultPack.tracks);
         }
-      } catch (e) {
-        console.error('Error loading packs:', e);
+      }
+    }
+
+    async function loadCuratedPacks() {
+      // 1. Immediately render from synchronously loaded window.BUILTIN_PACKS (zero latency, offline safe)
+      if (window.BUILTIN_PACKS && Object.keys(window.BUILTIN_PACKS).length) {
+        renderPacksUI(window.BUILTIN_PACKS);
+      }
+
+      // 2. Also try fetching packs.json with fallback paths
+      const tryPaths = ['packs.json', './packs.json', 'muzloto/packs.json', '/muzloto/packs.json'];
+      for (const p of tryPaths) {
+        try {
+          const res = await fetch(p);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && Object.keys(data).length) {
+              renderPacksUI(data);
+              return;
+            }
+          }
+        } catch(e) {}
+      }
+
+      // 3. Absolute fallback
+      const container = $('curated-packs-list');
+      if (container && (!container.children || container.children.length === 0)) {
+        if (window.BUILTIN_PACKS) {
+          renderPacksUI(window.BUILTIN_PACKS);
+        }
       }
     }
 

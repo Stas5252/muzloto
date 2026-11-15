@@ -1,0 +1,995 @@
+window.BUILTIN_PACKS = {
+  "new_school": {
+    "id": "new_school",
+    "title": "🔥 Новая школа: Крид, Дора, SODA LUV",
+    "icon": "🔥",
+    "desc": "Егор Крид, Дора, SODA LUV, Toxi$, Big Baby Tape, OG Buda, Инстасамка, Macan",
+    "tracks": [
+      {
+        "id": "1472773312",
+        "artist": "Egor Kreed",
+        "title": "Сердцеедка",
+        "displayTitle": "Egor Kreed — Сердцеедка",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/cd/90/b1/cd90b165-152a-5098-0e2d-d08158430bdb/mzaf_14442385998910394486.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/93/d0/b8/93d0b851-a8a8-29a2-37dc-e252186deab6/190295391379.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "917537591",
+        "artist": "Egor Kreed",
+        "title": "Самая самая",
+        "displayTitle": "Egor Kreed — Самая самая",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/81/9c/da/819cda14-1817-8a9b-bdb3-d34c0db5d733/mzaf_13167506493719874695.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/97/56/0a/97560a61-009a-e9d8-2b95-718b90c6e940/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1062887294",
+        "artist": "Egor Kreed",
+        "title": "Будильник",
+        "displayTitle": "Egor Kreed — Будильник",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/29/2c/e2/292ce227-3f96-f9d5-04b5-8492634c8d59/mzaf_2147446873305517883.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/5e/3b/fd/5e3bfdc2-34f8-4f6b-7768-e9b5eaa7faeb/contsched.ztynmvss.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1743190730",
+        "artist": "Egor Kreed & JONY",
+        "title": "Дым",
+        "displayTitle": "Egor Kreed & JONY — Дым",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ea/d9/07/ead90739-606e-9a9d-6b33-3f5a601dce65/mzaf_17547578603345658810.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/1e/6d/1d/1e6d1db3-465e-5c26-2754-c2a580d3855b/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1211733166",
+        "artist": "Egor Kreed & MOLLY",
+        "title": "Если ты меня не любишь",
+        "displayTitle": "Egor Kreed & MOLLY — Если ты меня не любишь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/92/29/a9/9229a997-0758-d77e-f26a-25bd3c3184f9/mzaf_4276097845916878607.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/60/35/00603536-2994-8ac8-91a6-0a5355e59f78/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "6815201397",
+        "artist": "SODA LUV",
+        "title": "Тысячи рук",
+        "displayTitle": "SODA LUV — Тысячи рук",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a3/d8/0c/a3d80c60-e74b-e3a1-a9b5-eb9ae4bb2ec6/mzaf_9860954516344777781.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b7/58/c9/b758c9a3-7ccc-7bc9-1fd0-8b241b4cac8d/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1585377359",
+        "artist": "SODA LUV",
+        "title": "Прости",
+        "displayTitle": "SODA LUV — Прости",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/b2/88/75/b288753f-877c-ae33-7cc2-3b11de0dc4f3/mzaf_10818791063905429650.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b2/78/f9/b278f9e2-2f6c-de74-42a7-afd090d7c89e/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1729172171",
+        "artist": "SODA LUV",
+        "title": "ДАЛЕКО",
+        "displayTitle": "SODA LUV — ДАЛЕКО",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/03/ce/da/03ceda1c-309a-a108-3d10-853028036238/mzaf_720222774635572731.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5a/a5/10/5aa510ee-e80b-5896-f6e8-4d835a2dca30/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1618194956",
+        "artist": "Klava Koka",
+        "title": "Думал (feat. SODA LUV)",
+        "displayTitle": "Klava Koka — Думал (feat. SODA LUV)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ca/3d/b8/ca3db810-cda9-19d9-05cb-10174fd018d4/mzaf_11657613083664861245.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/e9/23/c3/e923c3aa-6509-d5f0-4f08-dea3e4fce204/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1833559037",
+        "artist": "Dora",
+        "title": "Дорадура",
+        "displayTitle": "Dora — Дорадура",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/66/89/6b668970-3e82-9cce-7b2a-78a599bb3cc2/mzaf_5635759596617363263.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/77/74/c9/7774c973-59d9-0d15-f0d2-f6fca5b9caf7/3616401438037.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1833563113",
+        "artist": "Dora",
+        "title": "Втюрилась",
+        "displayTitle": "Dora — Втюрилась",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/da/48/c5/da48c57f-681d-40bd-35fd-457de88bcb64/mzaf_1170050165272456414.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e0/0e/09/e00e096e-fc3f-2ede-2e3d-4a51fa27f99e/3616408187983.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1833560779",
+        "artist": "Dora",
+        "title": "Осень пьяная",
+        "displayTitle": "Dora — Осень пьяная",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/df/0f/e9/df0fe9d3-9b96-e2ad-c077-ed37f706f299/mzaf_1959720023164487669.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b9/8f/37/b98f37a9-4ea5-3ab6-e315-0e5bfaa281aa/3616551039269.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1833553164",
+        "artist": "Dora & Мэйби Бэйби",
+        "title": "Барбисайз",
+        "displayTitle": "Dora & Мэйби Бэйби — Барбисайз",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6b/86/b0/6b86b043-2467-fad2-b14c-450e645f5037/mzaf_9116340405240374655.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a2/a6/a0/a2a6a02d-a463-1dff-c011-993770809d7e/3616842498706.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "6793556682",
+        "artist": "Toxi$ & Dora",
+        "title": "ЗНАК",
+        "displayTitle": "Toxi$ & Dora — ЗНАК",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/71/c0/8e71c053-2ea2-4b17-ec93-ce515b1728ae/mzaf_18307262092983093504.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1a/c3/dc/1ac3dc86-3154-9b9b-f26b-d82ae4093d68/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1694074705",
+        "artist": "Toxi$",
+        "title": "ХАЙЕГОХО",
+        "displayTitle": "Toxi$ — ХАЙЕГОХО",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/99/20/b6/9920b6c7-da68-d9e9-66bd-a73508db09db/mzaf_15068239164996924689.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/72/c1/c9/72c1c99c-e395-cba0-86b2-aed9bf4a2a25/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1446761394",
+        "artist": "Big Baby Tape",
+        "title": "Gimme the Loot",
+        "displayTitle": "Big Baby Tape — Gimme the Loot",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/62/43/ee/6243eeb4-335e-ddbb-125e-0a67dd963cf8/mzaf_1521361186445789138.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/41/b0/29/41b029fc-b52a-6d9e-a6b9-b4e8d9c5ef50/190296894299.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1752831358",
+        "artist": "Big Baby Tape & Aarne",
+        "title": "Supersonic",
+        "displayTitle": "Big Baby Tape & Aarne — Supersonic",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/b3/c5/17b3c5d9-4022-38f8-0819-a689163bb152/mzaf_16672658488479472547.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/3d/68/c7/3d68c740-a0d2-e3ec-1598-e7796fe66085/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1784471407",
+        "artist": "Big Baby Tape",
+        "title": "Chuchuka",
+        "displayTitle": "Big Baby Tape — Chuchuka",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ba/32/17/ba3217ab-4d48-304f-346e-5e79e98c569d/mzaf_14453353029061266817.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f6/f6/b3/f6f6b3a1-5e69-ef78-cbaa-010a0fc51aca/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1724932498",
+        "artist": "OG BUDA & Egor Kreed",
+        "title": "Плачут Небеса (feat. Доминик Джокер)",
+        "displayTitle": "OG BUDA & Egor Kreed — Плачут Небеса (feat. Доминик Джокер)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0d/9c/bf/0d9cbf2f-3971-6854-6369-6d43fa82f147/mzaf_11198061865709773642.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6f/46/4a/6f464afe-5d6d-2335-46c1-a48004a3644e/0.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1727572388",
+        "artist": "Mary Gu & OG BUDA",
+        "title": "толстовка",
+        "displayTitle": "Mary Gu & OG BUDA — толстовка",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f6/95/d0/f695d0ee-e2b7-892d-6a26-9cae97799695/mzaf_13969039394760206211.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/7b/aa/ae/7baaae4e-eee5-959c-b313-034603db692b/0.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1656019512",
+        "artist": "INSTASAMKA",
+        "title": "ЗА ДЕНЬГИ ДА",
+        "displayTitle": "INSTASAMKA — ЗА ДЕНЬГИ ДА",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/23/8e/6b238e5e-8e3c-582c-1b9a-fa3a4efd8b5c/mzaf_11531777200776049946.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fa/4b/f4/fa4bf460-52b5-e3b7-acf1-a7babfdf44ff/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1644690309",
+        "artist": "INSTASAMKA",
+        "title": "POPSTAR",
+        "displayTitle": "INSTASAMKA — POPSTAR",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/51/de/9a51dedf-9f96-4746-284e-5f1e6f00a667/mzaf_8869797298042631974.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/d9/3d/3b/d93d3bfe-86af-9100-69b3-03eaf8bbc91e/cover.jpg/400x400bb.jpg",
+        "genre": "Indie Pop"
+      },
+      {
+        "id": "1679628216",
+        "artist": "MACAN",
+        "title": "ASPHALT 8",
+        "displayTitle": "MACAN — ASPHALT 8",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/a8/23/fea8230a-8cda-7297-9841-79d9bf71a3ba/mzaf_18229323036952052363.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/99/d9/6b/99d96b14-b330-2293-f4c5-c09296b6dc3e/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1684315870",
+        "artist": "Scally Milano & uglystephan",
+        "title": "Дай Мне Шанс",
+        "displayTitle": "Scally Milano & uglystephan — Дай Мне Шанс",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/02/1a/48021a80-2f55-1d21-9801-30b88f40f3c5/mzaf_6238499353575255000.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/3a/43/9c/3a439c8e-365d-9aba-f97d-825b447239a7/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1795685914",
+        "artist": "MORGENSHTERN",
+        "title": "ДОМ (Лондон, Прага, Ницца)",
+        "displayTitle": "MORGENSHTERN — ДОМ (Лондон, Прага, Ницца)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/26/21/9b/26219bfb-3181-0869-4ac2-c54c1bede510/mzaf_15992735745405041572.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/25/ed/27/25ed27b8-9244-0fa1-96db-7167ebdbf82a/cover.jpg/400x400bb.jpg",
+        "genre": "Rock in Russian"
+      }
+    ]
+  },
+  "rock": {
+    "id": "rock",
+    "title": "Русский Рок & Легенды",
+    "icon": "🎸",
+    "desc": "Культовые гитарные риффы и песни, которые поёт вся страна",
+    "tracks": [
+      {
+        "id": "1333011553",
+        "artist": "Kino",
+        "title": "Группа крови",
+        "displayTitle": "Kino — Группа крови",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b8/93/9e/b8939e79-2152-223e-7983-64059ac86998/mzaf_17538330426059398011.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a2/f7/13/a2f713de-4af3-9e21-da3f-c73d747cd847/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1723344398",
+        "artist": "Korol I Shut",
+        "title": "Лесник",
+        "displayTitle": "Korol I Shut — Лесник",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/16/5b/19/165b19ac-8c37-1dd8-ff41-4f63d1ca83d2/mzaf_11400848126157062154.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/68/6c/25/686c255d-2916-a86d-dc2d-6de62b0a0ba4/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1458962128",
+        "artist": "Bi-2",
+        "title": "Полковнику никто не пишет",
+        "displayTitle": "Bi-2 — Полковнику никто не пишет",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/29/cb/ac/29cbac01-a994-aba9-3c70-14f984aa5d48/mzaf_3401294637160034307.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/09/9f/bb/099fbb12-3a95-fc08-ea6d-5f73641b32e8/193483690865.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1212112126",
+        "artist": "Splean",
+        "title": "Моё сердце",
+        "displayTitle": "Splean — Моё сердце",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5e/91/e2/5e91e22b-87a4-a4f8-ae77-830e8b7d5dac/mzaf_5240534008959012171.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/db/4a/c5/db4ac58b-d8b3-ab9a-f77a-79810509c2e6/859719935307_cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1589963819",
+        "artist": "Zemfira",
+        "title": "ИСКАЛА",
+        "displayTitle": "Zemfira — ИСКАЛА",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/77/cd/be/77cdbedf-a17f-a60a-7f90-3b00a2f60f63/mzaf_14188940599415065380.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/bb/ca/d0/bbcad0b1-109b-f19b-e4f4-18a35e526ab4/3610154399133.jpg/400x400bb.jpg",
+        "genre": "Singer/Songwriter"
+      },
+      {
+        "id": "1139745229",
+        "artist": "Agatha Christie",
+        "title": "Как на войне",
+        "displayTitle": "Agatha Christie — Как на войне",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e8/06/d6/e806d693-9e77-d967-8ffe-e0df916d382e/mzaf_104508607196227079.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/7e/34/e8/7e34e805-850a-6e6f-debe-d8b6e5ff9322/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1739743706",
+        "artist": "DDT",
+        "title": "Что такое осень",
+        "displayTitle": "DDT — Что такое осень",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/64/02/80/64028039-77a9-5d47-1ea3-ae79a4367d39/mzaf_15549649133664875874.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/da/67/ca/da67ca51-ce15-5fe0-14eb-d2e2b9dff99f/10_001_DDT-Aktrisa_vesna.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "646990426",
+        "artist": "Aria",
+        "title": "Возьми моё сердце",
+        "displayTitle": "Aria — Возьми моё сердце",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4d/0c/46/4d0c46ef-17d1-88d5-9b9a-ccbc3dda1d81/mzaf_1474150470926586407.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/1f/b3/8d/1fb38d1c-8f1a-9ef5-e0c4-1033919d2819/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "583074480",
+        "artist": "Sektor Gaza",
+        "title": "Туман (Tuman)",
+        "displayTitle": "Sektor Gaza — Туман (Tuman)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/17/26/bf/1726bf20-248b-ef13-6236-fc5c9afae8f8/mzaf_812170571968075365.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/b3/4d/d8/b34dd8be-dbd7-269d-f4ab-024a852446ca/825646520381.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "863843597",
+        "artist": "Mumiy Troll",
+        "title": "Владивосток 2000",
+        "displayTitle": "Mumiy Troll — Владивосток 2000",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/60/7c/b3/607cb3c9-84d9-eb77-39da-8edae2e51069/mzaf_2326934792345199355.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/ad/3c/71/ad3c7138-f58b-a08b-02cd-670db7b77594/Mumiy_Troll_The_Best_Cover_2000x2000.png/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1079862228",
+        "artist": "Nautilus Pompilius",
+        "title": "Скованные одной цепью",
+        "displayTitle": "Nautilus Pompilius — Скованные одной цепью",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/00/7d/3d/007d3d20-04ad-12ec-2333-4c6c9fff59b7/mzaf_14670152683566554096.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music49/v4/e1/a4/97/e1a4979e-60c3-2e9f-d1aa-8389dc81bf99/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1677598605",
+        "artist": "Chaif",
+        "title": "Никто не услышит (Ой-йо)",
+        "displayTitle": "Chaif — Никто не услышит (Ой-йо)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/43/4e/d2/434ed2fd-de92-a42f-bb63-d32c24d8ff58/mzaf_11370130847451146764.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8e/ff/ee/8effee16-f811-9585-ee7f-5ac6a59e93c8/0.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1505832620",
+        "artist": "Leningrad",
+        "title": "WWW (Инструментальная версия)",
+        "displayTitle": "Leningrad — WWW (Инструментальная версия)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/42/1f/be/421fbe22-6e4b-9e39-66ac-c09dd07d3d5d/mzaf_18032641909808514352.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/d1/6c/bf/d16cbf59-9cc8-9390-5952-87589b3816bc/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1126308634",
+        "artist": "Bravo",
+        "title": "Этот город",
+        "displayTitle": "Bravo — Этот город",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a9/63/af/a963af92-1ef6-a06f-cc42-3e466f2e9a57/mzaf_5276193940910089305.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/5a/12/40/5a1240d5-5e67-7ea0-a73d-1e9c6c972167/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1624039104",
+        "artist": "The Chizh & Co",
+        "title": "О любви",
+        "displayTitle": "The Chizh & Co — О любви",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/80/08/24/80082409-0369-a1f0-f79d-5113d270dbfa/mzaf_7348667104311520331.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/ac/38/6b/ac386b32-9771-def1-551d-04891d35c1e4/cover.jpg/400x400bb.jpg",
+        "genre": "Rock in Russian"
+      },
+      {
+        "id": "1130493547",
+        "artist": "Жуки",
+        "title": "Батарейка",
+        "displayTitle": "Жуки — Батарейка",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/34/64/e3/3464e3fa-4643-8e7d-4ebb-1e94d1c8383c/mzaf_12305600568403971021.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/5f/f4/76/5ff476a8-33e0-8986-c699-f1606d316466/190374918183.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "821651200",
+        "artist": "Lyapis Trubetskoy",
+        "title": "Воины света",
+        "displayTitle": "Lyapis Trubetskoy — Воины света",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bc/1c/4d/bc1c4d9f-3f75-e876-de03-f1460d90704c/mzaf_3601618847374610929.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/d9/89/54/d9895409-3c6b-8266-4501-d036dcb2e2e4/888608558075.jpg/400x400bb.jpg",
+        "genre": "Alternative"
+      },
+      {
+        "id": "1142233794",
+        "artist": "Smyslovye Gallyutsinatsii",
+        "title": "Вечно молодой",
+        "displayTitle": "Smyslovye Gallyutsinatsii — Вечно молодой",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/16/0b/de/160bdec3-a089-d480-7877-ff078f7d861c/mzaf_9670781622259318160.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/8f/83/d0/8f83d08b-3104-115f-2393-4168b23303d0/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      }
+    ]
+  },
+  "retro": {
+    "id": "retro",
+    "title": "Хиты 90-х и 2000-х",
+    "icon": "🪩",
+    "desc": "Ностальгия, дискотеки и треки из магнитофонов и первых MP3-плееров",
+    "tracks": [
+      {
+        "id": "6824969671",
+        "artist": "Ruki Vverkh",
+        "title": "Крошка моя",
+        "displayTitle": "Ruki Vverkh — Крошка моя",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a8/b5/78/a8b578cb-890a-0d16-36c0-d37889bd6884/mzaf_15065480111231795238.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e3/3c/cd/e33ccdf8-be01-f503-3962-7c801303c2f0/cover.png/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1604358228",
+        "artist": "Ivanushki International",
+        "title": "Тополиный пух",
+        "displayTitle": "Ivanushki International — Тополиный пух",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d4/1c/d2/d41cd2c7-b035-ff4f-affe-307f8a316fab/mzaf_13683561934501694020.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/f4/79/72/f4797289-f54d-a18e-6993-5f05118a0df3/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1180092100",
+        "artist": "Diskoteka Avariya",
+        "title": "Новогодняя",
+        "displayTitle": "Diskoteka Avariya — Новогодняя",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e7/f1/cf/e7f1cf40-d408-5254-52a6-50c384c7466e/mzaf_12805804309673418266.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music71/v4/81/24/6e/81246e82-b4a9-57cc-4f92-d9fb33507fad/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1887250179",
+        "artist": "Demo",
+        "title": "Солнышко",
+        "displayTitle": "Demo — Солнышко",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6f/db/e9/6fdbe9be-60dc-3279-bd04-1de732bb0dc7/mzaf_14651879588263526684.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d2/fb/76/d2fb7688-d96d-1997-d607-6706abc506fe/0.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1729802110",
+        "artist": "Otpetye Moshenniki",
+        "title": "Люби меня, люби",
+        "displayTitle": "Otpetye Moshenniki — Люби меня, люби",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d6/82/a6/d682a648-c53e-c0fe-ea3d-7c3351bee3a4/mzaf_9718671987097667079.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/c1/4e/22/c14e222c-4b7b-194f-1ac0-0b6ca3951797/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1160426192",
+        "artist": "Hi-Fi",
+        "title": "Седьмой лепесток",
+        "displayTitle": "Hi-Fi — Седьмой лепесток",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c8/b4/55/c8b455f4-72b3-1fc6-7e30-e09cf55b2f1b/mzaf_12437933353852878344.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/0a/8a/99/0a8a99b1-64d0-9a94-d180-42f730532849/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1142161138",
+        "artist": "VIA Gra",
+        "title": "Попытка № 5",
+        "displayTitle": "VIA Gra — Попытка № 5",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6e/7d/af/6e7dafd9-2435-e88f-1aa4-f03b13a5560c/mzaf_14336490638378751529.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/51/bf/3d/51bf3d3f-d13f-7f02-ba22-3ad4a25ab557/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1873151673",
+        "artist": "t.A.T.u.",
+        "title": "Nas Ne Dogonyat",
+        "displayTitle": "t.A.T.u. — Nas Ne Dogonyat",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e4/cc/62/e4cc62a0-59e5-4111-4e50-4da230b7d6ae/mzaf_6712217723366640604.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/c7/7c/e9/c77ce918-8c08-8195-17ac-6ebbfdea60b0/26UMGIM11885.rgb.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1723039276",
+        "artist": "Zveri",
+        "title": "Районы-кварталы",
+        "displayTitle": "Zveri — Районы-кварталы",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a2/24/7e/a2247e32-8e31-c504-832c-9bb8b725e22f/mzaf_9696280451842699100.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/fd/c5/47/fdc547ad-0534-d608-160b-3e2986caaae8/0.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1776659451",
+        "artist": "Kraski",
+        "title": "Он не знает ничего",
+        "displayTitle": "Kraski — Он не знает ничего",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d0/04/c3/d004c3fa-7e3f-67a0-2488-f5246ce76d8c/mzaf_8002751840167760179.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/4b/aa/ba/4baabab3-9111-c59c-cffe-8ef0f54991ba/0.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1776824059",
+        "artist": "Virus",
+        "title": "Ты меня не ищи",
+        "displayTitle": "Virus — Ты меня не ищи",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/05/af/af/05afafe1-892e-bd52-0c22-8ea15e40288f/mzaf_15315768155478088067.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/29/d2/2a/29d22a75-9b1f-5dcb-97d8-f82396c150b5/0.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1151379631",
+        "artist": "Shura",
+        "title": "Твори добро",
+        "displayTitle": "Shura — Твори добро",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9a/04/57/9a0457ab-ffc7-08b9-de86-cf798f970e07/mzaf_15567828889778778081.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/b1/73/16/b1731610-0bb0-17b1-ab33-00ea7ecb2872/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "588212078",
+        "artist": "MakSim",
+        "title": "Знаешь ли ты",
+        "displayTitle": "MakSim — Знаешь ли ты",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/cd/e1/cc/cde1cc7d-2f29-09a6-339d-195bb557dbb0/mzaf_4225576299175216220.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/9a/af/da/9aafda94-1675-ca5b-48a3-b93b8e99362e/825646512461.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1216625687",
+        "artist": "Blestyashchie",
+        "title": "А я всё летала",
+        "displayTitle": "Blestyashchie — А я всё летала",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7b/ad/e4/7bade47c-ec28-f80b-f513-ddd6f25caa94/mzaf_354002270626300400.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9a/29/ea/9a29eac4-f177-3851-af64-6dff0802e20f/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1142585652",
+        "artist": "Gosti Iz Budushchego",
+        "title": "Беги от меня",
+        "displayTitle": "Gosti Iz Budushchego — Беги от меня",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/dd/8a/4d/dd8a4d56-fe5a-a394-1b49-d7e9859aaf83/mzaf_11825427350058775685.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/44/46/fb/4446fb65-8e53-2ab0-d9d3-a63ec2c5b6d2/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "903368797",
+        "artist": "Valeriy Meladze",
+        "title": "Салют, Вера!",
+        "displayTitle": "Valeriy Meladze — Салют, Вера!",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/43/f0/ef/43f0ef1f-d1c9-d7a5-32f9-1657d2f6cea1/mzaf_8932792620513795174.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/2c/7e/cd/2c7ecde5-2d30-4e07-3656-3a751c30764e/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1602693847",
+        "artist": "Fabrika",
+        "title": "Про любовь",
+        "displayTitle": "Fabrika — Про любовь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f6/b3/74/f6b37465-e65c-b313-3b2c-8199838dd767/mzaf_16499848089943723103.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/fd/f4/51/fdf45171-a8c8-c950-1688-4f8e1db651d8/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1396534534",
+        "artist": "Ruki Vverkh",
+        "title": "18 мне уже",
+        "displayTitle": "Ruki Vverkh — 18 мне уже",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/29/0c/42/290c42bd-dd08-0019-23de-4dbf5901375d/mzaf_7840345697589731389.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a0/05/94/a005944e-6c4a-7c5d-026d-0d3192c5acb2/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      }
+    ]
+  },
+  "world": {
+    "id": "world",
+    "title": "Мировые Поп-Хиты",
+    "icon": "🌍",
+    "desc": "Платиновые синглы, взрывавшие стадионы и мировые радиостанции",
+    "tracks": [
+      {
+        "id": "6781024437",
+        "artist": "Queen",
+        "title": "Bohemian Rhapsody",
+        "displayTitle": "Queen — Bohemian Rhapsody",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4b/83/09/4b8309c3-e3b2-10bd-ea80-ec017d832503/mzaf_9752264660400108875.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8b/0a/ea/8b0aea60-6f4a-195b-5958-cdf459c2333b/602527644271.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "269573364",
+        "artist": "Michael Jackson",
+        "title": "Billie Jean",
+        "displayTitle": "Michael Jackson — Billie Jean",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/dc/bc/8a/dcbc8a3e-4ce1-c00d-cc02-eda2212053c7/mzaf_8347559338388601510.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/32/4f/fd/324ffda2-9e51-8f6a-0c2d-c6fd2b41ac55/074643811224.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1538003843",
+        "artist": "Dua Lipa",
+        "title": "Levitating",
+        "displayTitle": "Dua Lipa — Levitating",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/59/dc/4d/59dc4dda-93ff-8f1c-c536-f005f6ea6af5/mzaf_3066686759813252385.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/6c/11/d6/6c11d681-aa3a-d59e-4c2e-f77e181026ab/190295092665.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "943946671",
+        "artist": "Mark Ronson",
+        "title": "Uptown Funk (feat. Bruno Mars)",
+        "displayTitle": "Mark Ronson — Uptown Funk (feat. Bruno Mars)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/91/99/1f/91991fe5-aa77-87e4-edbc-6d68c95e5f18/mzaf_10685317694850942114.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/7e/30/c5/7e30c572-aa47-5f7b-c6fd-42d50cd2c56d/886444959797.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1441154437",
+        "artist": "Rihanna",
+        "title": "Umbrella (feat. JAŸ-Z)",
+        "displayTitle": "Rihanna — Umbrella (feat. JAŸ-Z)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/7b/45/22/7b452241-882c-409b-3a9b-23306b14286a/mzaf_8588243939716013218.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2b/c0/81/2bc081c8-25f0-ba43-d451-587a54613778/16UMGIM59202.rgb.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1122773680",
+        "artist": "Coldplay",
+        "title": "Viva La Vida",
+        "displayTitle": "Coldplay — Viva La Vida",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a3/30/8e/a3308eed-d8b7-e0b3-f09d-5e1b0f4d660a/mzaf_8517946447501075134.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/52/aa/85/52aa851f-15b7-6322-f91f-df84b15b7b19/190295978044.jpg/400x400bb.jpg",
+        "genre": "Alternative"
+      },
+      {
+        "id": "617154366",
+        "artist": "Daft Punk, Pharrell Williams & Nile Rodgers",
+        "title": "Get Lucky",
+        "displayTitle": "Daft Punk, Pharrell Williams & Nile Rodgers — Get Lucky",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/57/a5/85/57a585aa-f1bc-7619-881b-f8a04a5541d5/mzaf_6906185026678279401.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e8/43/5f/e8435ffa-b6b9-b171-40ab-4ff3959ab661/886443919266.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1544491233",
+        "artist": "Adele",
+        "title": "Rolling in the Deep",
+        "displayTitle": "Adele — Rolling in the Deep",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4c/4f/03/4c4f032a-3d2b-853d-da81-996602355b42/mzaf_11625850023134180491.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/eb/ca/25/ebca2596-cd1e-b295-91a3-771c868d0a79/191404113868.png/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1440903439",
+        "artist": "Eminem",
+        "title": "Lose Yourself",
+        "displayTitle": "Eminem — Lose Yourself",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/13/5a/61/135a6154-8ca2-0523-1fa2-f4ac0ea9e1e7/mzaf_13242749689945681184.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/08/23/fc/0823fcd9-cb44-695b-32bf-b3bf51d9f800/00606949351229.rgb.jpg/400x400bb.jpg",
+        "genre": "Soundtrack"
+      },
+      {
+        "id": "1422648513",
+        "artist": "ABBA",
+        "title": "Dancing Queen",
+        "displayTitle": "ABBA — Dancing Queen",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ec/b1/63/ecb163bc-aff2-4dd2-d40b-c044f0b9fa4d/mzaf_4358783485405794088.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/60/f8/a6/60f8a6bc-e875-238d-f2f8-f34a6034e6d2/14UMGIM07615.rgb.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1440677670",
+        "artist": "Bon Jovi",
+        "title": "It's My Life",
+        "displayTitle": "Bon Jovi — It's My Life",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/37/4c/b6/374cb6b3-1390-b8d5-eb28-702fa32d20ad/mzaf_8791835277619319579.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/3c/96/b3/3c96b3cb-59c0-9641-cfad-a33346ab87f9/24UMGIM83177.rgb.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1193701392",
+        "artist": "Ed Sheeran",
+        "title": "Shape of You",
+        "displayTitle": "Ed Sheeran — Shape of You",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/44/c7/4f/44c74f0d-72dc-6143-d4d0-ba14d661ca0d/mzaf_9566898362556366703.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1411628233",
+        "artist": "Imagine Dragons",
+        "title": "Believer",
+        "displayTitle": "Imagine Dragons — Believer",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c0/3f/36/c03f367a-b66b-fd0a-a54c-30f8250c4410/mzaf_12768434238801682952.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/11/7a/b8/117ab805-6811-8929-18b9-0fad7baf0c25/17UMGIM98210.rgb.jpg/400x400bb.jpg",
+        "genre": "Alternative"
+      },
+      {
+        "id": "1440783625",
+        "artist": "Nirvana",
+        "title": "Smells Like Teen Spirit",
+        "displayTitle": "Nirvana — Smells Like Teen Spirit",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/65/49/4e/65494e02-b6d3-26d8-6b0c-9bd98dcf4d5d/mzaf_7665413316386155700.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/95/fd/b9/95fdb9b2-6d2b-92a6-97f2-51c1a6d77f1a/00602527874609.rgb.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1450695739",
+        "artist": "Billie Eilish",
+        "title": "bad guy",
+        "displayTitle": "Billie Eilish — bad guy",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c3/87/1f/c3871f7e-3260-d615-1c66-5fdca2c3a48f/mzaf_10721331211699880949.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1a/37/d1/1a37d1b1-8508-54f2-f541-bf4e437dda76/19UMGIM05028.rgb.jpg/400x400bb.jpg",
+        "genre": "Alternative"
+      },
+      {
+        "id": "1440872929",
+        "artist": "Avicii",
+        "title": "Wake Me Up",
+        "displayTitle": "Avicii — Wake Me Up",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/68/1e/60/681e601f-e1f2-4ebb-37de-adf00bdf57b6/mzaf_8266263075137964740.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/18/5b/1e/185b1ef5-5d97-19d8-aebf-8e29e41874ef/13UAAIM59255.rgb.jpg/400x400bb.jpg",
+        "genre": "House"
+      }
+    ]
+  },
+  "charts": {
+    "id": "charts",
+    "title": "Современные Чарты",
+    "icon": "⚡",
+    "desc": "Свежие бэнгеры, тренды TikTok и главные стриминговые хиты",
+    "tracks": [
+      {
+        "id": "1695852450",
+        "artist": "ANNA ASTI",
+        "title": "Царица",
+        "displayTitle": "ANNA ASTI — Царица",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a3/a6/71/a3a67162-690c-87f4-7257-3f7aa9d683ed/mzaf_11703994124901380594.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/36/b3/57/36b35733-08b0-e4e1-8509-746d0f531f29/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1679628216",
+        "artist": "MACAN",
+        "title": "ASPHALT 8",
+        "displayTitle": "MACAN — ASPHALT 8",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/a8/23/fea8230a-8cda-7297-9841-79d9bf71a3ba/mzaf_18229323036952052363.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/99/d9/6b/99d96b14-b330-2293-f4c5-c09296b6dc3e/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "6778730185",
+        "artist": "Basta",
+        "title": "Сансара (feat. Диана Арбенина, Александр Ф. Скляр, Сергей Бобунец, SUNSAY, Скриптонит & АНТ)",
+        "displayTitle": "Basta — Сансара (feat. Диана Арбенина, Александр Ф. Скляр, Сергей Бобунец, SUNSAY, Скриптонит & АНТ)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7f/a1/63/7fa16386-ba0b-b990-e1cd-19b193ae5976/mzaf_15016513066246139484.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/22/c2/4c/22c24c22-5e2f-cbe6-8d6a-bc17941f5db1/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1570108418",
+        "artist": "9 Gramm",
+        "title": "Рапапам (feat. Miyagi & Эндшпиль)",
+        "displayTitle": "9 Gramm — Рапапам (feat. Miyagi & Эндшпиль)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/8a/f6/9a8af6f8-684e-b935-eca4-29e5f8a06c2d/mzaf_14331958887321027854.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/fc/18/cf/fc18cf16-e8e5-8f63-5ea0-155c5f5ff9e8/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1680505404",
+        "artist": "Ar4i",
+        "title": "Самолёты в небеса (feat. JonyGram)",
+        "displayTitle": "Ar4i — Самолёты в небеса (feat. JonyGram)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/f7/41/26/f7412687-e8ad-29a5-06c4-3df77515dc14/mzaf_17100045987774497785.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/e1/98/41/e1984195-7531-3d3d-9faa-801c2b90e426/0.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1497357243",
+        "artist": "Klava Koka",
+        "title": "Покинула чат",
+        "displayTitle": "Klava Koka — Покинула чат",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/7c/20/bc/7c20bcc7-9c83-9ead-a4b3-55b586b2a4b2/mzaf_9125750632336189726.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/7f/a1/98/7fa1987b-6a3d-263d-2984-4afddbf49b92/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1880729582",
+        "artist": "NILETTO",
+        "title": "Любимка",
+        "displayTitle": "NILETTO — Любимка",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8d/f9/97/8df99783-dfa2-d839-12d4-3ef0347701b3/mzaf_7629191323839660110.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/86/20/21/862021e1-9d17-7484-8236-8b72eb446755/0.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1457393530",
+        "artist": "Артём Качер & ARTIK & ASTI",
+        "title": "Грустный дэнс",
+        "displayTitle": "Артём Качер & ARTIK & ASTI — Грустный дэнс",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/58/6a/2c/586a2c64-2935-ace6-958f-f5b829350631/mzaf_3126369907651212881.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9a/ad/0b/9aad0b69-af8a-f57e-582b-89480a06d85c/190296892943.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1852443278",
+        "artist": "Loc-Dog & NAVAI",
+        "title": "Не закрывай",
+        "displayTitle": "Loc-Dog & NAVAI — Не закрывай",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b4/02/3d/b4023d62-7773-6630-2446-24b7305b8f33/mzaf_3117387911706054048.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ee/99/58/ee99583e-63a0-29a9-8b89-76682d2da7bf/0.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1576535535",
+        "artist": "Moya Mishel",
+        "title": "Зима в сердце",
+        "displayTitle": "Moya Mishel — Зима в сердце",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/65/69/1f/65691fdc-9a92-9ae7-abc3-88b4788ac937/mzaf_5996866199580519957.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6c/0c/06/6c0c0608-416e-1b5c-d79f-44b986b02b19/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1804994544",
+        "artist": "Xcho",
+        "title": "Ты и Я",
+        "displayTitle": "Xcho — Ты и Я",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ad/01/f3/ad01f3d6-fbe1-4034-54a4-72df58ee0409/mzaf_3712383284108264722.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/c7/b0/4b/c7b04b77-a2b6-f0bf-df80-8cdc08abd09d/cover.jpg/400x400bb.jpg",
+        "genre": "Hip-Hop/Rap"
+      },
+      {
+        "id": "1656019512",
+        "artist": "INSTASAMKA",
+        "title": "ЗА ДЕНЬГИ ДА",
+        "displayTitle": "INSTASAMKA — ЗА ДЕНЬГИ ДА",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/23/8e/6b238e5e-8e3c-582c-1b9a-fa3a4efd8b5c/mzaf_11531777200776049946.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fa/4b/f4/fa4bf460-52b5-e3b7-acf1-a7babfdf44ff/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1892065125",
+        "artist": "Markul & Тося Чайкина",
+        "title": "Стрелы",
+        "displayTitle": "Markul & Тося Чайкина — Стрелы",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/79/0f/5a/790f5af5-012a-c48d-03e5-9f43539346cc/mzaf_3308115083261160906.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/17/9d/3b/179d3b32-8163-77b8-3eec-274d9ed3ac2e/5063018335668.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1620003651",
+        "artist": "Три дня дождя",
+        "title": "Отпускай",
+        "displayTitle": "Три дня дождя — Отпускай",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/21/b4/15/21b415ee-fa2d-bfb5-ec8c-6e95cee58deb/mzaf_10532833504085759963.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/49/1b/6c/491b6c77-b982-fae0-4711-b91d0fa0f8c1/cover.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "1613842995",
+        "artist": "Dabro",
+        "title": "Юность",
+        "displayTitle": "Dabro — Юность",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/40/ea/c3/40eac37b-244f-1b66-5682-c9ad6bb5280d/mzaf_9103329364666510486.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/2a/8e/95/2a8e95c7-91f7-2072-a1bf-4afc1ea5e0e9/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1539432182",
+        "artist": "Хабиб",
+        "title": "Ягода малинка",
+        "displayTitle": "Хабиб — Ягода малинка",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/05/ac/70/05ac70fe-1d42-efd1-dfb2-8dc08b7bc56e/mzaf_14618167929631537072.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/da/41/11/da411119-9ded-a9f7-86b4-ee1f9876a81e/cover.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      }
+    ]
+  },
+  "ost": {
+    "id": "ost",
+    "title": "Кино & Саундтреки",
+    "icon": "🎬",
+    "desc": "Узнаваемые с первых секунд мелодии из любимых фильмов и сериалов",
+    "tracks": [
+      {
+        "id": "1638457548",
+        "artist": "Imperial Orchestra",
+        "title": "Interstellar (Original Score)",
+        "displayTitle": "Imperial Orchestra — Interstellar (Original Score)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/dc/f4/b4/dcf4b474-5d9c-76fb-c361-36664f641011/mzaf_5472354911620501954.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/6e/e6/5a/6ee65a66-8501-50d0-9cf9-b0f8387266f8/859764605361_cover.jpg/400x400bb.jpg",
+        "genre": "Soundtrack"
+      },
+      {
+        "id": "1611233895",
+        "artist": "HAUSER, Czech National Symphony Orchestra & Steven Mercurio",
+        "title": "Pirates of the Caribbean",
+        "displayTitle": "HAUSER, Czech National Symphony Orchestra & Steven Mercurio — Pirates of the Caribbean",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview116/v4/ef/e2/5b/efe25bde-b4e4-71e0-4836-46f08f501eed/mzaf_2021580883927831160.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/b1/83/01/b1830119-7caf-d5ca-a2c0-a166a14563ea/886449868827.jpg/400x400bb.jpg",
+        "genre": "Classical Crossover"
+      },
+      {
+        "id": "1784916536",
+        "artist": "Beatrice Berrut",
+        "title": "Hedwig (From \"Harry Potter and the Philosopher’s Stone\") [Arr. for Piano by Beatrice Berrut]",
+        "displayTitle": "Beatrice Berrut — Hedwig (From \"Harry Potter and the Philosopher’s Stone\") [Arr. for Piano by Beatrice Berrut]",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/16/5c/81/165c819a-3213-6566-f233-e2c249647236/mzaf_16534340349962807041.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/74/db/55/74db5574-4939-e7ac-d62b-48d388cbe007/3760419360054.png/400x400bb.jpg",
+        "genre": "Classical"
+      },
+      {
+        "id": "1473655101",
+        "artist": "M.S.",
+        "title": "Pulp Fiction: Misirlou",
+        "displayTitle": "M.S. — Pulp Fiction: Misirlou",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/62/57/07/62570705-4e79-53d3-5350-ae545368ff0d/mzaf_10939310243579744066.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/24/ac/da/24acdaa2-f83c-5b30-4b78-d80fc7325d94/cover.jpg/400x400bb.jpg",
+        "genre": "Soundtrack"
+      },
+      {
+        "id": "254685026",
+        "artist": "Survivor",
+        "title": "Eye of the Tiger",
+        "displayTitle": "Survivor — Eye of the Tiger",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/fa/9e/fefa9edd-c023-4d1c-1012-08bfb0ec69e6/mzaf_4651653238471209843.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/f9/02/8f/f9028f63-7a55-235e-f789-1e8946430fa2/614223201122.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "479204873",
+        "artist": "Céline Dion",
+        "title": "My Heart Will Go On (Love Theme from \"Titanic\")",
+        "displayTitle": "Céline Dion — My Heart Will Go On (Love Theme from \"Titanic\")",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ad/10/9c/ad109c62-aa02-8345-bfcc-b50f98345475/mzaf_3279697888712975539.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/f8/22/71/f82271b5-febd-23c2-8028-040760dda6f8/mzi.actfimaz.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1127014316",
+        "artist": "Ray Parker Jr.",
+        "title": "Ghostbusters",
+        "displayTitle": "Ray Parker Jr. — Ghostbusters",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/70/1f/f1/701ff165-58e2-75eb-464b-fec3483f93bd/mzaf_15159076127980316987.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/9a/70/43/9a704362-976d-ec4b-0367-54d368cb0ef8/886445902204.jpg/400x400bb.jpg",
+        "genre": "Soundtrack"
+      },
+      {
+        "id": "1375815602",
+        "artist": "John Williams & London Symphony Orchestra",
+        "title": "The Imperial March (Darth Vader's Theme)",
+        "displayTitle": "John Williams & London Symphony Orchestra — The Imperial March (Darth Vader's Theme)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ac/74/e4/ac74e4a8-c0cc-d1be-c860-69b4352aa5bb/mzaf_929035722676796506.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/0a/5d/af/0a5daf0f-34f0-6413-9b8c-fe668663b3dd/18UMGIM22122.rgb.jpg/400x400bb.jpg",
+        "genre": "Soundtrack"
+      },
+      {
+        "id": "634152730",
+        "artist": "The Piano Guys",
+        "title": "Mission Impossible (feat. Lindsey Stirling)",
+        "displayTitle": "The Piano Guys — Mission Impossible (feat. Lindsey Stirling)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/17/6a/b9/176ab927-87f9-0a19-8484-260f711fb394/mzaf_3145715186897362042.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/82/b7/09/82b709fe-80e5-bb30-ffd6-1681293d160d/886443905658.jpg/400x400bb.jpg",
+        "genre": "Classical Crossover"
+      },
+      {
+        "id": "1818796185",
+        "artist": "Pelageya",
+        "title": "Позови меня тихо по имени (Любэ 35. Всё опять начинается. Трибьют)",
+        "displayTitle": "Pelageya — Позови меня тихо по имени (Любэ 35. Всё опять начинается. Трибьют)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/93/25/d0/9325d0c6-bd73-08b8-b414-f117eadc4e41/mzaf_15444480488671748196.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ac/e8/b0/ace8b00b-9ec4-266f-a84c-f115fb4a696d/0.jpg/400x400bb.jpg",
+        "genre": "Pop"
+      },
+      {
+        "id": "1458962131",
+        "artist": "Bi-2",
+        "title": "Варвара",
+        "displayTitle": "Bi-2 — Варвара",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9f/ba/42/9fba4222-ae79-1f67-a6bd-03f50ddbdd95/mzaf_8659648008251262965.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/09/9f/bb/099fbb12-3a95-fc08-ea6d-5f73641b32e8/193483690865.jpg/400x400bb.jpg",
+        "genre": "Rock"
+      },
+      {
+        "id": "715628797",
+        "artist": "Ennio Morricone",
+        "title": "The Good, The Bad & The Ugly (Main Title)",
+        "displayTitle": "Ennio Morricone — The Good, The Bad & The Ugly (Main Title)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b0/99/86/b09986f5-ef2c-801f-ec3a-f6f2e7189826/mzaf_9640375822381239964.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/4f/1b/0a/4f1b0a74-1951-bd22-3b1a-ad516eb0ec13/00724359862156.rgb.jpg/400x400bb.jpg",
+        "genre": "Original Score"
+      }
+    ]
+  }
+};
