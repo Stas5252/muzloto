@@ -20,9 +20,358 @@
       "games": 1,
       "lastWin": 1794785489828,
       "lastWinDate": "16.11.2026, 03:31"
+    },
+    "Макс": {
+      "name": "Макс",
+      "wins": 2,
+      "games": 2,
+      "lastWin": 1794786467688,
+      "lastWinDate": "16.11.2026, 03:47"
+    },
+    "Игрок_11": {
+      "name": "Игрок_11",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786687638,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Row 0 (Горизо": {
+      "name": "Тестер_Row 0 (Горизо",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786687712,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Row 1 (Горизо": {
+      "name": "Тестер_Row 1 (Горизо",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786687774,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Row 2 (Горизо": {
+      "name": "Тестер_Row 2 (Горизо",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786687838,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Column 0 (Вер": {
+      "name": "Тестер_Column 0 (Вер",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786687898,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Column 1 (Вер": {
+      "name": "Тестер_Column 1 (Вер",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786687964,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Column 2 (Вер": {
+      "name": "Тестер_Column 2 (Вер",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786688010,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Main Diagonal": {
+      "name": "Тестер_Main Diagonal",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786688074,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Тестер_Anti-Diagonal": {
+      "name": "Тестер_Anti-Diagonal",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786688127,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Игрок_4x4_Линия": {
+      "name": "Игрок_4x4_Линия",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786688194,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "Игрок_4x4_Фулл": {
+      "name": "Игрок_4x4_Фулл",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786688256,
+      "lastWinDate": "16.11.2026, 03:51"
+    },
+    "ФуллКардМастер": {
+      "name": "ФуллКардМастер",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794786688315,
+      "lastWinDate": "16.11.2026, 03:51"
     }
   },
   "history": [
+    {
+      "id": "win_1794786688315_sbe0",
+      "roomCode": "4506",
+      "winnerName": "ФуллКардМастер",
+      "winnerPid": null,
+      "mode": "Вся карточка",
+      "turn": 24,
+      "totalBarrels": 25,
+      "timestamp": 1794786688315,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "MACAN — ASPHALT 8",
+        "Egor Kreed — Будильник",
+        "INSTASAMKA — ЗА ДЕНЬГИ ДА",
+        "Big Baby Tape — Chuchuka",
+        "Big Baby Tape & Aarne — Supersonic",
+        "Scally Milano & uglystephan — Дай Мне Шанс",
+        "SODA LUV — Тысячи рук",
+        "Dora — Дорадура",
+        "Dora — Втюрилась"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786688256_e1c7",
+      "roomCode": "8567",
+      "winnerName": "Игрок_4x4_Фулл",
+      "winnerPid": null,
+      "mode": "Вся карточка",
+      "turn": 23,
+      "totalBarrels": 25,
+      "timestamp": 1794786688256,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "SODA LUV — Прости",
+        "SODA LUV — Тысячи рук",
+        "MORGENSHTERN — ДОМ (Лондон, Прага, Ницца)",
+        "INSTASAMKA — ЗА ДЕНЬГИ ДА",
+        "Scally Milano & uglystephan — Дай Мне Шанс",
+        "Big Baby Tape — Gimme the Loot",
+        "Big Baby Tape — Chuchuka",
+        "Egor Kreed & JONY — Дым",
+        "Mary Gu & OG BUDA — толстовка",
+        "INSTASAMKA — POPSTAR",
+        "Egor Kreed — Самая самая",
+        "SODA LUV — ДАЛЕКО",
+        "MACAN — ASPHALT 8",
+        "Egor Kreed & MOLLY — Если ты меня не любишь",
+        "Dora — Осень пьяная",
+        "Dora — Втюрилась"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786688194_rces",
+      "roomCode": "6883",
+      "winnerName": "Игрок_4x4_Линия",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 20,
+      "totalBarrels": 25,
+      "timestamp": 1794786688194,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "Egor Kreed — Сердцеедка",
+        "Big Baby Tape & Aarne — Supersonic",
+        "MORGENSHTERN — ДОМ (Лондон, Прага, Ницца)",
+        "SODA LUV — Тысячи рук"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786688127_8ulq",
+      "roomCode": "6869",
+      "winnerName": "Тестер_Anti-Diagonal",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 4,
+      "totalBarrels": 25,
+      "timestamp": 1794786688127,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "Dora — Осень пьяная",
+        "Big Baby Tape & Aarne — Supersonic",
+        "Mary Gu & OG BUDA — толстовка"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786688074_c001",
+      "roomCode": "7812",
+      "winnerName": "Тестер_Main Diagonal",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 23,
+      "totalBarrels": 25,
+      "timestamp": 1794786688074,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "Egor Kreed — Будильник",
+        "INSTASAMKA — ЗА ДЕНЬГИ ДА",
+        "Egor Kreed — Самая самая"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786688010_mr3q",
+      "roomCode": "2744",
+      "winnerName": "Тестер_Column 2 (Вер",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 22,
+      "totalBarrels": 25,
+      "timestamp": 1794786688010,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "Egor Kreed & JONY — Дым",
+        "Egor Kreed & MOLLY — Если ты меня не любишь",
+        "MACAN — ASPHALT 8"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786687964_e2am",
+      "roomCode": "7234",
+      "winnerName": "Тестер_Column 1 (Вер",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 24,
+      "totalBarrels": 25,
+      "timestamp": 1794786687964,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "Mary Gu & OG BUDA — толстовка",
+        "INSTASAMKA — POPSTAR",
+        "Big Baby Tape & Aarne — Supersonic"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786687898_xedo",
+      "roomCode": "7765",
+      "winnerName": "Тестер_Column 0 (Вер",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 15,
+      "totalBarrels": 25,
+      "timestamp": 1794786687898,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "SODA LUV — Прости",
+        "Dora — Осень пьяная",
+        "Egor Kreed — Самая самая"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786687838_01y5",
+      "roomCode": "7696",
+      "winnerName": "Тестер_Row 2 (Горизо",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 25,
+      "totalBarrels": 25,
+      "timestamp": 1794786687838,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "MORGENSHTERN — ДОМ (Лондон, Прага, Ницца)",
+        "Dora — Дорадура",
+        "MACAN — ASPHALT 8"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786687774_8gja",
+      "roomCode": "6362",
+      "winnerName": "Тестер_Row 1 (Горизо",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 19,
+      "totalBarrels": 25,
+      "timestamp": 1794786687774,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "Klava Koka — Думал (feat. SODA LUV)",
+        "Egor Kreed — Сердцеедка",
+        "Egor Kreed & MOLLY — Если ты меня не любишь"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786687712_vyir",
+      "roomCode": "7185",
+      "winnerName": "Тестер_Row 0 (Горизо",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 19,
+      "totalBarrels": 25,
+      "timestamp": 1794786687712,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "MACAN — ASPHALT 8",
+        "Egor Kreed & MOLLY — Если ты меня не любишь",
+        "Egor Kreed — Самая самая"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786687638_ewcu",
+      "roomCode": "8884",
+      "winnerName": "Игрок_11",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 4,
+      "totalBarrels": 25,
+      "timestamp": 1794786687638,
+      "dateStr": "16.11.2026, 03:51",
+      "winningTracks": [
+        "SODA LUV — ДАЛЕКО",
+        "OG BUDA & Egor Kreed — Плачут Небеса (feat. Доминик Джокер)",
+        "INSTASAMKA — POPSTAR"
+      ],
+      "playerCount": 30
+    },
+    {
+      "id": "win_1794786467688_h1hu",
+      "roomCode": "4655",
+      "winnerName": "Макс",
+      "winnerPid": null,
+      "mode": "Вся карточка",
+      "turn": 10,
+      "totalBarrels": 25,
+      "timestamp": 1794786467688,
+      "dateStr": "16.11.2026, 03:47",
+      "winningTracks": [
+        "Бочонок #1",
+        "Бочонок #4",
+        "Бочонок #7"
+      ],
+      "playerCount": 1
+    },
+    {
+      "id": "win_1794786467676_qvw9",
+      "roomCode": "4655",
+      "winnerName": "Макс",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 10,
+      "totalBarrels": 25,
+      "timestamp": 1794786467676,
+      "dateStr": "16.11.2026, 03:47",
+      "winningTracks": [
+        "Egor Kreed — Сердцеедка",
+        "Egor Kreed & MOLLY — Если ты меня не любишь",
+        "Mary Gu & OG BUDA — толстовка"
+      ],
+      "playerCount": 1
+    },
     {
       "id": "win_1794785489828_xx6g",
       "roomCode": "5456",
