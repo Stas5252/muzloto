@@ -176,7 +176,7 @@ function getWinInfo(r, p) {
 
   if (r.mode === 'full') {
     const isFull = p.card.every((_, i) => ok(i));
-    return isFull ? { win: true, winIndices: R.map((_, i) => i) } : { win: false, winIndices: [] };
+    return isFull ? { win: true, winIndices: p.card.map((_, i) => i) } : { win: false, winIndices: [] };
   }
 
   // Rows
@@ -351,15 +351,23 @@ io.on('connection', s => {
   });
 
   s.on('player:join', (d, ack) => {
-    const r = rooms[String(d.code)];
+    if (!ack) ack = () => {};
+    const r = rooms[String(d && d.code)];
     if (!r) return ack({ error: 'Комната не найдена. Проверьте 4-значный код.' });
-    const name = String(d.name || '').trim().slice(0, 20);
+    const name = String((d && d.name) || '').trim().slice(0, 20);
     if (!name) return ack({ error: 'Пожалуйста, введите ваше имя' });
 
-    let pid = d.pid;
-    let p = r.players.get(pid);
+    let pid = (d && d.pid) ? String(d.pid).trim() : null;
+    let p = pid ? r.players.get(pid) : null;
+
+    // Prevent cross-session collisions: if existing PID belongs to another active socket with different name, create new
+    if (p && p.sid && p.sid !== s.id && p.name !== name) {
+      pid = null;
+      p = null;
+    }
+
     if (!p) {
-      pid = Math.random().toString(36).slice(2, 10);
+      pid = pid || ('p_' + Math.random().toString(36).slice(2, 11) + '_' + Date.now().toString(36));
       p = { name, card: newCard(r), marks: new Set() };
       r.players.set(pid, p);
     }
@@ -379,23 +387,57 @@ io.on('connection', s => {
     push(r);
   });
 
-  s.on('player:mark', id => {
+  s.on('player:mark', d => {
     const r = rooms[s.data.room];
     const p = r && r.players.get(s.data.pid);
-    if (!p || r.state !== 'playing' || !p.card.includes(id)) return;
-    if (p.marks.has(id)) {
-      p.marks.delete(id);
+    if (!p || r.state !== 'playing') return;
+
+    let id;
+    let explicitMark = null;
+    if (typeof d === 'object' && d !== null) {
+      id = d.id;
+      if (typeof d.marked === 'boolean') explicitMark = d.marked;
     } else {
-      p.marks.add(id);
+      id = d;
+    }
+
+    if (!id || !p.card.includes(id)) return;
+
+    if (explicitMark !== null) {
+      if (explicitMark) p.marks.add(id);
+      else p.marks.delete(id);
+    } else {
+      if (p.marks.has(id)) p.marks.delete(id);
+      else p.marks.add(id);
     }
     push(r);
   });
 
-  s.on('player:bingo', (_, ack) => {
+  s.on('player:bingo', (d, ack) => {
+    if (typeof d === 'function') {
+      ack = d;
+      d = {};
+    }
+    if (!ack) ack = () => {};
     const r = rooms[s.data.room];
     const p = r && r.players.get(s.data.pid);
-    if (!p || r.state !== 'playing') {
+    if (!p) {
+      return ack({ ok: false, msg: 'Игрок не найден в комнате' });
+    }
+    if (r.state === 'finished') {
+      return ack({ ok: false, msg: `Игра уже завершена! Победитель: ${r.winner || 'Определён'}` });
+    }
+    if (r.state !== 'playing') {
       return ack({ ok: false, msg: 'Игра сейчас не идёт' });
+    }
+
+    // Safely reconcile client-reported marks with called barrels (never allows uncalled tracks)
+    if (d && Array.isArray(d.marks)) {
+      for (const mId of d.marks) {
+        if (p.card.includes(mId) && r.called.includes(mId)) {
+          p.marks.add(mId);
+        }
+      }
     }
 
     const winInfo = getWinInfo(r, p);

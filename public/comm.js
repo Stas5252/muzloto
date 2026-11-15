@@ -48,8 +48,11 @@ window.createComm = function(role) {
       adapter.hostNewRound = cb => socket.emit('host:newround', {}, cb);
     } else {
       adapter.playerJoin = (data, cb) => socket.emit('player:join', data, cb);
-      adapter.playerMark = id => socket.emit('player:mark', id);
-      adapter.playerBingo = cb => socket.emit('player:bingo', {}, cb);
+      adapter.playerMark = arg => socket.emit('player:mark', arg);
+      adapter.playerBingo = (arg, cb) => {
+        if (typeof arg === 'function') { cb = arg; arg = {}; }
+        socket.emit('player:bingo', arg || {}, cb);
+      };
     }
     return adapter;
   }
@@ -104,7 +107,7 @@ window.createComm = function(role) {
 
     if (r.mode === 'full') {
       const isFull = p.card.every((_, i) => ok(i));
-      return isFull ? { win: true, winIndices: R.map((_, i) => i) } : { win: false, winIndices: [] };
+      return isFull ? { win: true, winIndices: p.card.map((_, i) => i) } : { win: false, winIndices: [] };
     }
     for (let i = 0; i < n; i++) {
       if (R.every(j => ok(i * n + j))) return { win: true, winIndices: R.map(j => i * n + j) };
@@ -207,23 +210,43 @@ window.createComm = function(role) {
     }
   }
 
+  function sendToPlayer(targetPid, message) {
+    message.targetPid = targetPid;
+    // 1. BroadcastChannel
+    if (broadcastChan) {
+      try { broadcastChan.postMessage(message); } catch(e) {}
+    }
+    // 2. MQTT
+    if (mqttClient && mqttClient.connected) {
+      const payload = JSON.stringify(message);
+      try { mqttClient.publish(`muzloto/${roomCode}/to_player/${targetPid}`, payload); } catch(e) {}
+      try { mqttClient.publish(`muzloto/${roomCode}/host_to_client`, payload); } catch(e) {}
+    }
+    // 3. PeerJS
+    const p = players.get(targetPid);
+    if (p && p.conn && p.conn.open) {
+      try { p.conn.send(message); } catch(e) {}
+    }
+  }
+
   // Common message handler for Host
-  function handleHostMessage(msg, replyFn) {
+  function handleHostMessage(msg, senderConn) {
     if (!msg || !msg.type) return;
 
     if (msg.type === 'join') {
       const { name, pid } = msg;
-      const playerPid = pid || Math.random().toString(36).slice(2, 10);
+      const playerPid = (pid && String(pid).trim()) || ('p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36));
       let p = players.get(playerPid);
       if (!p) {
-        p = { name, card: newCard(roomState), marks: new Set(), sendFn: replyFn };
+        p = { name, pid: playerPid, card: newCard(roomState), marks: new Set(), conn: senderConn };
         players.set(playerPid, p);
       } else {
         p.name = name;
-        p.sendFn = replyFn;
+        if (senderConn) p.conn = senderConn;
       }
-      replyFn({
+      sendToPlayer(playerPid, {
         type: 'join:ack',
+        targetPid: playerPid,
         data: {
           pid: playerPid,
           code: roomState.code,
@@ -235,13 +258,47 @@ window.createComm = function(role) {
       broadcastState();
     } else if (msg.type === 'mark') {
       const p = players.get(msg.pid);
-      if (!p || roomState.state !== 'playing' || !p.card.includes(msg.id)) return;
-      p.marks.has(msg.id) ? p.marks.delete(msg.id) : p.marks.add(msg.id);
+      if (!p || roomState.state !== 'playing') return;
+      const trackId = (typeof msg.id === 'object' && msg.id !== null) ? msg.id.id : msg.id;
+      if (!trackId || !p.card.includes(trackId)) return;
+
+      if (typeof msg.marked === 'boolean') {
+        if (msg.marked) p.marks.add(trackId);
+        else p.marks.delete(trackId);
+      } else {
+        p.marks.has(trackId) ? p.marks.delete(trackId) : p.marks.add(trackId);
+      }
       broadcastState();
     } else if (msg.type === 'bingo') {
       const p = players.get(msg.pid);
-      if (!p || roomState.state !== 'playing') {
-        return replyFn({ type: 'bingo:ack', data: { ok: false, msg: 'Игра не идёт' } });
+      if (!p) {
+        return sendToPlayer(msg.pid, {
+          type: 'bingo:ack',
+          targetPid: msg.pid,
+          data: { ok: false, msg: 'Игрок не найден в комнате' }
+        });
+      }
+      if (roomState.state === 'finished') {
+        return sendToPlayer(msg.pid, {
+          type: 'bingo:ack',
+          targetPid: msg.pid,
+          data: { ok: false, msg: `Игра уже завершена! Победитель: ${roomState.winner || 'Определён'}` }
+        });
+      }
+      if (roomState.state !== 'playing') {
+        return sendToPlayer(msg.pid, {
+          type: 'bingo:ack',
+          targetPid: msg.pid,
+          data: { ok: false, msg: 'Игра сейчас не идёт' }
+        });
+      }
+      // Reconcile client-reported marks safely with called barrels
+      if (msg.marks && Array.isArray(msg.marks)) {
+        for (const mId of msg.marks) {
+          if (p.card.includes(mId) && roomState.called.includes(mId)) {
+            p.marks.add(mId);
+          }
+        }
       }
       const winInfo = getWinInfo(roomState, p);
       if (winInfo.win) {
@@ -252,10 +309,18 @@ window.createComm = function(role) {
           card: cardOut(roomState, p),
           winIndices: winInfo.winIndices
         };
-        replyFn({ type: 'bingo:ack', data: { ok: true, winner: p.name } });
+        sendToPlayer(p.pid, {
+          type: 'bingo:ack',
+          targetPid: p.pid,
+          data: { ok: true, winner: p.name }
+        });
         broadcastState();
       } else {
-        replyFn({ type: 'bingo:ack', data: { ok: false, msg: 'Пока не бинго: отмечены не все бочонки!' } });
+        sendToPlayer(p.pid, {
+          type: 'bingo:ack',
+          targetPid: p.pid,
+          data: { ok: false, msg: 'Пока не бинго: отмечены не все выпавшие бочонки!' }
+        });
       }
     }
   }
@@ -301,9 +366,7 @@ window.createComm = function(role) {
           broadcastChan = new BroadcastChannel('muzloto_' + code);
           broadcastChan.onmessage = ev => {
             const msg = ev.data;
-            handleHostMessage(msg, replyMsg => {
-              try { broadcastChan.postMessage(replyMsg); } catch(e) {}
-            });
+            handleHostMessage(msg);
           };
         }
       } catch(e) { console.warn('BroadcastChannel error:', e); }
@@ -320,9 +383,7 @@ window.createComm = function(role) {
           mqttClient.on('message', (topic, message) => {
             try {
               const msg = JSON.parse(message.toString());
-              handleHostMessage(msg, replyMsg => {
-                mqttClient.publish(`muzloto/${code}/host_to_client`, JSON.stringify(replyMsg));
-              });
+              handleHostMessage(msg);
             } catch(e) {}
           });
         }
@@ -335,9 +396,7 @@ window.createComm = function(role) {
           peerInstance = new Peer(peerId);
           peerInstance.on('connection', conn => {
             conn.on('data', msg => {
-              handleHostMessage(msg, replyMsg => {
-                try { conn.send(replyMsg); } catch(e) {}
-              });
+              handleHostMessage(msg, conn);
             });
           });
           peerInstance.on('error', err => console.warn('PeerJS notice:', err));
@@ -404,9 +463,11 @@ window.createComm = function(role) {
       for (const p of players.values()) {
         p.card = newCard(roomState);
         p.marks = new Set();
-        if (p.sendFn) {
-          p.sendFn({ type: 'card', data: cardOut(roomState, p) });
-        }
+        sendToPlayer(p.pid, {
+          type: 'card',
+          targetPid: p.pid,
+          data: cardOut(roomState, p)
+        });
       }
       broadcastState();
       if (cb) cb();
@@ -422,8 +483,24 @@ window.createComm = function(role) {
     let pendingBingoCb = null;
     let playerConn = null;
 
+    function getPlayerPid() {
+      if (playerPid) return playerPid;
+      try {
+        let sp = sessionStorage.getItem('muzloto_session_pid');
+        if (!sp) {
+          sp = 'p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+          sessionStorage.setItem('muzloto_session_pid', sp);
+        }
+        playerPid = sp;
+      } catch(e) {
+        playerPid = 'p_' + Math.random().toString(36).slice(2, 10);
+      }
+      return playerPid;
+    }
+
     function sendToHost(msg) {
-      msg.pid = playerPid;
+      const myPid = getPlayerPid();
+      msg.pid = myPid;
       const payload = JSON.stringify(msg);
 
       // 1. BroadcastChannel
@@ -443,8 +520,17 @@ window.createComm = function(role) {
     function handleIncomingPlayerMessage(msg) {
       if (!msg || !msg.type) return;
 
+      const myPid = getPlayerPid();
+      // Drop messages intended for a different player
+      if (msg.targetPid && msg.targetPid !== myPid) {
+        return;
+      }
+
       if (msg.type === 'join:ack') {
-        playerPid = msg.data.pid;
+        if (msg.data && msg.data.pid) {
+          playerPid = msg.data.pid;
+          try { sessionStorage.setItem('muzloto_session_pid', playerPid); } catch(e) {}
+        }
         if (pendingJoinCb) {
           pendingJoinCb(msg.data);
           pendingJoinCb = null;
@@ -466,7 +552,10 @@ window.createComm = function(role) {
       joinedRoomCode = code;
       pendingJoinCb = cb;
 
-      const joinPayload = { type: 'join', name: data.name, pid: data.pid };
+      const myPid = (data && data.pid) || getPlayerPid();
+      playerPid = myPid;
+
+      const joinPayload = { type: 'join', name: data.name, pid: myPid };
 
       // 1. BroadcastChannel (Instant on same machine/browser tabs)
       try {
@@ -480,10 +569,11 @@ window.createComm = function(role) {
       // 2. MQTT WebSockets (Public mobile mesh)
       try {
         if (typeof mqtt !== 'undefined') {
-          const clientId = 'player_' + Math.random().toString(16).slice(2, 10);
+          const clientId = 'p_' + myPid.slice(-8) + '_' + Math.random().toString(16).slice(2, 6);
           mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000 });
           mqttClient.on('connect', () => {
             mqttClient.subscribe(`muzloto/${code}/host_to_client`);
+            mqttClient.subscribe(`muzloto/${code}/to_player/${myPid}`);
             mqttClient.publish(`muzloto/${code}/client_to_host`, JSON.stringify(joinPayload));
           });
           mqttClient.on('message', (topic, message) => {
@@ -518,13 +608,27 @@ window.createComm = function(role) {
       }, 7000);
     };
 
-    adapter.playerMark = id => {
-      sendToHost({ type: 'mark', id });
+    adapter.playerMark = arg => {
+      let id, marked;
+      if (typeof arg === 'object' && arg !== null) {
+        id = arg.id;
+        marked = arg.marked;
+      } else {
+        id = arg;
+      }
+      sendToHost({ type: 'mark', id, marked });
     };
 
-    adapter.playerBingo = cb => {
-      pendingBingoCb = cb;
-      sendToHost({ type: 'bingo' });
+    adapter.playerBingo = (arg, cb) => {
+      let marks = [];
+      let callback = cb;
+      if (typeof arg === 'function') {
+        callback = arg;
+      } else if (arg && Array.isArray(arg.marks)) {
+        marks = arg.marks;
+      }
+      pendingBingoCb = callback;
+      sendToHost({ type: 'bingo', marks });
     };
   }
 

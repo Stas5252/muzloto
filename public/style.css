@@ -716,86 +716,183 @@ label {
 }
 
 .bingo-cell {
-  background: rgba(20, 24, 38, 0.9);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  position: relative;
+  background: #0f111a;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
   min-width: 0;
   min-height: 0;
-  padding: 6px 4px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-end;
+  text-align: left;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
-  aspect-ratio: 1 / 1.05;
+  aspect-ratio: 1 / 1.08;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .bingo-cell:active {
   transform: scale(0.95);
 }
 
+/* Cover Image Layer */
+.cell-cover-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #141724;
+}
+
+.cell-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease, filter 0.2s ease;
+  filter: brightness(0.82) contrast(1.08);
+}
+
+.bingo-cell:hover .cell-cover-img {
+  transform: scale(1.06);
+}
+
+/* Gradient Mask over cover so text is always 100% crisp & readable */
+.cell-cover-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, 
+    rgba(10, 12, 18, 0.2) 0%, 
+    rgba(10, 12, 18, 0.5) 45%, 
+    rgba(10, 12, 18, 0.94) 85%, 
+    rgba(8, 9, 14, 0.98) 100%);
+  pointer-events: none;
+}
+
+/* Content Container above cover */
+.cell-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+  padding: 6px 6px 7px 6px;
+  box-sizing: border-box;
+}
+
+.cell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
 .keg-number-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   font-family: var(--font-mono);
-  font-weight: 900;
-  font-size: clamp(0.65rem, 2vw, 0.78rem);
+  font-weight: 800;
+  font-size: clamp(0.66rem, 2.1vw, 0.78rem);
   color: #fbbf24;
-  background: rgba(245, 158, 11, 0.18);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 4px;
-  padding: 1px 5px;
-  margin-bottom: 2px;
+  background: rgba(15, 17, 26, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 6px;
+  padding: 2px 6px;
   line-height: 1.1;
-  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+.cell-stamp {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.6) rotate(-15deg);
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.cell-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
 }
 
 .cell-artist-badge {
-  font-size: clamp(0.55rem, 1.9vw, 0.7rem);
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-size: clamp(0.52rem, 1.7vw, 0.65rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
   color: #c4b5fd;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-  width: 100%;
-  line-height: 1.15;
-  margin-bottom: 2px;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .cell-title {
   font-weight: 700;
-  font-size: clamp(0.65rem, 2.3vw, 0.8rem);
-  line-height: 1.15;
+  font-size: clamp(0.66rem, 2.1vw, 0.8rem);
+  line-height: 1.2;
   color: #ffffff;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-  overflow-wrap: break-word;
   hyphens: auto;
-  width: 100%;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
-/* Stamped / Marked Cell */
+/* Stamped / Marked Cell State */
 .bingo-cell.marked {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(236, 72, 153, 0.4) 100%);
-  border-color: #fbbf24;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2);
-  transform: scale(0.97);
+  border-color: #f59e0b;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.45), 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 0 1.5px #f59e0b;
+}
+
+.bingo-cell.marked .cell-cover-gradient {
+  background: linear-gradient(180deg, 
+    rgba(245, 158, 11, 0.28) 0%, 
+    rgba(15, 17, 26, 0.65) 45%, 
+    rgba(15, 17, 26, 0.96) 90%, 
+    rgba(10, 12, 18, 0.99) 100%);
 }
 
 .bingo-cell.marked .keg-number-badge {
-  background: #fbbf24;
-  color: #000;
+  background: #f59e0b;
+  color: #0b0c10;
+  border-color: #fbbf24;
+  font-weight: 900;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+.bingo-cell.marked .cell-stamp {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  background: #f59e0b;
+  color: #0b0c10;
+  border-color: #fef08a;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
 }
 
 .bingo-cell.marked .cell-artist-badge {
@@ -803,42 +900,67 @@ label {
 }
 
 .bingo-cell.marked .cell-title {
-  color: #fff;
-  text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(254, 240, 138, 0.4), 0 1px 3px #000;
 }
 
-.bingo-cell.marked::after {
-  content: '✓';
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 0.85rem;
-  font-weight: 900;
-  color: #fbbf24;
-  text-shadow: 0 0 6px #000;
-}
-
-/* Giant Bingo Button */
+/* Giant Tactile Bingo Button */
 .btn-bingo {
   width: 100%;
   padding: 16px;
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+  text-transform: uppercase;
+  border-radius: 14px;
+  background: #161824;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  cursor: not-allowed;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .btn-bingo.ready {
-  animation: pulseReady 1.2s infinite alternate ease-in-out;
-  border: 2px solid #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%);
+  color: #0c0d12;
+  border: 1px solid #fef08a;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: pulseReadyBuzzer 1.2s infinite alternate ease-in-out;
 }
 
-@keyframes pulseReady {
-  0% { transform: scale(1); box-shadow: 0 0 20px #fbbf24; }
-  100% { transform: scale(1.03); box-shadow: 0 0 40px #ef4444; }
+@keyframes pulseReadyBuzzer {
+  0% { transform: scale(1); box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+  100% { transform: scale(1.02); box-shadow: 0 0 35px rgba(251, 191, 36, 0.85); }
+}
+
+/* Soundwave Live Animation */
+.soundwave-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+}
+
+.soundwave-bar {
+  width: 3px;
+  background: #fbbf24;
+  border-radius: 2px;
+  animation: soundwaveAnim 0.8s infinite ease-in-out alternate;
+}
+.soundwave-bar:nth-child(1) { height: 35%; animation-delay: 0.1s; }
+.soundwave-bar:nth-child(2) { height: 90%; animation-delay: 0.3s; }
+.soundwave-bar:nth-child(3) { height: 55%; animation-delay: 0.2s; }
+.soundwave-bar:nth-child(4) { height: 100%; animation-delay: 0.4s; }
+
+@keyframes soundwaveAnim {
+  0% { transform: scaleY(0.3); opacity: 0.5; }
+  100% { transform: scaleY(1); opacity: 1; }
 }
 
 /* Bingo Verification Showcase Modal on TV */
@@ -859,9 +981,9 @@ label {
 
 .card-showcase-grid {
   display: grid;
-  gap: 8px;
-  margin: 16px 0;
-  max-width: 500px;
+  gap: 10px;
+  margin: 18px 0;
+  max-width: 580px;
   width: 100%;
 }
 
@@ -869,25 +991,63 @@ label {
 .card-showcase-grid.size-4 { grid-template-columns: repeat(4, 1fr); }
 
 .card-showcase-cell {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 6px 4px;
-  font-size: 0.75rem;
-  text-align: center;
+  position: relative;
+  background: #0f111a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1.05;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-width: 0;
+  justify-content: flex-end;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.card-showcase-cell .showcase-cover-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #141724;
+}
+
+.card-showcase-cell .showcase-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.8);
+}
+
+.card-showcase-cell .showcase-cover-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10,12,18,0.2) 0%, rgba(10,12,18,0.6) 45%, rgba(10,12,18,0.96) 100%);
+}
+
+.card-showcase-cell .showcase-content {
+  position: relative;
+  z-index: 1;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .card-showcase-cell.win-highlight {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.6) 0%, rgba(239, 68, 68, 0.6) 100%);
-  border: 2px solid #fbbf24;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
-  color: #fff;
-  font-weight: 800;
-  transform: scale(1.02);
+  border-color: #fbbf24;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.75), inset 0 0 0 2px #fbbf24;
+  animation: pulseWinCell 1.4s infinite alternate ease-in-out;
+}
+
+.card-showcase-cell.win-highlight .showcase-cover-gradient {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.3) 0%, rgba(10, 12, 18, 0.6) 40%, rgba(10, 12, 18, 0.98) 100%);
+}
+
+@keyframes pulseWinCell {
+  0% { transform: scale(1); box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+  100% { transform: scale(1.04); box-shadow: 0 0 35px rgba(251, 191, 36, 0.9); }
 }
 
 /* Toast */

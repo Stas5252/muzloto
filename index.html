@@ -10,10 +10,12 @@
 <body>
   <div class="wrap">
     <!-- Navbar -->
-    <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 0 32px 0;">
+    <header style="display:flex; justify-content:space-between; align-items:center; padding:16px 0 32px 0;">
       <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:2rem; filter:drop-shadow(0 0 16px rgba(139,92,246,0.5));">🎵</span>
-        <span style="font-weight:800; font-size:1.5rem; letter-spacing:-0.03em; color:#fff;">МузЛото</span>
+        <div style="width:36px; height:36px; border-radius:50%; background:radial-gradient(circle, #2d1f05 0%, #151824 80%); border:1px solid rgba(245,158,11,0.5); display:flex; align-items:center; justify-content:center; box-shadow:0 0 12px rgba(245,158,11,0.3);">
+          <span style="color:#fbbf24; font-size:1.1rem; font-weight:900;">♪</span>
+        </div>
+        <span style="font-weight:900; font-size:1.45rem; letter-spacing:-0.03em; color:#fff;">МУЗЛОТО</span>
       </div>
       <div class="row">
         <a href="tv.html" class="btn btn-sm">Создать игру</a>
@@ -22,24 +24,24 @@
     </header>
 
     <!-- Hero Section -->
-    <section style="text-align:center; padding: 40px 10px 60px 10px;">
-      <div class="badge">
-        <span class="badge-pulse"></span>
-        <span>Новая версия · Любые треки из интернета</span>
+    <section style="text-align:center; padding: 40px 10px 50px 10px;">
+      <div class="badge" style="background:rgba(245,158,11,0.12); border-color:rgba(245,158,11,0.35); color:#fef08a;">
+        <span class="badge-pulse" style="background:#fbbf24; box-shadow:0 0 8px #fbbf24;"></span>
+        <span>Интерактивное музыкальное лото с бочонками</span>
       </div>
-      <h1 style="max-width:900px; margin: 0 auto 20px auto;">
-        Музыкальное бинго <br><span style="background: linear-gradient(135deg, #a78bfa, #ec4899, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">для идеальной вечеринки</span>
+      <h1 style="max-width:900px; margin: 16px auto 18px auto; font-size:clamp(2.1rem, 5vw, 3.4rem); line-height:1.12;">
+        Музыкальное лото <br><span style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 40%, #fef08a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">для идеальной вечеринки</span>
       </h1>
-      <p style="max-width: 680px; margin: 0 auto 36px auto; font-size: 1.15rem; line-height: 1.6;">
-        Забудьте про бумажные бланки и ручную нарезку музыки. Открывайте игру на большом экране ТВ, раздавайте QR-код друзьям на смартфоны и угадывайте любимые треки прямо из интернета!
+      <p style="max-width: 680px; margin: 0 auto 34px auto; font-size: 1.12rem; line-height: 1.6; color:var(--text-muted);">
+        Открывайте игру на большом экране ТВ, раздавайте QR-код друзьям на смартфоны и угадывайте любимые песни с настоящими бочонками и живым звуком!
       </p>
 
-      <div class="row" style="justify-content:center; gap:18px;">
-        <a href="tv.html" class="btn" style="padding: 16px 36px; font-size: 1.1rem;">
-          <span>📺 Запустить на ТВ (Ведущий)</span>
+      <div class="row" style="justify-content:center; gap:16px;">
+        <a href="tv.html" class="btn btn-gold" style="padding: 16px 36px; font-size: 1.05rem; font-weight:800;">
+          <span>Создать игру на ТВ</span>
         </a>
-        <a href="play.html" class="btn btn-secondary" style="padding: 16px 32px; font-size: 1.1rem;">
-          <span>📱 Присоединиться с телефона</span>
+        <a href="play.html" class="btn btn-secondary" style="padding: 16px 32px; font-size: 1.05rem; font-weight:700;">
+          <span>Войти с телефона</span>
         </a>
       </div>
     </section>
