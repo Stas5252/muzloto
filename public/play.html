@@ -156,6 +156,7 @@
 
   <!-- Libraries -->
   <script src="/socket.io/socket.io.js"></script>
+  <script src="mqtt.min.js"></script>
   <script src="peerjs.min.js"></script>
   <script src="comm.js"></script>
 
@@ -230,8 +231,15 @@
 
       const storageKey = 'muzloto_pid_' + code;
       const cachedPid = localStorage.getItem(storageKey);
+      const joinBtn = $('btn-join');
+
+      joinBtn.disabled = true;
+      joinBtn.querySelector('span').textContent = 'Подключаемся к ТВ... ⏳';
 
       comm.playerJoin({ code, name, pid: cachedPid }, res => {
+        joinBtn.disabled = false;
+        joinBtn.querySelector('span').textContent = 'Получить карточку лото 🎟';
+
         if (res.error) return toast(res.error);
 
         localStorage.setItem(storageKey, res.pid);

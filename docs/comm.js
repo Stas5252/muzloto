@@ -1,8 +1,10 @@
 /**
- * Unified Real-time Communication Adapter for MuzLoto
- * Supports both:
+ * Unified Multi-Channel Real-time Communication Adapter for MuzLoto
+ * Supports:
  * 1. Socket.IO (Local Node.js server)
- * 2. PeerJS WebRTC (GitHub Pages & Serverless Cloud Mode)
+ * 2. BroadcastChannel (Instant zero-latency cross-tab communication)
+ * 3. MQTT WebSockets (Public cloud pub/sub broker for reliable multi-device mobile play)
+ * 4. PeerJS (WebRTC P2P direct data channels)
  */
 
 window.createComm = function(role) {
@@ -17,7 +19,7 @@ window.createComm = function(role) {
   }
 
   const adapter = {
-    mode: hasSocketIo ? 'socket.io' : 'peerjs',
+    mode: hasSocketIo ? 'socket.io' : 'cloud-mesh',
     on(event, handler) {
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(handler);
@@ -29,7 +31,7 @@ window.createComm = function(role) {
   };
 
   // ==========================================
-  // MODE 1: Socket.IO
+  // MODE 1: Socket.IO (Local Server)
   // ==========================================
   if (hasSocketIo) {
     const socket = io();
@@ -53,7 +55,8 @@ window.createComm = function(role) {
   }
 
   // ==========================================
-  // MODE 2: PeerJS (Serverless for GitHub Pages)
+  // MODE 2: Multi-Channel Cloud Mesh (GitHub Pages)
+  // Combines BroadcastChannel + MQTT + PeerJS
   // ==========================================
   const LOTTO_NICKNAMES = {
     1: 'Кол',
@@ -79,9 +82,8 @@ window.createComm = function(role) {
     90: 'Дед'
   };
 
-  let peer = null;
   let roomCode = null;
-  const players = new Map(); // pid -> { name, sid, card, marks, conn }
+  const players = new Map(); // pid -> { name, card, marks, conn, sendFn }
   let roomState = {
     code: '',
     state: 'lobby',
@@ -171,22 +173,96 @@ window.createComm = function(role) {
       currentTrack: r.currentTrack || null,
       players: [...players.values()].map(p => ({
         name: p.name,
-        online: !!p.conn && p.conn.open,
+        online: true,
         marksCount: p.marks.size
       }))
     };
   }
 
+  let broadcastChan = null;
+  let mqttClient = null;
+  let peerInstance = null;
+
   function broadcastState() {
     const pubData = makePub(roomState);
     emitLocal('state', pubData);
+
+    const payload = JSON.stringify({ type: 'state', data: pubData });
+
+    // 1. BroadcastChannel
+    if (broadcastChan) {
+      try { broadcastChan.postMessage({ type: 'state', data: pubData }); } catch(e) {}
+    }
+
+    // 2. MQTT
+    if (mqttClient && mqttClient.connected) {
+      try { mqttClient.publish(`muzloto/${roomCode}/host_to_client`, payload); } catch(e) {}
+    }
+
+    // 3. PeerJS connections
     for (const p of players.values()) {
       if (p.conn && p.conn.open) {
-        p.conn.send({ type: 'state', data: pubData });
+        try { p.conn.send({ type: 'state', data: pubData }); } catch(e) {}
       }
     }
   }
 
+  // Common message handler for Host
+  function handleHostMessage(msg, replyFn) {
+    if (!msg || !msg.type) return;
+
+    if (msg.type === 'join') {
+      const { name, pid } = msg;
+      const playerPid = pid || Math.random().toString(36).slice(2, 10);
+      let p = players.get(playerPid);
+      if (!p) {
+        p = { name, card: newCard(roomState), marks: new Set(), sendFn: replyFn };
+        players.set(playerPid, p);
+      } else {
+        p.name = name;
+        p.sendFn = replyFn;
+      }
+      replyFn({
+        type: 'join:ack',
+        data: {
+          pid: playerPid,
+          code: roomState.code,
+          mode: roomState.mode,
+          size: roomState.size,
+          ...cardOut(roomState, p)
+        }
+      });
+      broadcastState();
+    } else if (msg.type === 'mark') {
+      const p = players.get(msg.pid);
+      if (!p || roomState.state !== 'playing' || !p.card.includes(msg.id)) return;
+      p.marks.has(msg.id) ? p.marks.delete(msg.id) : p.marks.add(msg.id);
+      broadcastState();
+    } else if (msg.type === 'bingo') {
+      const p = players.get(msg.pid);
+      if (!p || roomState.state !== 'playing') {
+        return replyFn({ type: 'bingo:ack', data: { ok: false, msg: 'Игра не идёт' } });
+      }
+      const winInfo = getWinInfo(roomState, p);
+      if (winInfo.win) {
+        roomState.state = 'finished';
+        roomState.winner = p.name;
+        roomState.winnerDetails = {
+          name: p.name,
+          card: cardOut(roomState, p),
+          winIndices: winInfo.winIndices
+        };
+        replyFn({ type: 'bingo:ack', data: { ok: true, winner: p.name } });
+        broadcastState();
+      } else {
+        replyFn({ type: 'bingo:ack', data: { ok: false, msg: 'Пока не бинго: отмечены не все бочонки!' } });
+      }
+    }
+  }
+
+  // ==========================================
+  // HOST IMPLEMENTATION
+  // ==========================================
   if (role === 'host') {
     adapter.hostCreate = (data, cb) => {
       const code = String(1000 + Math.random() * 9000 | 0);
@@ -215,78 +291,58 @@ window.createComm = function(role) {
         winnerDetails: null
       };
 
-      // Connect PeerJS
-      const peerId = 'muzloto_' + code;
-      peer = new Peer(peerId);
+      // 1. Instant local callback: Transition to lobby immediately!
+      if (cb) cb({ code });
+      broadcastState();
 
-      peer.on('open', () => {
-        cb({ code });
-        broadcastState();
-      });
-
-      peer.on('error', err => {
-        console.warn('PeerJS error:', err);
-        // Fallback or retry
-      });
-
-      peer.on('connection', conn => {
-        let playerPid = null;
-        conn.on('data', msg => {
-          if (!msg || !msg.type) return;
-
-          if (msg.type === 'join') {
-            const { name, pid } = msg;
-            playerPid = pid || Math.random().toString(36).slice(2, 10);
-            let p = players.get(playerPid);
-            if (!p) {
-              p = { name, card: newCard(roomState), marks: new Set(), conn };
-              players.set(playerPid, p);
-            } else {
-              p.name = name;
-              p.conn = conn;
-            }
-            conn.send({
-              type: 'join:ack',
-              data: {
-                pid: playerPid,
-                code: roomState.code,
-                mode: roomState.mode,
-                size: roomState.size,
-                ...cardOut(roomState, p)
-              }
+      // 2. BroadcastChannel setup (instant tab communication on same browser)
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          broadcastChan = new BroadcastChannel('muzloto_' + code);
+          broadcastChan.onmessage = ev => {
+            const msg = ev.data;
+            handleHostMessage(msg, replyMsg => {
+              try { broadcastChan.postMessage(replyMsg); } catch(e) {}
             });
-            broadcastState();
-          } else if (msg.type === 'mark') {
-            const p = players.get(playerPid);
-            if (!p || roomState.state !== 'playing' || !p.card.includes(msg.id)) return;
-            p.marks.has(msg.id) ? p.marks.delete(msg.id) : p.marks.add(msg.id);
-            broadcastState();
-          } else if (msg.type === 'bingo') {
-            const p = players.get(playerPid);
-            if (!p || roomState.state !== 'playing') {
-              return conn.send({ type: 'bingo:ack', data: { ok: false, msg: 'Игра не идёт' } });
-            }
-            const winInfo = getWinInfo(roomState, p);
-            if (winInfo.win) {
-              roomState.state = 'finished';
-              roomState.winner = p.name;
-              roomState.winnerDetails = {
-                name: p.name,
-                card: cardOut(roomState, p),
-                winIndices: winInfo.winIndices
-              };
-              conn.send({ type: 'bingo:ack', data: { ok: true, winner: p.name } });
-              broadcastState();
-            } else {
-              conn.send({ type: 'bingo:ack', data: { ok: false, msg: 'Пока не бинго: отмечены не все бочонки!' } });
-            }
-          }
-        });
+          };
+        }
+      } catch(e) { console.warn('BroadcastChannel error:', e); }
 
-        conn.on('close', () => {
-          broadcastState();
-        });
-      });
+      // 3. MQTT WebSockets setup (bypasses all NATs, cellular networks, firewalls)
+      try {
+        if (typeof mqtt !== 'undefined') {
+          const clientId = 'host_' + Math.random().toString(16).slice(2, 10);
+          mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000 });
+          mqttClient.on('connect', () => {
+            mqttClient.subscribe(`muzloto/${code}/client_to_host`);
+            broadcastState();
+          });
+          mqttClient.on('message', (topic, message) => {
+            try {
+              const msg = JSON.parse(message.toString());
+              handleHostMessage(msg, replyMsg => {
+                mqttClient.publish(`muzloto/${code}/host_to_client`, JSON.stringify(replyMsg));
+              });
+            } catch(e) {}
+          });
+        }
+      } catch(e) { console.warn('MQTT setup error:', e); }
+
+      // 4. PeerJS WebRTC channel setup
+      try {
+        if (typeof Peer !== 'undefined') {
+          const peerId = 'muzloto_' + code;
+          peerInstance = new Peer(peerId);
+          peerInstance.on('connection', conn => {
+            conn.on('data', msg => {
+              handleHostMessage(msg, replyMsg => {
+                try { conn.send(replyMsg); } catch(e) {}
+              });
+            });
+          });
+          peerInstance.on('error', err => console.warn('PeerJS notice:', err));
+        }
+      } catch(e) { console.warn('PeerJS error:', e); }
     };
 
     adapter.hostStart = cb => {
@@ -348,78 +404,127 @@ window.createComm = function(role) {
       for (const p of players.values()) {
         p.card = newCard(roomState);
         p.marks = new Set();
-        if (p.conn && p.conn.open) {
-          p.conn.send({ type: 'card', data: cardOut(roomState, p) });
+        if (p.sendFn) {
+          p.sendFn({ type: 'card', data: cardOut(roomState, p) });
         }
       }
       broadcastState();
       if (cb) cb();
     };
+
   } else {
-    // PLAYER ADAPTER
-    let playerConn = null;
+    // ==========================================
+    // PLAYER IMPLEMENTATION
+    // ==========================================
+    let playerPid = null;
+    let joinedRoomCode = null;
     let pendingJoinCb = null;
     let pendingBingoCb = null;
+    let playerConn = null;
+
+    function sendToHost(msg) {
+      msg.pid = playerPid;
+      const payload = JSON.stringify(msg);
+
+      // 1. BroadcastChannel
+      if (broadcastChan) {
+        try { broadcastChan.postMessage(msg); } catch(e) {}
+      }
+      // 2. MQTT
+      if (mqttClient && mqttClient.connected && joinedRoomCode) {
+        try { mqttClient.publish(`muzloto/${joinedRoomCode}/client_to_host`, payload); } catch(e) {}
+      }
+      // 3. PeerJS
+      if (playerConn && playerConn.open) {
+        try { playerConn.send(msg); } catch(e) {}
+      }
+    }
+
+    function handleIncomingPlayerMessage(msg) {
+      if (!msg || !msg.type) return;
+
+      if (msg.type === 'join:ack') {
+        playerPid = msg.data.pid;
+        if (pendingJoinCb) {
+          pendingJoinCb(msg.data);
+          pendingJoinCb = null;
+        }
+      } else if (msg.type === 'state') {
+        emitLocal('state', msg.data);
+      } else if (msg.type === 'card') {
+        emitLocal('card', msg.data);
+      } else if (msg.type === 'bingo:ack') {
+        if (pendingBingoCb) {
+          pendingBingoCb(msg.data);
+          pendingBingoCb = null;
+        }
+      }
+    }
 
     adapter.playerJoin = (data, cb) => {
       const code = String(data.code).trim();
+      joinedRoomCode = code;
       pendingJoinCb = cb;
 
-      peer = new Peer();
-      peer.on('open', () => {
-        playerConn = peer.connect('muzloto_' + code);
-        playerConn.on('open', () => {
-          playerConn.send({ type: 'join', name: data.name, pid: data.pid });
-        });
+      const joinPayload = { type: 'join', name: data.name, pid: data.pid };
 
-        playerConn.on('data', msg => {
-          if (!msg || !msg.type) return;
-          if (msg.type === 'join:ack') {
-            if (pendingJoinCb) {
-              pendingJoinCb(msg.data);
-              pendingJoinCb = null;
-            }
-          } else if (msg.type === 'state') {
-            emitLocal('state', msg.data);
-          } else if (msg.type === 'card') {
-            emitLocal('card', msg.data);
-          } else if (msg.type === 'bingo:ack') {
-            if (pendingBingoCb) {
-              pendingBingoCb(msg.data);
-              pendingBingoCb = null;
-            }
-          }
-        });
+      // 1. BroadcastChannel (Instant on same machine/browser tabs)
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          broadcastChan = new BroadcastChannel('muzloto_' + code);
+          broadcastChan.onmessage = ev => handleIncomingPlayerMessage(ev.data);
+          broadcastChan.postMessage(joinPayload);
+        }
+      } catch(e) {}
 
-        playerConn.on('error', err => {
-          if (pendingJoinCb) {
-            pendingJoinCb({ error: 'Не удалось подключиться к ТВ. Проверьте код комнаты.' });
-            pendingJoinCb = null;
-          }
-        });
-      });
+      // 2. MQTT WebSockets (Public mobile mesh)
+      try {
+        if (typeof mqtt !== 'undefined') {
+          const clientId = 'player_' + Math.random().toString(16).slice(2, 10);
+          mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000 });
+          mqttClient.on('connect', () => {
+            mqttClient.subscribe(`muzloto/${code}/host_to_client`);
+            mqttClient.publish(`muzloto/${code}/client_to_host`, JSON.stringify(joinPayload));
+          });
+          mqttClient.on('message', (topic, message) => {
+            try {
+              const msg = JSON.parse(message.toString());
+              handleIncomingPlayerMessage(msg);
+            } catch(e) {}
+          });
+        }
+      } catch(e) {}
 
-      peer.on('error', err => {
+      // 3. PeerJS (WebRTC P2P fallback)
+      try {
+        if (typeof Peer !== 'undefined') {
+          peerInstance = new Peer();
+          peerInstance.on('open', () => {
+            playerConn = peerInstance.connect('muzloto_' + code);
+            playerConn.on('open', () => {
+              playerConn.send(joinPayload);
+            });
+            playerConn.on('data', msg => handleIncomingPlayerMessage(msg));
+          });
+        }
+      } catch(e) {}
+
+      // Safety timeout in case room code does not exist
+      setTimeout(() => {
         if (pendingJoinCb) {
-          pendingJoinCb({ error: 'Ошибка соединения: ' + err.type });
+          pendingJoinCb({ error: 'Не удалось найти комнату #' + code + '. Проверьте 4 цифры на экране ТВ.' });
           pendingJoinCb = null;
         }
-      });
+      }, 7000);
     };
 
     adapter.playerMark = id => {
-      if (playerConn && playerConn.open) {
-        playerConn.send({ type: 'mark', id });
-      }
+      sendToHost({ type: 'mark', id });
     };
 
     adapter.playerBingo = cb => {
       pendingBingoCb = cb;
-      if (playerConn && playerConn.open) {
-        playerConn.send({ type: 'bingo' });
-      } else {
-        cb({ ok: false, msg: 'Нет связи с ТВ' });
-      }
+      sendToHost({ type: 'bingo' });
     };
   }
 
