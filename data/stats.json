@@ -6,9 +6,69 @@
       "games": 1,
       "lastWin": 1794784511808,
       "lastWinDate": "16.11.2026, 03:15"
+    },
+    "Анна": {
+      "name": "Анна",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794785437310,
+      "lastWinDate": "16.11.2026, 03:30"
+    },
+    "Вика": {
+      "name": "Вика",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794785489828,
+      "lastWinDate": "16.11.2026, 03:31"
     }
   },
   "history": [
+    {
+      "id": "win_1794785489828_xx6g",
+      "roomCode": "5456",
+      "winnerName": "Вика",
+      "winnerPid": null,
+      "mode": "Вся карточка",
+      "turn": 19,
+      "totalBarrels": 25,
+      "timestamp": 1794785489828,
+      "dateStr": "16.11.2026, 03:31",
+      "winningTracks": [
+        "Big Baby Tape — Gimme the Loot",
+        "SODA LUV — Тысячи рук",
+        "Egor Kreed — Будильник",
+        "Egor Kreed — Самая самая",
+        "MORGENSHTERN — ДОМ (Лондон, Прага, Ницца)",
+        "SODA LUV — Прости",
+        "Dora — Втюрилась",
+        "Scally Milano & uglystephan — Дай Мне Шанс",
+        "Egor Kreed — Сердцеедка"
+      ],
+      "playerCount": 10
+    },
+    {
+      "id": "win_1794785437310_yiq0",
+      "roomCode": "9770",
+      "winnerName": "Анна",
+      "winnerPid": null,
+      "mode": "Вся карточка",
+      "turn": 22,
+      "totalBarrels": 25,
+      "timestamp": 1794785437310,
+      "dateStr": "16.11.2026, 03:30",
+      "winningTracks": [
+        "SODA LUV — ДАЛЕКО",
+        "MACAN — ASPHALT 8",
+        "Egor Kreed — Самая самая",
+        "Toxi$ — ХАЙЕГОХО",
+        "Big Baby Tape & Aarne — Supersonic",
+        "Egor Kreed — Будильник",
+        "Big Baby Tape — Chuchuka",
+        "Big Baby Tape — Gimme the Loot",
+        "Scally Milano & uglystephan — Дай Мне Шанс"
+      ],
+      "playerCount": 10
+    },
     {
       "id": "win_1794784511808_ty8i",
       "roomCode": "3665",

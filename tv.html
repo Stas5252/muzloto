@@ -2578,14 +2578,16 @@
     // STATS & LEADERBOARD DATABASE MANAGER
     // ==========================================
     async function fetchStatsDb() {
-      // 1. Try server API
-      try {
-        const res = await fetch('/api/stats');
-        if (res.ok) {
-          const data = await res.json();
-          if (data && (data.leaderboard || data.history)) return data;
-        }
-      } catch(e) {}
+      // 1. Try server API if in socket.io mode
+      if (comm && comm.mode === 'socket.io') {
+        try {
+          const res = await fetch('/api/stats');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && (data.leaderboard || data.history)) return data;
+          }
+        } catch(e) {}
+      }
 
       // 2. Fallback to localStorage
       try {
@@ -2655,14 +2657,16 @@
         localStorage.setItem('muzloto_db_stats', JSON.stringify(db));
       } catch(e) {}
 
-      // Also send to server API if available
-      try {
-        await fetch('/api/stats/win', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(winnerDetails)
-        });
-      } catch(e) {}
+      // Also send to server API if in socket.io mode
+      if (comm && comm.mode === 'socket.io') {
+        try {
+          await fetch('/api/stats/win', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(winnerDetails)
+          });
+        } catch(e) {}
+      }
     }
 
     async function openLeaderboardModal() {
@@ -2770,7 +2774,9 @@
       if (confirm('Сбросить всю историю побед и рейтинг игроков?')) {
         try {
           localStorage.removeItem('muzloto_db_stats');
-          await fetch('/api/stats/reset', { method: 'POST' });
+          if (comm && comm.mode === 'socket.io') {
+            await fetch('/api/stats/reset', { method: 'POST' });
+          }
         } catch(e) {}
         renderLeaderboardUI();
       }
