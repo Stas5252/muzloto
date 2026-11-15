@@ -366,6 +366,40 @@ label {
   gap: 5px;
 }
 
+/* Selected Tracks in Bag Container */
+.selected-tracks-list {
+  max-height: 340px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(10, 12, 22, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin: 12px 0 20px 0;
+  overscroll-behavior: contain;
+}
+
+.selected-tracks-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.selected-tracks-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.selected-tracks-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.selected-tracks-list::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-gold);
+}
+
 .track-item {
   display: flex;
   align-items: center;

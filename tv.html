@@ -112,14 +112,14 @@
           <button id="btn-clear-tracks" class="btn btn-secondary btn-sm" style="display:none;">Очистить все</button>
         </div>
 
-        <div class="selected-tracks-list" id="selected-tracks-container" style="max-height:280px;">
+        <div class="selected-tracks-list" id="selected-tracks-container">
           <div style="padding: 24px; text-align: center; color: var(--text-faint);">
             Список пока пуст. Выберите готовый пак выше или воспользуйтесь поиском.
           </div>
         </div>
 
         <!-- Rules & Party Mode settings -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0 16px 0; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
           <label>
             Размер сетки
             <select id="opt-size">
@@ -151,8 +151,8 @@
           </label>
         </div>
 
-        <div class="row" style="justify-content: flex-end; margin-top: 16px;">
-          <button id="btn-create-room" class="btn btn-gold" disabled style="padding: 16px 36px; font-size: 1.15rem;">
+        <div style="display:flex; justify-content:flex-end; align-items:center; margin-top: 20px;">
+          <button id="btn-create-room" class="btn btn-gold" disabled style="padding: 16px 36px; font-size: 1.15rem; min-width: 280px; justify-content: center;">
             <span>Создать комнату для ТВ 🎱</span>
           </button>
         </div>
