@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>МузЛото — Карточка игрока</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📱</text></svg>">
+  <style>
+    body {
+      padding-bottom: 30px;
+    }
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10001;
+    }
+    .keg-number-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-weight: 900;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-bottom: 3px;
+    }
+    .bingo-cell.marked .keg-number-badge {
+      background: #fbbf24;
+      color: #000;
+      border-color: #fbbf24;
+    }
+    .proximity-badge {
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: #c4b5fd;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .proximity-badge.urgent {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #fbbf24;
+      color: #fef08a;
+      animation: pulseUrgent 1s infinite alternate;
+    }
+    @keyframes pulseUrgent {
+      from { transform: scale(0.98); }
+      to { transform: scale(1.03); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="wrap" style="max-width: 520px; padding: 14px 12px;">
+    <!-- SECTION: JOIN ROOM -->
+    <section id="sec-join">
+      <div style="text-align:center; padding: 18px 0 12px 0;">
+        <span style="font-size:3rem; filter:drop-shadow(0 0 16px rgba(245,158,11,0.6));">🎱</span>
+        <h1 style="font-size: 2.2rem; margin: 6px 0 2px 0;">МУЗЛОТО</h1>
+        <p style="font-size: 0.95rem;">Введите имя и 4 цифры кода с экрана ТВ</p>
+      </div>
+
+      <div class="card" style="margin-top: 14px;">
+        <div style="display:flex; flex-direction:column; gap: 14px;">
+          <label>
+            Ваше имя / никнейм
+            <input id="input-name" type="text" placeholder="Например: Алина, Макс..." maxlength="20" autocomplete="name">
+          </label>
+          <label>
+            Код комнаты с ТВ (4 цифры)
+            <input id="input-room" type="text" placeholder="7937" inputmode="numeric" maxlength="6" style="font-family:var(--font-mono); font-size:1.4rem; letter-spacing:0.12em; text-align:center;">
+          </label>
+          <button id="btn-join" class="btn btn-gold" style="padding: 16px; font-size:1.15rem; margin-top:6px;">
+            <span>Получить карточку лото 🎟</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="text-align:center; margin-top: 20px;">
+        <a href="index.html" style="color:var(--text-muted); font-size:0.85rem; text-decoration:none;">← На главную</a>
+      </div>
+    </section>
+
+    <!-- SECTION: GAME CARD -->
+    <section id="sec-play" style="display:none;">
+      <!-- Top Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.4rem;">🎱</span>
+          <div>
+            <div style="font-weight:900; font-size:1.1rem; color:#fff;" id="player-display-name">Игрок</div>
+            <div class="mono" style="font-size:0.75rem; color:#fbbf24;" id="room-code-badge">Комната #----</div>
+          </div>
+        </div>
+        <div class="badge" id="mode-badge" style="margin-bottom:0; font-size:0.75rem; padding: 4px 10px; background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.3); color:#fef08a;">
+          Линия
+        </div>
+      </div>
+
+      <!-- Live Game Info Banner -->
+      <div class="card" style="padding: 12px 14px; margin-bottom: 12px; text-align:center; background: rgba(255,255,255,0.03);">
+        <div id="game-banner-status" style="font-weight:800; font-size:1rem; color:#fff; margin-bottom:2px;">
+          Ждём начала игры на ТВ... ⏳
+        </div>
+        <div id="game-banner-meta" class="mono" style="font-size:0.78rem; color:var(--text-muted);">
+          Сыграно 0 бочонков
+        </div>
+      </div>
+
+      <!-- Proximity to Bingo bar -->
+      <div style="text-align:center; margin-bottom: 10px;">
+        <span class="proximity-badge" id="proximity-badge">
+          Слушайте песню или сверяйте номер бочонка
+        </span>
+      </div>
+
+      <!-- Bingo Grid with Numbers & Song info -->
+      <div id="bingo-grid" class="bingo-grid size-3"></div>
+
+      <!-- Counter -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin: 10px 4px 16px 4px; font-size:0.85rem; color:var(--text-muted);">
+        <span>Закрыто: <b id="marks-count-text" style="color:#fbbf24; font-weight:800;">0</b> бочонков</span>
+        <span>Жмите на клетку, чтобы закрыть</span>
+      </div>
+
+      <!-- Giant Bingo Button -->
+      <button id="btn-bingo" class="btn-bingo" disabled>
+        🎉 БИНГО!
+      </button>
+    </section>
+  </div>
+
+  <div id="toast" class="toast-msg"></div>
+
+  <!-- Libraries -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="peerjs.min.js"></script>
+  <script src="comm.js"></script>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const comm = window.createComm('player');
+    const urlParams = new URLSearchParams(window.location.search);
+
+    let joinedCode = null;
+    let myPlayerName = '';
+    let myCard = [];
+    let myMarks = new Set();
+    let currentGameState = 'lobby';
+    let currentMode = 'line';
+    let gridSize = 3;
+
+    $('input-room').value = urlParams.get('room') || '';
+    $('input-name').value = localStorage.getItem('muzloto_player_name') || '';
+
+    // Web Audio Tap Sound
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTapSound(isMarking) {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isMarking ? 659.25 : 440.0, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.14);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch(e) {}
+    }
+
+    function playWinSound() {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+          gain.gain.setValueAtTime(0, audioCtx.currentTime + idx * 0.1);
+          gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + idx * 0.1 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.1 + 0.6);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + idx * 0.1);
+          osc.stop(audioCtx.currentTime + idx * 0.1 + 0.7);
+        });
+      } catch(e) {}
+    }
+
+    function toast(text) {
+      const el = $('toast');
+      el.textContent = text;
+      el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.display = 'none'; }, 3500);
+    }
+
+    function joinGame() {
+      const code = $('input-room').value.trim();
+      const name = $('input-name').value.trim();
+
+      if (!code) return toast('Пожалуйста, введите код с ТВ');
+      if (!name) return toast('Пожалуйста, введите ваше имя');
+
+      const storageKey = 'muzloto_pid_' + code;
+      const cachedPid = localStorage.getItem(storageKey);
+
+      comm.playerJoin({ code, name, pid: cachedPid }, res => {
+        if (res.error) return toast(res.error);
+
+        localStorage.setItem(storageKey, res.pid);
+        localStorage.setItem('muzloto_player_name', name);
+        joinedCode = code;
+        myPlayerName = name;
+        currentMode = res.mode;
+
+        $('player-display-name').textContent = name;
+        $('room-code-badge').textContent = `Комната #${code}`;
+        $('mode-badge').textContent = (res.mode === 'full') ? 'Вся карточка' : 'Линия';
+
+        $('sec-join').style.display = 'none';
+        $('sec-play').style.display = 'block';
+
+        renderCard(res);
+      });
+    }
+
+    $('btn-join').onclick = joinGame;
+
+    function renderCard(data) {
+      myCard = data.card || [];
+      myMarks = new Set(data.marks || []);
+      gridSize = Math.sqrt(myCard.length) || 3;
+      const grid = $('bingo-grid');
+
+      grid.className = `bingo-grid size-${gridSize}`;
+      grid.innerHTML = myCard.map(item => {
+        const isMarked = myMarks.has(item.id);
+        return `
+          <div class="bingo-cell ${isMarked ? 'marked' : ''}" data-id="${item.id}">
+            <span class="keg-number-badge">№${item.kegNum}</span>
+            <div class="cell-artist-badge">${escapeHtml(item.artist || 'Хит')}</div>
+            <div class="cell-title">${escapeHtml(item.title)}</div>
+          </div>
+        `;
+      }).join('');
+
+      updateProgress();
+
+      grid.querySelectorAll('.bingo-cell').forEach(cell => {
+        cell.onclick = () => {
+          if (currentGameState !== 'playing') {
+            toast('Отмечать бочонки можно только во время игры');
+            return;
+          }
+          const id = cell.dataset.id;
+          const willMark = !cell.classList.contains('marked');
+
+          if (willMark) {
+            cell.classList.add('marked');
+            myMarks.add(id);
+          } else {
+            cell.classList.remove('marked');
+            myMarks.delete(id);
+          }
+
+          comm.playerMark(id);
+          playTapSound(willMark);
+          if (navigator.vibrate) navigator.vibrate(35);
+          updateProgress();
+        };
+      });
+    }
+
+    function calculateMinRemainingToWin() {
+      const n = gridSize;
+      const R = [...Array(n).keys()];
+      const isMarked = idx => myMarks.has(myCard[idx].id);
+
+      if (currentMode === 'full') {
+        const remaining = myCard.filter((_, i) => !isMarked(i)).length;
+        return remaining;
+      }
+
+      // Check rows, cols, diags
+      const lines = [];
+      for (let i = 0; i < n; i++) lines.push(R.map(j => i * n + j));
+      for (let j = 0; j < n; j++) lines.push(R.map(i => i * n + j));
+      lines.push(R.map(j => j * n + j));
+      lines.push(R.map(j => j * n + (n - 1 - j)));
+
+      let minRemaining = n;
+      for (const line of lines) {
+        const missing = line.filter(idx => !isMarked(idx)).length;
+        if (missing < minRemaining) minRemaining = missing;
+      }
+      return minRemaining;
+    }
+
+    function updateProgress() {
+      $('marks-count-text').textContent = `${myMarks.size} из ${myCard.length}`;
+
+      const minToWin = calculateMinRemainingToWin();
+      const badge = $('proximity-badge');
+      const bingoBtn = $('btn-bingo');
+
+      if (minToWin === 0) {
+        badge.className = 'proximity-badge urgent';
+        badge.innerHTML = '🎉 ЛИНИЯ СОБРАНА! ЖМИТЕ БИНГО!';
+        bingoBtn.classList.add('ready');
+        bingoBtn.disabled = false;
+      } else if (minToWin === 1) {
+        badge.className = 'proximity-badge urgent';
+        badge.innerHTML = '🔥 ОСТАЛСЯ 1 БОЧОНОК ДО ЛИНИИ!';
+        bingoBtn.classList.remove('ready');
+      } else {
+        badge.className = 'proximity-badge';
+        badge.innerHTML = `До победной линии: ${minToWin} бочонка`;
+        bingoBtn.classList.remove('ready');
+      }
+    }
+
+    $('btn-bingo').onclick = () => {
+      comm.playerBingo(res => {
+        if (res.ok) {
+          toast('🎉 ВАШЕ БИНГО ПРИНЯТО НА ТВ! ПОБЕДА!');
+          playWinSound();
+          startConfetti();
+        } else {
+          toast(res.msg || 'Пока не бинго');
+        }
+      });
+    };
+
+    comm.on('state', state => {
+      if (!joinedCode) return;
+      currentGameState = state.state;
+
+      const banner = $('game-banner-status');
+      const meta = $('game-banner-meta');
+      const bingoBtn = $('btn-bingo');
+
+      meta.textContent = `Выпало ${state.calledCount} из ${state.totalCount} бочонков · Режим: ${state.mode === 'full' ? 'вся карточка' : 'линия'}`;
+
+      if (state.state === 'lobby') {
+        banner.textContent = 'Ждём начала раунда на ТВ... ⏳';
+        bingoBtn.disabled = true;
+      } else if (state.state === 'playing') {
+        banner.textContent = 'Слушайте песню и сверяйте бочонки! 🎧';
+        bingoBtn.disabled = false;
+      } else if (state.state === 'finished') {
+        if (state.winner) {
+          if (state.winner === myPlayerName) {
+            banner.textContent = '🏆 ВЫ ПОБЕДИЛИ! ВАША КАРТОЧКА НА ТВ! 🎉';
+            playWinSound();
+            startConfetti();
+          } else {
+            banner.textContent = `Победил(а) ${state.winner}! 👏`;
+          }
+        } else {
+          banner.textContent = 'Раунд окончен!';
+        }
+        bingoBtn.disabled = true;
+      }
+    });
+
+    comm.on('card', data => {
+      stopConfetti();
+      renderCard(data);
+    });
+
+    // Confetti
+    let confettiAnim = null;
+    function startConfetti() {
+      const canvas = $('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const count = 90;
+      const particles = Array.from({ length: count }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * count,
+        color: ['#fbbf24', '#f59e0b', '#ec4899', '#8b5cf6', '#34d399'][Math.floor(Math.random() * 5)],
+        tilt: Math.floor(Math.random() * 10) - 10,
+        tiltAngleInc: Math.random() * 0.07 + 0.05,
+        tiltAngle: 0
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.lineWidth = p.r / 2;
+          ctx.strokeStyle = p.color;
+          ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
+          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
+          ctx.stroke();
+          p.tiltAngle += p.tiltAngleInc;
+          p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+          p.tilt = Math.sin(p.tiltAngle - p.d / 3) * 15;
+          if (p.y > canvas.height) {
+            p.y = -10;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+        confettiAnim = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function stopConfetti() {
+      if (confettiAnim) cancelAnimationFrame(confettiAnim);
+      const canvas = $('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+  </script>
+</body>
+</html>

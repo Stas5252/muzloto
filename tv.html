@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МузЛото — Экран ведущего (ТВ)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>">
+  <style>
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10001;
+    }
+    .keg-nickname {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fef08a;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 4px;
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    #lobby-qr-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="wrap">
+    <!-- Header -->
+    <header style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:2.2rem; filter:drop-shadow(0 0 16px rgba(245,158,11,0.6));">🎱</span>
+        <div>
+          <div style="font-weight:900; font-size:1.5rem; color:#fff; letter-spacing:-0.02em;">МУЗЛОТО <span style="font-size:0.85rem; color:#fbbf24; font-weight:700; background:rgba(245,158,11,0.15); padding:2px 8px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">ТВ-ШОУ</span></div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Настоящее русское лото под любимую музыку</div>
+        </div>
+      </div>
+      <div class="row">
+        <a href="index.html" class="btn btn-secondary btn-sm">На главную</a>
+      </div>
+    </header>
+
+    <!-- SECTION 1: SETUP -->
+    <section id="sec-setup">
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="badge" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fef08a;">
+          <span class="badge-pulse" style="background:#fbbf24; box-shadow:0 0 10px #fbbf24;"></span>
+          <span>Шаг 1 · Загрузка бочонков в мешок</span>
+        </div>
+        <h2>Выберите готовый пак или найдите треки в интернете</h2>
+        <p>Каждой песне присваивается свой номер бочонка. В игре бочонки вытягиваются из мешка <b>совершенно случайно</b>, как в настоящем лото!</p>
+
+        <!-- Curated Packs Quick Buttons -->
+        <div style="margin: 20px 0 10px 0;">
+          <label style="margin-bottom: 10px; font-weight:700; color:#fff;">Готовые коллекции треков (загрузка в 1 клик):</label>
+          <div class="packs-grid" id="curated-packs-list"></div>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="margin: 24px 0 16px 0;">
+          <label style="font-weight:700; color:#fff;">Или найдите любые песни в интернете:</label>
+          <div class="search-container">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input id="search-input" type="text" placeholder="Поиск по артисту или треку (например: Егор Крид, Дора, Soda Luv, Кино)..." autocomplete="off">
+              <div class="search-spinner" id="search-spinner"></div>
+            </div>
+            <div id="search-results" class="search-results" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Local files fallback -->
+        <details style="margin-top: 14px; color: var(--text-muted); font-size: 0.9rem;">
+          <summary style="cursor:pointer; color:#a78bfa; font-weight:600;">Есть свои MP3 файлы? Загрузить с компьютера</summary>
+          <div style="margin-top: 10px; padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
+            <input type="file" id="local-files" accept="audio/*" multiple>
+          </div>
+        </details>
+      </div>
+
+      <!-- Selected Tracks & Game Settings -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom: 16px;">
+          <div>
+            <h3>Бочонки в мешке (<span id="tracks-count" class="mono" style="color:#fbbf24;">0</span>)</h3>
+            <span id="tracks-status-msg" style="font-size:0.875rem; color:var(--accent-red);">Нужно добавить минимум 9 треков</span>
+          </div>
+          <button id="btn-clear-tracks" class="btn btn-secondary btn-sm" style="display:none;">Очистить все</button>
+        </div>
+
+        <div class="selected-tracks-list" id="selected-tracks-container" style="max-height:300px;">
+          <div style="padding: 24px; text-align: center; color: var(--text-faint);">
+            Список пока пуст. Выберите готовый пак выше или воспользуйтесь поиском.
+          </div>
+        </div>
+
+        <!-- Rules & Timer settings -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+          <label>
+            Размер сетки
+            <select id="opt-size">
+              <option value="3" selected>3×3 (9 клеток на карточке)</option>
+              <option value="4">4×4 (16 клеток на карточке)</option>
+            </select>
+          </label>
+          <label>
+            Условие победы
+            <select id="opt-mode">
+              <option value="line" selected>Линия (ряд, колонка, диагональ)</option>
+              <option value="full">Вся карточка целиком</option>
+            </select>
+          </label>
+          <label>
+            Длительность фрагмента
+            <select id="opt-clip">
+              <option value="15">15 секунд</option>
+              <option value="20" selected>20 секунд</option>
+              <option value="25">25 секунд</option>
+              <option value="30">30 секунд</option>
+            </select>
+          </label>
+          <label>
+            Авто-вскрытие ответа
+            <select id="opt-reveal">
+              <option value="auto" selected>Вскрывать после окончания музыки</option>
+              <option value="manual">Только по кнопке ведущего</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row" style="justify-content: flex-end; margin-top: 16px;">
+          <button id="btn-create-room" class="btn btn-gold" disabled style="padding: 16px 36px; font-size: 1.15rem;">
+            <span>Создать комнату для ТВ 🎱</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: TV LOBBY -->
+    <section id="sec-lobby" style="display:none;">
+      <div class="card" style="text-align:center; padding: 40px 24px;">
+        <div class="badge" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fef08a;">
+          <span class="badge-pulse" style="background:#fbbf24; box-shadow:0 0 10px #fbbf24;"></span>
+          <span>Ожидание игроков · Сканируйте QR</span>
+        </div>
+        <h1 style="margin-bottom: 24px;">Включайте камеры телефонов и забирайте карточки</h1>
+
+        <div class="tv-lobby-grid">
+          <div class="tv-code-box">
+            <div style="font-size: 1.1rem; color: var(--text-muted); font-weight:700;">КОД ДЛЯ ВХОДА:</div>
+            <div class="code-display" id="lobby-room-code">----</div>
+            <p style="font-size: 1.1rem;">Или введите в браузере телефона:<br>
+              <b id="lobby-url-text" class="mono" style="color:#fbbf24; font-size:1.3rem;"></b>
+            </p>
+          </div>
+
+          <div style="display:flex; justify-content:center;">
+            <div id="lobby-qr-container"></div>
+          </div>
+        </div>
+
+        <div style="margin: 36px 0;">
+          <h2 style="font-size:1.5rem;">Игроки за столом (<span id="lobby-players-count">0</span>):</h2>
+          <div class="players-pill-wrap" id="lobby-players-wrap" style="justify-content:center;">
+            <div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым наведите камеру!</div>
+          </div>
+        </div>
+
+        <div class="row" style="justify-content:center; gap: 20px;">
+          <button id="btn-start-game" class="btn btn-gold" style="padding: 18px 48px; font-size: 1.3rem;">
+            <span>🚀 Начать игру!</span>
+          </button>
+          <button id="btn-back-setup" class="btn btn-secondary">
+            <span>⚙️ Настройки</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: AUTHENTIC MUZ LOTO STAGE -->
+    <section id="sec-game" style="display:none;">
+      <div class="card">
+        <!-- Top Status Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:14px;">
+          <div class="row">
+            <span class="badge" style="margin-bottom:0; background:rgba(245,158,11,0.2); border-color:#fbbf24; color:#fef08a;" id="game-turn-badge">Ход 1</span>
+            <span style="color:var(--text-main); font-weight:700; font-size:1.1rem;" id="game-remaining-text">В мешке осталось: 25 бочонков</span>
+          </div>
+          <div class="row">
+            <label style="flex-direction:row; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="chk-auto-next" checked style="width:20px; height:20px; accent-color:var(--accent-gold);">
+              <span style="color:#fff; font-size:0.95rem;">Автоматический ход</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- The Central Lotto Barrel Stage (ZERO SPOILERS!) -->
+        <div class="lotto-stage">
+          <!-- 3D Glowing Lotto Barrel showing the RANDOM KEG NUMBER -->
+          <div class="lotto-keg-container">
+            <div class="lotto-keg-halo"></div>
+            <div class="lotto-keg-ball" id="lotto-keg-ball">
+              <div class="lotto-keg-label">БОЧОНОК</div>
+              <div class="lotto-keg-number" id="lotto-keg-number">?</div>
+            </div>
+          </div>
+
+          <!-- Traditional Russian lotto nickname if applicable -->
+          <div class="keg-nickname" id="keg-nickname-text" style="display:none;"></div>
+
+          <!-- Soundwave Bars -->
+          <div class="equalizer-wave" id="equalizer-wave">
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+          </div>
+
+          <!-- Song Reveal Banner (Hidden during playback, revealed after time/click!) -->
+          <div class="song-reveal-banner hidden-mode" id="song-reveal-box">
+            <div id="box-hidden-content">
+              <div class="mystery-prompt">🎲 ВЫПАЛ БОЧОНОК № <span id="mystery-keg-num">?</span>!</div>
+              <div class="mystery-subprompt">Слушайте песню и проверяйте номер <span id="mystery-keg-subnum">?</span> на своих карточках 🎧</div>
+            </div>
+            <div id="box-revealed-content" style="display:none;">
+              <div style="font-size:0.85rem; color:#fef08a; text-transform:uppercase; font-weight:800; letter-spacing:0.1em; margin-bottom:4px;">
+                🎯 ВЫПАЛ БОЧОНОК № <span id="revealed-keg-num">?</span>:
+              </div>
+              <div class="reveal-artist" id="stage-artist">АРТИСТ</div>
+              <div class="reveal-title" id="stage-title">Название песни</div>
+            </div>
+          </div>
+
+          <!-- Timer -->
+          <div style="margin: 12px 0 16px 0; font-family:var(--font-mono); font-size:1.3rem; color:#fbbf24; font-weight:800;">
+            Время фрагмента: <span id="stage-timer">20</span> сек
+          </div>
+
+          <!-- Host Stage Controls -->
+          <div class="row" style="justify-content:center; gap:14px;">
+            <button id="btn-reveal-now" class="btn btn-gold" style="padding:12px 28px;">
+              <span>Вскрыть бочонок 👁</span>
+            </button>
+            <button id="btn-next-keg" class="btn" style="padding:12px 28px;">
+              <span>Тянуть следующий бочонок 🎲</span>
+            </button>
+            <button id="btn-pause-keg" class="btn btn-secondary">
+              <span>Пауза ⏸</span>
+            </button>
+            <button id="btn-replay-keg" class="btn btn-secondary">
+              <span>Сначала 🔁</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CALL BOARD: Табло сыгравших бочонков -->
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.05em; color:#fbbf24;">
+              📋 Табло выпавших бочонков (<span id="board-count">0</span>):
+            </h3>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Игроки могут сверить все номера, вышедшие из мешка</span>
+          </div>
+          <div class="call-board" id="call-board-container">
+            <span style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «Тянуть следующий бочонок».</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BINGO VERIFICATION SHOWCASE MODAL -->
+    <div class="win-showcase-overlay" id="win-showcase-modal">
+      <div style="font-size:4rem; margin-bottom:8px;">🏆</div>
+      <h1 style="color:#fbbf24; font-size:clamp(2.5rem, 6vw, 4rem); line-height:1; margin-bottom:4px;">БИНГО!</h1>
+      <div style="font-size:1.8rem; font-weight:800; color:#fff;" id="showcase-winner-name">Игрок собрал линию!</div>
+      <p style="color:var(--text-muted); font-size:1rem; margin-top:4px;">
+        Сервер проверил карточку: все бочонки выигрышной комбинации действительно вышли из мешка!
+      </p>
+
+      <div id="showcase-card-grid" class="card-showcase-grid size-3"></div>
+
+      <div class="row" style="gap:16px; margin-top:20px;">
+        <button id="btn-showcase-newround" class="btn btn-gold" style="padding:14px 32px; font-size:1.1rem;">
+          <span>🔄 Новый раунд</span>
+        </button>
+        <button id="btn-showcase-continue" class="btn btn-secondary">
+          <span>Продолжить игру (тянуть дальше)</span>
+        </button>
+        <button id="btn-showcase-lobby" class="btn btn-secondary">
+          <span>В лобби</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="main-audio"></audio>
+  <audio id="preview-audio"></audio>
+
+  <!-- Libraries -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="peerjs.min.js"></script>
+  <script src="qrcode.min.js"></script>
+  <script src="comm.js"></script>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const comm = window.createComm('host');
+    const mainAudio = $('main-audio');
+    const previewAudio = $('preview-audio');
+
+    let allPacks = {};
+    let selectedTracks = [];
+    let previewAudioBtn = null;
+    let autoNext = true;
+    let trackTimer = null;
+    let currentRoomCode = null;
+    let currentCallingTrack = null;
+    let isRevealed = false;
+    let qrGenerator = null;
+
+    // Web Audio Fanfare
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playFanfare() {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+          gain.gain.setValueAtTime(0, audioCtx.currentTime + idx * 0.1);
+          gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + idx * 0.1 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.1 + 0.6);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + idx * 0.1);
+          osc.stop(audioCtx.currentTime + idx * 0.1 + 0.7);
+        });
+      } catch(e) {}
+    }
+
+    async function loadCuratedPacks() {
+      try {
+        const res = await fetch('packs.json');
+        allPacks = await res.json();
+        const container = $('curated-packs-list');
+        container.innerHTML = Object.values(allPacks).map(p => `
+          <div class="pack-card ${p.id === 'new_school' ? 'active' : ''}" data-id="${p.id}">
+            <div>
+              <div class="pack-icon">${p.icon}</div>
+              <div class="pack-title">${escapeHtml(p.title)}</div>
+              <div class="pack-desc">${escapeHtml(p.desc)}</div>
+            </div>
+            <div class="row" style="justify-content:space-between; margin-top:8px;">
+              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">${p.tracks.length} бочонков</span>
+              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
+            </div>
+          </div>
+        `).join('');
+
+        container.querySelectorAll('.pack-card').forEach(card => {
+          card.onclick = () => {
+            const packId = card.dataset.id;
+            const pack = allPacks[packId];
+            if (pack && pack.tracks) {
+              setTracks(pack.tracks);
+              container.querySelectorAll('.pack-card').forEach(c => c.classList.remove('active'));
+              card.classList.add('active');
+            }
+          };
+        });
+
+        const defaultPack = allPacks['new_school'] || Object.values(allPacks)[0];
+        if (defaultPack) {
+          setTracks(defaultPack.tracks);
+        }
+      } catch (e) {
+        console.error('Error loading packs:', e);
+      }
+    }
+
+    function setTracks(tracksList) {
+      selectedTracks = tracksList.map((t, i) => ({
+        id: t.id || 't_' + i,
+        kegNum: i + 1,
+        title: t.title || 'Песня',
+        artist: t.artist || '',
+        displayTitle: t.displayTitle || `${t.artist || ''} — ${t.title || ''}`,
+        preview: t.preview,
+        art: t.art || ''
+      }));
+      renderSelectedTracks();
+    }
+
+    function renderSelectedTracks() {
+      const container = $('selected-tracks-container');
+      const countEl = $('tracks-count');
+      const statusEl = $('tracks-status-msg');
+      const createBtn = $('btn-create-room');
+      const clearBtn = $('btn-clear-tracks');
+      const minNeeded = ($('opt-size').value ** 2);
+
+      countEl.textContent = selectedTracks.length;
+      clearBtn.style.display = selectedTracks.length > 0 ? 'inline-flex' : 'none';
+
+      if (selectedTracks.length < minNeeded) {
+        statusEl.textContent = `Нужно минимум ${minNeeded} треков для мешка (сейчас ${selectedTracks.length})`;
+        statusEl.style.color = 'var(--accent-red)';
+        createBtn.disabled = true;
+      } else {
+        statusEl.textContent = `Готово! В мешке будет ${selectedTracks.length} случайных бочонков`;
+        statusEl.style.color = 'var(--accent-green)';
+        createBtn.disabled = false;
+      }
+
+      if (!selectedTracks.length) {
+        container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-faint);">Список пуст. Выберите пак выше или воспользуйтесь поиском.</div>`;
+        return;
+      }
+
+      container.innerHTML = selectedTracks.map((t, idx) => `
+        <div class="track-item">
+          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№${idx + 1}</span>
+          <div class="track-info" style="margin-left:8px;">
+            <div class="track-title">${escapeHtml(t.title)}</div>
+            <div class="track-artist">${escapeHtml(t.artist)}</div>
+          </div>
+          ${t.preview ? `<button class="btn-play-preview" data-preview="${t.preview}">▶</button>` : ''}
+          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="${idx}">✕</button>
+        </div>
+      `).join('');
+
+      container.querySelectorAll('.btn-play-preview').forEach(btn => {
+        btn.onclick = () => playPreview(btn.dataset.preview, btn);
+      });
+
+      container.querySelectorAll('.btn-secondary[data-idx]').forEach(btn => {
+        btn.onclick = () => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          selectedTracks.splice(idx, 1);
+          selectedTracks.forEach((t, i) => t.kegNum = i + 1);
+          renderSelectedTracks();
+        };
+      });
+    }
+
+    $('btn-clear-tracks').onclick = () => {
+      selectedTracks = [];
+      renderSelectedTracks();
+    };
+
+    $('opt-size').onchange = renderSelectedTracks;
+
+    // Search bar with direct iTunes API fallback
+    let searchDebounce = null;
+    const searchInput = $('search-input');
+    const searchResults = $('search-results');
+    const searchSpinner = $('search-spinner');
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      const q = searchInput.value.trim();
+      if (!q) {
+        searchResults.style.display = 'none';
+        searchSpinner.style.display = 'none';
+        return;
+      }
+      searchSpinner.style.display = 'block';
+      searchDebounce = setTimeout(async () => {
+        try {
+          // Direct iTunes API with CORS works natively in both Node and GitHub Pages!
+          const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=25`;
+          const res = await fetch(url);
+          const data = await res.json();
+          const items = (data.results || []).filter(r => r.previewUrl).map(r => ({
+            id: String(r.trackId),
+            title: r.trackName,
+            artist: r.artistName,
+            displayTitle: `${r.artistName} — ${r.trackName}`,
+            preview: r.previewUrl,
+            art: (r.artworkUrl100 || '').replace('100x100bb', '400x400bb')
+          }));
+          renderSearchResults(items);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          searchSpinner.style.display = 'none';
+        }
+      }, 300);
+    });
+
+    function renderSearchResults(list) {
+      if (!list.length) {
+        searchResults.innerHTML = '<div style="padding:14px; text-align:center; color:var(--text-muted);">Ничего не найдено. Попробуйте другой запрос.</div>';
+        searchResults.style.display = 'flex';
+        return;
+      }
+
+      searchResults.innerHTML = list.map(t => `
+        <div class="track-item">
+          <div class="track-info">
+            <div class="track-title">${escapeHtml(t.title)}</div>
+            <div class="track-artist">${escapeHtml(t.artist)}</div>
+          </div>
+          <button class="btn-play-preview" data-preview="${t.preview}">▶</button>
+          <button class="btn btn-sm btn-gold btn-add-track" data-track='${escapeAttr(JSON.stringify(t))}'>+ В мешок</button>
+        </div>
+      `).join('');
+      searchResults.style.display = 'flex';
+
+      searchResults.querySelectorAll('.btn-play-preview').forEach(btn => {
+        btn.onclick = () => playPreview(btn.dataset.preview, btn);
+      });
+
+      searchResults.querySelectorAll('.btn-add-track').forEach(btn => {
+        btn.onclick = () => {
+          const trackObj = JSON.parse(btn.dataset.track);
+          if (!selectedTracks.some(x => x.id === trackObj.id)) {
+            trackObj.kegNum = selectedTracks.length + 1;
+            selectedTracks.push(trackObj);
+            renderSelectedTracks();
+            btn.textContent = '✓ В мешке';
+            btn.disabled = true;
+          }
+        };
+      });
+    }
+
+    function playPreview(url, btn) {
+      if (previewAudioBtn === btn && !previewAudio.paused) {
+        previewAudio.pause();
+        btn.textContent = '▶';
+        btn.classList.remove('playing');
+        previewAudioBtn = null;
+      } else {
+        if (previewAudioBtn) {
+          previewAudioBtn.textContent = '▶';
+          previewAudioBtn.classList.remove('playing');
+        }
+        previewAudio.src = url;
+        previewAudio.play().then(() => {
+          btn.textContent = '⏸';
+          btn.classList.add('playing');
+          previewAudioBtn = btn;
+        }).catch(e => console.warn(e));
+      }
+    }
+
+    previewAudio.onended = () => {
+      if (previewAudioBtn) {
+        previewAudioBtn.textContent = '▶';
+        previewAudioBtn.classList.remove('playing');
+        previewAudioBtn = null;
+      }
+    };
+
+    // CREATE ROOM
+    $('btn-create-room').onclick = async () => {
+      if (previewAudio) previewAudio.pause();
+      const size = parseInt($('opt-size').value, 10);
+      const mode = $('opt-mode').value;
+
+      comm.hostCreate({ tracks: selectedTracks, size, mode }, async r => {
+        if (r.error) return alert(r.error);
+        currentRoomCode = r.code;
+
+        let base = location.origin + location.pathname.replace(/\/tv\.html.*$/, '');
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+          try {
+            const info = await (await fetch('/api/info')).json();
+            if (info.lan) base = `http://${info.lan}:${info.port || location.port || 3000}`;
+          } catch(e) {}
+        }
+        const joinLink = `${base}/play.html?room=${r.code}`;
+
+        $('lobby-room-code').textContent = r.code;
+        $('lobby-url-text').textContent = joinLink.replace(/^https?:\/\//, '');
+
+        // Render QR Code in pure client-side JavaScript
+        const qrContainer = $('lobby-qr-container');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: joinLink,
+          width: 240,
+          height: 240,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        $('sec-setup').style.display = 'none';
+        $('sec-lobby').style.display = 'block';
+        $('sec-game').style.display = 'none';
+      });
+    };
+
+    $('btn-back-setup').onclick = () => {
+      $('sec-lobby').style.display = 'none';
+      $('sec-setup').style.display = 'block';
+    };
+
+    // START GAME
+    $('btn-start-game').onclick = () => {
+      comm.hostStart();
+      $('sec-lobby').style.display = 'none';
+      $('sec-game').style.display = 'block';
+      $('call-board-container').innerHTML = '<span style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
+      nextBarrel();
+    };
+
+    $('chk-auto-next').onchange = e => {
+      autoNext = e.target.checked;
+    };
+
+    $('btn-next-keg').onclick = nextBarrel;
+    $('btn-reveal-now').onclick = revealAnswer;
+    $('btn-pause-keg').onclick = togglePause;
+    $('btn-replay-keg').onclick = replayAudio;
+
+    function nextBarrel() {
+      clearTimeout(trackTimer);
+      comm.hostNext(res => {
+        if (!res || res.error) return;
+        if (res.end) {
+          $('box-hidden-content').style.display = 'none';
+          $('box-revealed-content').style.display = 'block';
+          $('stage-artist').textContent = 'МЕШОК ПУСТ!';
+          $('stage-title').textContent = 'Все бочонки раунда сыграли!';
+          $('equalizer-wave').classList.remove('active');
+          $('lotto-keg-ball').classList.remove('playing');
+          mainAudio.pause();
+          return;
+        }
+
+        currentCallingTrack = res.track;
+        isRevealed = false;
+
+        // Show RANDOM KEG NUMBER (e.g. 22, 7, 14...)
+        $('lotto-keg-number').textContent = res.kegNum;
+        $('mystery-keg-num').textContent = res.kegNum;
+        $('mystery-keg-subnum').textContent = res.kegNum;
+        $('revealed-keg-num').textContent = res.kegNum;
+
+        $('game-turn-badge').textContent = `Ход ${res.turn}`;
+        $('game-remaining-text').textContent = `В мешке осталось: ${res.remaining} бочонков`;
+
+        // Lotto Nickname if any
+        if (res.nickname) {
+          $('keg-nickname-text').textContent = `«${res.nickname}»`;
+          $('keg-nickname-text').style.display = 'block';
+        } else {
+          $('keg-nickname-text').style.display = 'none';
+        }
+
+        // Reset display box
+        $('song-reveal-box').classList.add('hidden-mode');
+        $('box-hidden-content').style.display = 'block';
+        $('box-revealed-content').style.display = 'none';
+        $('btn-reveal-now').style.display = 'inline-flex';
+
+        // Play Audio
+        mainAudio.src = res.track.preview;
+        const clipSec = parseInt($('opt-clip').value, 10);
+        let timeLeft = clipSec;
+        $('stage-timer').textContent = timeLeft;
+
+        mainAudio.onloadedmetadata = () => {
+          mainAudio.currentTime = 0;
+          mainAudio.play().then(() => {
+            $('equalizer-wave').classList.add('active');
+            $('lotto-keg-ball').classList.add('playing');
+            $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
+          }).catch(e => console.warn(e));
+        };
+
+        clearInterval(trackTimer);
+        trackTimer = setInterval(() => {
+          if (!mainAudio.paused) {
+            timeLeft--;
+            $('stage-timer').textContent = Math.max(0, timeLeft);
+            if (timeLeft <= 0) {
+              clearInterval(trackTimer);
+              onTimeExpired();
+            }
+          }
+        }, 1000);
+      });
+    }
+
+    function onTimeExpired() {
+      mainAudio.pause();
+      $('equalizer-wave').classList.remove('active');
+      $('lotto-keg-ball').classList.remove('playing');
+
+      if ($('opt-reveal').value === 'auto') {
+        revealAnswer();
+      }
+
+      if (autoNext) {
+        $('stage-timer').textContent = 'Следующий бочонок через 5 сек...';
+        trackTimer = setTimeout(nextBarrel, 5000);
+      }
+    }
+
+    function revealAnswer() {
+      if (!currentCallingTrack || isRevealed) return;
+      isRevealed = true;
+      $('song-reveal-box').classList.remove('hidden-mode');
+      $('box-hidden-content').style.display = 'none';
+      $('box-revealed-content').style.display = 'block';
+
+      $('stage-artist').textContent = currentCallingTrack.artist;
+      $('stage-title').textContent = currentCallingTrack.title;
+      $('btn-reveal-now').style.display = 'none';
+
+      // Add to Call Board
+      addToCallBoard(currentCallingTrack);
+    }
+
+    function addToCallBoard(track) {
+      const board = $('call-board-container');
+      if (board.querySelector('span')) {
+        board.innerHTML = '';
+      }
+      const item = document.createElement('div');
+      item.className = 'board-keg-item';
+      item.innerHTML = `
+        <span class="board-keg-number">№${track.kegNum}</span>
+        <span class="board-keg-text">${escapeHtml(track.artist)} — ${escapeHtml(track.title)}</span>
+      `;
+      board.prepend(item);
+      $('board-count').textContent = board.children.length;
+    }
+
+    function togglePause() {
+      if (mainAudio.paused) {
+        mainAudio.play();
+        $('equalizer-wave').classList.add('active');
+        $('lotto-keg-ball').classList.add('playing');
+        $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
+      } else {
+        mainAudio.pause();
+        $('equalizer-wave').classList.remove('active');
+        $('lotto-keg-ball').classList.remove('playing');
+        $('btn-pause-keg').querySelector('span').textContent = 'Продолжить ▶';
+      }
+    }
+
+    function replayAudio() {
+      mainAudio.currentTime = 0;
+      mainAudio.play();
+      $('equalizer-wave').classList.add('active');
+      $('lotto-keg-ball').classList.add('playing');
+      $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
+    }
+
+    // WIN & SHOWCASE
+    $('btn-showcase-newround').onclick = () => {
+      $('win-showcase-modal').style.display = 'none';
+      stopConfetti();
+      comm.hostNewRound();
+      $('call-board-container').innerHTML = '<span style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
+      nextBarrel();
+    };
+
+    $('btn-showcase-continue').onclick = () => {
+      $('win-showcase-modal').style.display = 'none';
+      stopConfetti();
+      nextBarrel();
+    };
+
+    $('btn-showcase-lobby').onclick = () => {
+      $('win-showcase-modal').style.display = 'none';
+      stopConfetti();
+      comm.hostNewRound();
+      $('sec-game').style.display = 'none';
+      $('sec-lobby').style.display = 'block';
+    };
+
+    // State events
+    comm.on('state', state => {
+      if (!currentRoomCode) return;
+      $('lobby-players-count').textContent = state.players.length;
+      if (state.players.length) {
+        $('lobby-players-wrap').innerHTML = state.players.map(p => `
+          <div class="player-pill ${p.online ? '' : 'offline'}">
+            <span class="p-dot"></span>
+            <span>${escapeHtml(p.name)}</span>
+          </div>
+        `).join('');
+      } else {
+        $('lobby-players-wrap').innerHTML = `<div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым сканируйте QR!</div>`;
+      }
+
+      // Check Bingo Winner
+      if (state.state === 'finished' && state.winner) {
+        clearInterval(trackTimer);
+        mainAudio.pause();
+        $('equalizer-wave').classList.remove('active');
+        $('lotto-keg-ball').classList.remove('playing');
+
+        $('showcase-winner-name').textContent = `Победитель: ${state.winner}!`;
+        renderWinningCard(state.winnerDetails);
+
+        $('win-showcase-modal').style.display = 'flex';
+        playFanfare();
+        startConfetti();
+      }
+    });
+
+    function renderWinningCard(details) {
+      const grid = $('showcase-card-grid');
+      if (!details || !details.card) {
+        grid.innerHTML = '';
+        return;
+      }
+      const size = Math.sqrt(details.card.card.length) || 3;
+      grid.className = `card-showcase-grid size-${size}`;
+      const winSet = new Set(details.winIndices || []);
+
+      grid.innerHTML = details.card.card.map((item, idx) => {
+        const isWinCell = winSet.has(idx);
+        return `
+          <div class="card-showcase-cell ${isWinCell ? 'win-highlight' : ''}">
+            <div style="font-family:var(--font-mono); color:#fbbf24; font-weight:900; font-size:0.75rem;">№${item.kegNum}</div>
+            <div style="font-weight:800; font-size:0.725rem; text-transform:uppercase;">${escapeHtml(item.artist)}</div>
+            <div style="font-size:0.725rem;">${escapeHtml(item.title)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Confetti
+    let confettiAnim = null;
+    function startConfetti() {
+      const canvas = $('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const count = 120;
+      const particles = Array.from({ length: count }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * count,
+        color: ['#fbbf24', '#f59e0b', '#ec4899', '#8b5cf6', '#34d399'][Math.floor(Math.random() * 5)],
+        tilt: Math.floor(Math.random() * 10) - 10,
+        tiltAngleInc: Math.random() * 0.07 + 0.05,
+        tiltAngle: 0
+      }));
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          ctx.beginPath();
+          ctx.lineWidth = p.r / 2;
+          ctx.strokeStyle = p.color;
+          ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
+          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
+          ctx.stroke();
+          p.tiltAngle += p.tiltAngleInc;
+          p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+          p.tilt = Math.sin(p.tiltAngle - p.d / 3) * 15;
+          if (p.y > canvas.height) {
+            p.y = -10;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+        confettiAnim = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    function stopConfetti() {
+      if (confettiAnim) cancelAnimationFrame(confettiAnim);
+      const canvas = $('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeAttr(s) {
+      return String(s || '').replace(/'/g, '&#39;');
+    }
+
+    loadCuratedPacks();
+  </script>
+</body>
+</html>

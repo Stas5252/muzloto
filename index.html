@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МузЛото — Музыкальное бинго для вечеринок</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+</head>
+<body>
+  <div class="wrap">
+    <!-- Navbar -->
+    <header style="display:flex; justify-content:space-between; align-items:center; padding:12px 0 32px 0;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:2rem; filter:drop-shadow(0 0 16px rgba(139,92,246,0.5));">🎵</span>
+        <span style="font-weight:800; font-size:1.5rem; letter-spacing:-0.03em; color:#fff;">МузЛото</span>
+      </div>
+      <div class="row">
+        <a href="tv.html" class="btn btn-sm">Создать игру</a>
+        <a href="play.html" class="btn btn-secondary btn-sm">Войти игроком</a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section style="text-align:center; padding: 40px 10px 60px 10px;">
+      <div class="badge">
+        <span class="badge-pulse"></span>
+        <span>Новая версия · Любые треки из интернета</span>
+      </div>
+      <h1 style="max-width:900px; margin: 0 auto 20px auto;">
+        Музыкальное бинго <br><span style="background: linear-gradient(135deg, #a78bfa, #ec4899, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">для идеальной вечеринки</span>
+      </h1>
+      <p style="max-width: 680px; margin: 0 auto 36px auto; font-size: 1.15rem; line-height: 1.6;">
+        Забудьте про бумажные бланки и ручную нарезку музыки. Открывайте игру на большом экране ТВ, раздавайте QR-код друзьям на смартфоны и угадывайте любимые треки прямо из интернета!
+      </p>
+
+      <div class="row" style="justify-content:center; gap:18px;">
+        <a href="tv.html" class="btn" style="padding: 16px 36px; font-size: 1.1rem;">
+          <span>📺 Запустить на ТВ (Ведущий)</span>
+        </a>
+        <a href="play.html" class="btn btn-secondary" style="padding: 16px 32px; font-size: 1.1rem;">
+          <span>📱 Присоединиться с телефона</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Interactive Track Search Demo -->
+    <section class="card" style="margin: 40px 0; border: 1px solid rgba(139, 92, 246, 0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+        <div>
+          <div class="mono" style="color:#a78bfa; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">
+            [ Live Explorer ]
+          </div>
+          <h2>Найдите любую песню из интернета прямо сейчас</h2>
+          <p>В строке поиска можно вбить любого артиста или трек — система мгновенно найдёт его и даст послушать отрывок.</p>
+        </div>
+      </div>
+
+      <div class="search-container">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="demo-search" type="text" placeholder="Например: Король и Шут, Dua Lipa, Руки Вверх, Кино, Queen..." autocomplete="off">
+          <div class="search-spinner" id="demo-spinner"></div>
+        </div>
+        <div id="demo-results" class="search-results" style="display:none;"></div>
+      </div>
+    </section>
+
+    <!-- Curated Packs Showcase -->
+    <section style="margin: 60px 0;">
+      <div style="text-align:center; margin-bottom: 30px;">
+        <div class="mono" style="color:#a78bfa; font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">
+          [ Готовые паки ]
+        </div>
+        <h2>Или выберите готовую подборку в 1 клик</h2>
+        <p>Каждая подборка уже собрана, протестирована и готова к запуску</p>
+      </div>
+
+      <div class="packs-grid" id="packs-showcase">
+        <div class="pack-card active">
+          <div>
+            <div class="pack-icon">🔥</div>
+            <div class="pack-title">Новая школа: Крид, Дора, SODA LUV</div>
+            <div class="pack-desc">Егор Крид, Дора, SODA LUV, Toxi$, Big Baby Tape, OG Buda, Инстасамка, Macan</div>
+          </div>
+          <div class="pack-count" style="color:#fbbf24; font-weight:800;">25 треков · Главный хит вечеринок</div>
+        </div>
+        <div class="pack-card">
+          <div>
+            <div class="pack-icon">🪩</div>
+            <div class="pack-title">Хиты 90-х и 2000-х</div>
+            <div class="pack-desc">Руки Вверх, Иванушки, Дискотека Авария, Demo, Отпетые Мошенники, Тату, Звери</div>
+          </div>
+          <div class="pack-count">18 треков · Готов к игре</div>
+        </div>
+        <div class="pack-card">
+          <div>
+            <div class="pack-icon">🎸</div>
+            <div class="pack-title">Русский Рок & Легенды</div>
+            <div class="pack-desc">Кино, Король и Шут, Би-2, Сплин, Земфира, Агата Кристи, ДДТ, Ария, Сектор Газа</div>
+          </div>
+          <div class="pack-count">18 треков · Готов к игре</div>
+        </div>
+        <div class="pack-card">
+          <div>
+            <div class="pack-icon">⚡</div>
+            <div class="pack-title">Современные Чарты</div>
+            <div class="pack-desc">Anna Asti, Macan, Баста, Miyagi, JONY, Клава Кока, Niletto, Instasamka</div>
+          </div>
+          <div class="pack-count">16 треков · Готов к игре</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works 3-step Bento -->
+    <section class="card" style="margin: 60px 0; padding: 40px;">
+      <h2 style="text-align:center; margin-bottom: 36px;">Как играть в МузЛото</h2>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;">
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">1️⃣</div>
+          <h3 style="margin-bottom: 8px;">Выберите треки на ТВ</h3>
+          <p>Выберите любой готовый пак или добавьте свои любимые песни через поиск. Настройте сетку 3×3 или 4×4 и нажмите «Создать комнату».</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">2️⃣</div>
+          <h3 style="margin-bottom: 8px;">Игроки сканируют QR-код</h3>
+          <p>Гости наводят камеру смартфона на экран телевизора и мгновенно получают уникальную интерактивную карточку со своим набором песен.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">3️⃣</div>
+          <h3 style="margin-bottom: 8px;">Слушайте и жмите БИНГО!</h3>
+          <p>Треки звучат один за другим. Узнали песню? Отмечайте её на экране телефона. Кто первый закрыл линию или всё поле — побеждает!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="text-align:center; padding: 40px 0; border-top: 1px solid var(--border-subtle); color: var(--text-faint); font-size: 0.9rem;">
+      <p>🎵 МузЛото · Интерактивная игра для компаний и вечеринок · 2026</p>
+    </footer>
+  </div>
+
+  <audio id="demo-player"></audio>
+
+  <script>
+    const searchInput = document.getElementById('demo-search');
+    const resultsBox = document.getElementById('demo-results');
+    const spinner = document.getElementById('demo-spinner');
+    const audio = document.getElementById('demo-player');
+    let searchDebounce = null;
+    let currentPlayingBtn = null;
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      const q = searchInput.value.trim();
+      if (!q) {
+        resultsBox.style.display = 'none';
+        spinner.style.display = 'none';
+        return;
+      }
+      spinner.style.display = 'block';
+      searchDebounce = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          renderResults(data.results || []);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          spinner.style.display = 'none';
+        }
+      }, 350);
+    });
+
+    function renderResults(list) {
+      if (!list.length) {
+        resultsBox.innerHTML = '<div style="padding:14px; text-align:center; color:var(--text-muted);">Ничего не найдено. Попробуйте другой запрос.</div>';
+        resultsBox.style.display = 'flex';
+        return;
+      }
+
+      resultsBox.innerHTML = list.map(t => `
+        <div class="track-item">
+          <img class="track-cover" src="${t.art || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23222%22/></svg>'}" alt="">
+          <div class="track-info">
+            <div class="track-title">${escapeHtml(t.title)}</div>
+            <div class="track-artist">${escapeHtml(t.artist)}</div>
+          </div>
+          <button class="btn-play-preview" data-preview="${t.preview}" title="Слушать отрывок">▶</button>
+          <a href="tv.html" class="btn btn-sm" style="padding: 6px 12px; font-size: 0.8rem;">Играть</a>
+        </div>
+      `).join('');
+      resultsBox.style.display = 'flex';
+
+      resultsBox.querySelectorAll('.btn-play-preview').forEach(btn => {
+        btn.onclick = () => {
+          const url = btn.dataset.preview;
+          if (currentPlayingBtn === btn && !audio.paused) {
+            audio.pause();
+            btn.textContent = '▶';
+            btn.classList.remove('playing');
+            currentPlayingBtn = null;
+          } else {
+            if (currentPlayingBtn) {
+              currentPlayingBtn.textContent = '▶';
+              currentPlayingBtn.classList.remove('playing');
+            }
+            audio.src = url;
+            audio.play().then(() => {
+              btn.textContent = '⏸';
+              btn.classList.add('playing');
+              currentPlayingBtn = btn;
+            }).catch(e => console.warn(e));
+          }
+        };
+      });
+    }
+
+    audio.onended = () => {
+      if (currentPlayingBtn) {
+        currentPlayingBtn.textContent = '▶';
+        currentPlayingBtn.classList.remove('playing');
+        currentPlayingBtn = null;
+      }
+    };
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+  </script>
+</body>
+</html>
