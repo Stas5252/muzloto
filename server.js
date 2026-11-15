@@ -267,7 +267,7 @@ io.on('connection', s => {
       code,
       tracks,
       size,
-      mode: d.mode === 'full' ? 'full' : 'line',
+      mode: d.mode === 'line' ? 'line' : 'full',
       state: 'lobby',
       order: [],
       called: [],

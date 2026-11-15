@@ -91,7 +91,7 @@ window.createComm = function(role) {
   let roomState = {
     code: '',
     state: 'lobby',
-    mode: 'line',
+    mode: 'full',
     size: 3,
     tracks: [],
     order: [],
@@ -351,7 +351,7 @@ window.createComm = function(role) {
         code,
         tracks,
         size: data.size || 3,
-        mode: data.mode || 'line',
+        mode: data.mode || 'full',
         state: 'lobby',
         order: [],
         called: [],
