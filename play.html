@@ -105,7 +105,11 @@
     <section id="sec-join" style="margin: auto 0; padding: 20px 0;">
       <div style="text-align:center; margin-bottom: 24px;">
         <div style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; background:radial-gradient(circle, #2d1f05 0%, #111420 70%); border:1px solid rgba(245,158,11,0.5); box-shadow:0 0 25px rgba(245,158,11,0.3); margin-bottom:12px;">
-          <span style="font-size:1.8rem; color:#fbbf24;">♪</span>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+            <circle cx="12" cy="12" r="6" stroke-dasharray="1 2"/>
+          </svg>
         </div>
         <h1 style="font-size: 2.2rem; margin: 4px 0 2px 0; letter-spacing:-0.02em;">МУЗЛОТО</h1>
         <p style="font-size: 0.95rem; color:var(--text-muted);">Интерактивная карточка музыкального лото</p>
@@ -209,6 +213,7 @@
 
     let joinedCode = null;
     let myPlayerName = '';
+    let myPlayerPid = null;
     let myCard = [];
     let myMarks = new Set();
     let currentGameState = 'lobby';
@@ -298,9 +303,11 @@
         if (res.error) return toast(res.error);
 
         sessionStorage.setItem(sessionKey, res.pid);
+        sessionStorage.setItem('muzloto_session_pid', res.pid);
         localStorage.setItem('muzloto_player_name', name);
         joinedCode = code;
         myPlayerName = name;
+        myPlayerPid = res.pid;
         currentMode = res.mode;
 
         $('player-display-name').textContent = name;
@@ -330,7 +337,7 @@
         return `
           <div class="bingo-cell ${isMarked ? 'marked' : ''}" data-id="${item.id}" role="button" aria-pressed="${isMarked}">
             <div class="cell-cover-wrap">
-              <img class="cell-cover-img" src="${coverSrc}" alt="" loading="lazy" onerror="this.src=getCoverArt('')">
+              <img class="cell-cover-img" src="${coverSrc}" alt="" loading="lazy" onerror="this.onerror=null;this.src=getCoverArt('')">
               <div class="cell-cover-gradient"></div>
             </div>
             <div class="cell-content">
@@ -397,6 +404,15 @@
       return minRemaining;
     }
 
+    function formatKegsCount(n) {
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      if (mod100 >= 11 && mod100 <= 19) return `${n} бочонков`;
+      if (mod10 === 1) return `${n} бочонок`;
+      if (mod10 >= 2 && mod10 <= 4) return `${n} бочонка`;
+      return `${n} бочонков`;
+    }
+
     function updateProgress() {
       $('marks-count-text').textContent = `${myMarks.size} из ${myCard.length}`;
 
@@ -406,29 +422,30 @@
 
       if (minToWin === 0) {
         badge.className = 'proximity-badge urgent';
-        badge.innerHTML = '⚡ ЛИНИЯ СОБРАНА! ЖМИТЕ БИНГО!';
+        badge.textContent = (currentMode === 'full') ? 'Карточка закрыта — жмите Бинго!' : 'Линия закрыта — жмите Бинго!';
         bingoBtn.classList.add('ready');
         bingoBtn.disabled = false;
         bingoBtn.querySelector('span').textContent = 'БИНГО! ЗАЯВИТЬ ПОБЕДУ';
       } else if (minToWin === 1) {
         badge.className = 'proximity-badge urgent';
-        badge.innerHTML = '🔥 Остался 1 бочонок до линии!';
+        badge.textContent = (currentMode === 'full') ? 'Остался 1 бочонок до всей карточки' : 'Остался 1 бочонок до победной линии';
         bingoBtn.classList.remove('ready');
         bingoBtn.disabled = true;
-        bingoBtn.querySelector('span').textContent = 'Линия ещё не закрыта';
+        bingoBtn.querySelector('span').textContent = (currentMode === 'full') ? 'Карточка ещё не закрыта' : 'Линия ещё не закрыта';
       } else {
         badge.className = 'proximity-badge';
-        badge.innerHTML = `До победной линии: ${minToWin} бочонка`;
+        const targetWord = (currentMode === 'full') ? 'закрытия карточки' : 'победной линии';
+        badge.textContent = `До ${targetWord}: ${formatKegsCount(minToWin)}`;
         bingoBtn.classList.remove('ready');
         bingoBtn.disabled = true;
-        bingoBtn.querySelector('span').textContent = 'Линия ещё не закрыта';
+        bingoBtn.querySelector('span').textContent = (currentMode === 'full') ? 'Карточка ещё не закрыта' : 'Линия ещё не закрыта';
       }
     }
 
     $('btn-bingo').onclick = () => {
       comm.playerBingo({ marks: [...myMarks] }, res => {
         if (res.ok) {
-          toast('🎉 ВАШЕ БИНГО ПРИНЯТО НА ТВ! ПОБЕДА!');
+          toast('Бинго принято! Ваша карточка проверяется на ТВ');
           playWinSound();
           startConfetti();
         } else {
@@ -462,13 +479,19 @@
       } else if (state.state === 'finished') {
         soundwave.style.display = 'none';
         if (state.winner) {
-          if (state.winner === myPlayerName) {
-            banner.textContent = '🏆 ВЫ ПОБЕДИЛИ! ВАША КАРТОЧКА НА ТВ!';
+          const isWinner = (state.winnerPid && myPlayerPid)
+            ? (state.winnerPid === myPlayerPid)
+            : (state.winnerDetails && state.winnerDetails.pid && myPlayerPid)
+              ? (state.winnerDetails.pid === myPlayerPid)
+              : (state.winner === myPlayerName);
+
+          if (isWinner) {
+            banner.textContent = 'Победа! Ваша карточка на ТВ';
             bannerSub.textContent = 'Все проверено, вы чемпион этого раунда!';
             playWinSound();
             startConfetti();
           } else {
-            banner.textContent = `Победитель: ${state.winner}!`;
+            banner.textContent = `Победитель: ${state.winner}`;
             bannerSub.textContent = 'Раунд завершён. Ждём следующий раунд.';
           }
         } else {
@@ -500,66 +523,6 @@
         r: Math.random() * 5 + 3,
         d: Math.random() * count,
         color: ['#fbbf24', '#f59e0b', '#d97706', '#ec4899', '#38bdf8'][Math.floor(Math.random() * 5)],
-        tilt: Math.floor(Math.random() * 10) - 10,
-        tiltAngleInc: Math.random() * 0.07 + 0.05,
-        tiltAngle: 0
-      }));
-
-      function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-          ctx.beginPath();
-          ctx.lineWidth = p.r / 2;
-          ctx.strokeStyle = p.color;
-          ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
-          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
-          ctx.stroke();
-          p.tiltAngle += p.tiltAngleInc;
-          p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
-          p.tilt = Math.sin(p.tiltAngle - p.d / 3) * 15;
-          if (p.y > canvas.height) {
-            p.y = -10;
-            p.x = Math.random() * canvas.width;
-          }
-        });
-        confettiAnim = requestAnimationFrame(draw);
-      }
-      draw();
-    }
-
-    function stopConfetti() {
-      if (confettiAnim) cancelAnimationFrame(confettiAnim);
-      const canvas = $('confetti-canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function escapeHtml(s) {
-      return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-  </script>
-</body>
-</html>
-
-    comm.on('card', data => {
-      stopConfetti();
-      renderCard(data);
-    });
-
-    // Confetti
-    let confettiAnim = null;
-    function startConfetti() {
-      const canvas = $('confetti-canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      const count = 70;
-      const particles = Array.from({ length: count }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height - canvas.height,
-        r: Math.random() * 5 + 3,
-        d: Math.random() * count,
-        color: ['#fbbf24', '#f59e0b', '#ec4899', '#8b5cf6', '#34d399'][Math.floor(Math.random() * 5)],
         tilt: Math.floor(Math.random() * 10) - 10,
         tiltAngleInc: Math.random() * 0.07 + 0.05,
         tiltAngle: 0

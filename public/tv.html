@@ -53,10 +53,16 @@
     <!-- Header -->
     <header style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px;">
       <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:2.2rem; filter:drop-shadow(0 0 16px rgba(245,158,11,0.6));">🎱</span>
+        <div style="width:42px; height:42px; border-radius:50%; background:radial-gradient(circle, #2d1f05 0%, #111420 70%); border:1px solid rgba(245,158,11,0.5); box-shadow:0 0 16px rgba(245,158,11,0.4); display:flex; align-items:center; justify-content:center;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.5"/>
+          </svg>
+        </div>
         <div>
-          <div style="font-weight:900; font-size:1.5rem; color:#fff; letter-spacing:-0.02em;">МУЗЛОТО <span style="font-size:0.85rem; color:#fbbf24; font-weight:700; background:rgba(245,158,11,0.15); padding:2px 8px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">ТВ-ШОУ</span></div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">Настоящее русское лото под любимую музыку · Режим вечеринки</div>
+          <div style="font-weight:900; font-size:1.5rem; color:#fff; letter-spacing:-0.02em;">МУЗЛОТО <span style="font-size:0.82rem; color:#fbbf24; font-weight:800; background:rgba(245,158,11,0.15); padding:2px 8px; border-radius:4px; border:1px solid rgba(245,158,11,0.3); letter-spacing:0.04em;">TV STAGE</span></div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Музыкальное лото · Режим живого эфира</div>
         </div>
       </div>
       <div class="row">
@@ -153,7 +159,7 @@
 
         <div style="display:flex; justify-content:flex-end; align-items:center; margin-top: 20px;">
           <button id="btn-create-room" class="btn btn-gold" disabled style="padding: 16px 36px; font-size: 1.15rem; min-width: 280px; justify-content: center;">
-            <span>Создать комнату для ТВ 🎱</span>
+            <span>Создать комнату для ТВ</span>
           </button>
         </div>
       </div>
@@ -191,10 +197,10 @@
 
         <div class="row" style="justify-content:center; gap: 20px;">
           <button id="btn-start-game" class="btn btn-gold" style="padding: 18px 48px; font-size: 1.3rem;">
-            <span>🚀 Начать игру!</span>
+            <span>Начать игру</span>
           </button>
           <button id="btn-back-setup" class="btn btn-secondary">
-            <span>⚙️ Настройки</span>
+            <span>Настройки</span>
           </button>
         </div>
       </div>
@@ -207,7 +213,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:14px;">
           <div class="row">
             <span class="badge" style="margin-bottom:0; background:rgba(245,158,11,0.2); border-color:#fbbf24; color:#fef08a;" id="game-turn-badge">Ход 1</span>
-            <span class="party-badge">🎉 Танцуем & Поём</span>
+            <span class="party-badge">Эфир игры</span>
             <span style="color:var(--text-main); font-weight:700; font-size:1.05rem;" id="game-remaining-text">В мешке: 25 бочонков</span>
           </div>
           <div class="row">
@@ -246,15 +252,20 @@
           <!-- Song Reveal Banner (Hidden during playback, revealed after host clicks or song ends) -->
           <div class="song-reveal-banner hidden-mode" id="song-reveal-box">
             <div id="box-hidden-content">
-              <div class="mystery-prompt">🎲 ВЫПАЛ БОЧОНОК № <span id="mystery-keg-num">?</span>!</div>
-              <div class="mystery-subprompt">Танцуйте, пойте и проверяйте номер <span id="mystery-keg-subnum">?</span> на своих карточках 🎧</div>
+              <div class="mystery-prompt">ВЫПАЛ БОЧОНОК № <span id="mystery-keg-num">?</span></div>
+              <div class="mystery-subprompt">Слушайте трек и отмечайте номер <span id="mystery-keg-subnum">?</span> на своих карточках</div>
             </div>
             <div id="box-revealed-content" style="display:none;">
-              <div style="font-size:0.85rem; color:#fef08a; text-transform:uppercase; font-weight:800; letter-spacing:0.1em; margin-bottom:4px;">
-                🎯 ВЫПАЛ БОЧОНОК № <span id="revealed-keg-num">?</span>:
+              <div style="font-size:0.85rem; color:#fef08a; text-transform:uppercase; font-weight:800; letter-spacing:0.1em; margin-bottom:8px;">
+                ВЫПАЛ БОЧОНОК № <span id="revealed-keg-num">?</span>:
               </div>
-              <div class="reveal-artist" id="stage-artist">АРТИСТ</div>
-              <div class="reveal-title" id="stage-title">Название песни</div>
+              <div style="display:flex; align-items:center; justify-content:center; gap:16px;">
+                <img id="stage-cover-art" src="" alt="" style="width:58px; height:58px; border-radius:10px; object-fit:cover; border:1px solid rgba(255,255,255,0.18); box-shadow:0 6px 16px rgba(0,0,0,0.5);">
+                <div style="text-align:left;">
+                  <div class="reveal-artist" id="stage-artist">АРТИСТ</div>
+                  <div class="reveal-title" id="stage-title">Название песни</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -266,16 +277,16 @@
           <!-- Host Stage Controls (DJ Panel) -->
           <div class="row" style="justify-content:center; gap:14px;">
             <button id="btn-next-keg" class="btn btn-gold" style="padding:14px 34px; font-size:1.15rem;">
-              <span>🎲 СЛЕДУЮЩИЙ БОЧОНОК ⏭</span>
+              <span>Следующий бочонок →</span>
             </button>
             <button id="btn-reveal-now" class="btn" style="padding:12px 24px;">
-              <span>Вскрыть название 👁</span>
+              <span>Вскрыть название</span>
             </button>
             <button id="btn-pause-keg" class="btn btn-secondary">
-              <span>Пауза ⏸</span>
+              <span>Пауза</span>
             </button>
             <button id="btn-replay-keg" class="btn btn-secondary">
-              <span>Сначала 🔁</span>
+              <span>Сначала</span>
             </button>
           </div>
         </div>
@@ -297,21 +308,26 @@
 
     <!-- BINGO VERIFICATION SHOWCASE MODAL -->
     <div class="win-showcase-overlay" id="win-showcase-modal">
-      <div style="font-size:4rem; margin-bottom:8px;">🏆</div>
+      <div style="font-size:3.5rem; margin-bottom:8px;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="7"/>
+          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+        </svg>
+      </div>
       <h1 style="color:#fbbf24; font-size:clamp(2.5rem, 6vw, 4rem); line-height:1; margin-bottom:4px;">БИНГО!</h1>
       <div style="font-size:1.8rem; font-weight:800; color:#fff;" id="showcase-winner-name">Игрок собрал линию!</div>
       <p style="color:var(--text-muted); font-size:1rem; margin-top:4px;">
-        Сервер проверил карточку: все бочонки выигрышной комбинации действительно вышли из мешка!
+        Карточка подтверждена: все бочонки выигрышной комбинации действительно вышли из мешка!
       </p>
 
       <div id="showcase-card-grid" class="card-showcase-grid size-3"></div>
 
       <div class="row" style="gap:16px; margin-top:20px;">
         <button id="btn-showcase-newround" class="btn btn-gold" style="padding:14px 32px; font-size:1.1rem;">
-          <span>🔄 Новый раунд</span>
+          <span>Новый раунд</span>
         </button>
         <button id="btn-showcase-continue" class="btn btn-secondary">
-          <span>Продолжить игру (тянуть дальше)</span>
+          <span>Продолжить игру</span>
         </button>
         <button id="btn-showcase-lobby" class="btn btn-secondary">
           <span>В лобби</span>
@@ -468,6 +484,7 @@
       container.innerHTML = selectedTracks.map((t, idx) => `
         <div class="track-item">
           <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№${idx + 1}</span>
+          <img class="track-cover-mini" src="${t.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
           <div class="track-info" style="margin-left:8px;">
             <div class="track-title">${escapeHtml(t.title)}</div>
             <div class="track-artist">${escapeHtml(t.artist)}</div>
@@ -544,7 +561,8 @@
 
       searchResults.innerHTML = list.map(t => `
         <div class="track-item">
-          <div class="track-info">
+          <img class="track-cover-mini" src="${t.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
+          <div class="track-info" style="margin-left:8px;">
             <div class="track-title">${escapeHtml(t.title)}</div>
             <div class="track-artist">${escapeHtml(t.artist)}</div>
           </div>
@@ -768,6 +786,12 @@
       $('box-hidden-content').style.display = 'none';
       $('box-revealed-content').style.display = 'block';
 
+      const coverImg = $('stage-cover-art');
+      if (coverImg) {
+        coverImg.onerror = function() { this.onerror = null; this.src = getTvCoverArt(''); };
+        coverImg.src = currentCallingTrack.art || getTvCoverArt('');
+      }
+
       $('stage-artist').textContent = currentCallingTrack.artist;
       $('stage-title').textContent = currentCallingTrack.title;
       $('btn-reveal-now').style.display = 'none';
@@ -785,6 +809,7 @@
       item.className = 'board-keg-item';
       item.innerHTML = `
         <span class="board-keg-number">№${track.kegNum}</span>
+        <img class="board-keg-cover" src="${track.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
         <span class="board-keg-text">${escapeHtml(track.artist)} — ${escapeHtml(track.title)}</span>
       `;
       board.prepend(item);
@@ -796,12 +821,12 @@
         mainAudio.play();
         $('equalizer-wave').classList.add('active');
         $('lotto-keg-ball').classList.add('playing');
-        $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
+        $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
       } else {
         mainAudio.pause();
         $('equalizer-wave').classList.remove('active');
         $('lotto-keg-ball').classList.remove('playing');
-        $('btn-pause-keg').querySelector('span').textContent = 'Продолжить ▶';
+        $('btn-pause-keg').querySelector('span').textContent = 'Продолжить';
       }
     }
 
@@ -810,30 +835,36 @@
       mainAudio.play();
       $('equalizer-wave').classList.add('active');
       $('lotto-keg-ball').classList.add('playing');
-      $('btn-pause-keg').querySelector('span').textContent = 'Пауза ⏸';
+      $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
     }
 
     // WIN & SHOWCASE
     $('btn-showcase-newround').onclick = () => {
       $('win-showcase-modal').style.display = 'none';
       stopConfetti();
-      comm.hostNewRound();
       $('call-board-container').innerHTML = '<span style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
-      nextBarrel();
+      comm.hostNewRound(() => {
+        comm.hostStart(() => {
+          nextBarrel();
+        });
+      });
     };
 
     $('btn-showcase-continue').onclick = () => {
       $('win-showcase-modal').style.display = 'none';
       stopConfetti();
-      nextBarrel();
+      comm.hostResume(() => {
+        nextBarrel();
+      });
     };
 
     $('btn-showcase-lobby').onclick = () => {
       $('win-showcase-modal').style.display = 'none';
       stopConfetti();
-      comm.hostNewRound();
-      $('sec-game').style.display = 'none';
-      $('sec-lobby').style.display = 'block';
+      comm.hostNewRound(() => {
+        $('sec-game').style.display = 'none';
+        $('sec-lobby').style.display = 'block';
+      });
     };
 
     // State events

@@ -219,10 +219,12 @@ const pub = r => ({
       id,
       title: tr ? tr.title : id,
       artist: tr ? tr.artist : '',
-      displayTitle: tr ? tr.displayTitle : id
+      displayTitle: tr ? tr.displayTitle : id,
+      art: tr ? tr.art : ''
     };
   }),
   winner: r.winner,
+  winnerPid: r.winnerPid || null,
   winnerDetails: r.winnerDetails || null,
   currentTrack: r.currentTrack || null,
   players: [...r.players.values()].map(p => ({
@@ -283,17 +285,21 @@ io.on('connection', s => {
     push(rooms[code]);
   });
 
-  s.on('host:start', () => {
+  s.on('host:start', (_, ack) => {
+    if (typeof _ === 'function') { ack = _; }
+    if (!ack) ack = () => {};
     const r = hostRoom();
-    if (!r || r.state !== 'lobby') return;
+    if (!r || r.state !== 'lobby') return ack({ error: 'not in lobby' });
     r.state = 'playing';
     // Shuffle the tracks so barrels are drawn from the bag completely at RANDOM!
     r.order = shuffle(r.tracks.map(t => t.id));
     r.called = [];
     r.currentTrack = null;
     r.winner = null;
+    r.winnerPid = null;
     r.winnerDetails = null;
     push(r);
+    ack({ ok: true });
   });
 
   s.on('host:next', (_, ack) => {
@@ -334,13 +340,16 @@ io.on('connection', s => {
     });
   });
 
-  s.on('host:newround', () => {
+  s.on('host:newround', (_, ack) => {
+    if (typeof _ === 'function') { ack = _; }
+    if (!ack) ack = () => {};
     const r = hostRoom();
-    if (!r) return;
+    if (!r) return ack({ error: 'no room' });
     r.state = 'lobby';
     r.called = [];
     r.currentTrack = null;
     r.winner = null;
+    r.winnerPid = null;
     r.winnerDetails = null;
     for (const p of r.players.values()) {
       p.card = newCard(r);
@@ -348,6 +357,20 @@ io.on('connection', s => {
       if (p.sid) io.to(p.sid).emit('card', cardOut(r, p));
     }
     push(r);
+    ack({ ok: true });
+  });
+
+  s.on('host:resume', (_, ack) => {
+    if (typeof _ === 'function') { ack = _; }
+    if (!ack) ack = () => {};
+    const r = hostRoom();
+    if (!r) return ack({ error: 'no room' });
+    r.state = 'playing';
+    r.winner = null;
+    r.winnerPid = null;
+    r.winnerDetails = null;
+    push(r);
+    ack({ ok: true });
   });
 
   s.on('player:join', (d, ack) => {
@@ -360,8 +383,8 @@ io.on('connection', s => {
     let pid = (d && d.pid) ? String(d.pid).trim() : null;
     let p = pid ? r.players.get(pid) : null;
 
-    // Prevent cross-session collisions: if existing PID belongs to another active socket with different name, create new
-    if (p && p.sid && p.sid !== s.id && p.name !== name) {
+    // Prevent cross-session collisions: if existing PID belongs to another active socket, assign new PID
+    if (p && p.sid && p.sid !== s.id) {
       pid = null;
       p = null;
     }
@@ -444,13 +467,15 @@ io.on('connection', s => {
     if (winInfo.win) {
       r.state = 'finished';
       r.winner = p.name;
+      r.winnerPid = p.pid;
       r.winnerDetails = {
         name: p.name,
+        pid: p.pid,
         card: cardOut(r, p),
         winIndices: winInfo.winIndices
       };
       push(r);
-      ack({ ok: true, winner: p.name });
+      ack({ ok: true, winner: p.name, pid: p.pid });
     } else {
       ack({ ok: false, msg: 'Пока не бинго! Проверьте: все ли отмеченные бочонки уже выпали на ТВ?' });
     }

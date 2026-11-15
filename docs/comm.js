@@ -46,6 +46,7 @@ window.createComm = function(role) {
       adapter.hostStart = cb => socket.emit('host:start', {}, cb);
       adapter.hostNext = cb => socket.emit('host:next', {}, cb);
       adapter.hostNewRound = cb => socket.emit('host:newround', {}, cb);
+      adapter.hostResume = cb => socket.emit('host:resume', {}, cb);
     } else {
       adapter.playerJoin = (data, cb) => socket.emit('player:join', data, cb);
       adapter.playerMark = arg => socket.emit('player:mark', arg);
@@ -168,10 +169,12 @@ window.createComm = function(role) {
           id,
           title: tr ? tr.title : id,
           artist: tr ? tr.artist : '',
-          displayTitle: tr ? tr.displayTitle : id
+          displayTitle: tr ? tr.displayTitle : id,
+          art: tr ? tr.art : ''
         };
       }),
       winner: r.winner,
+      winnerPid: r.winnerPid || null,
       winnerDetails: r.winnerDetails || null,
       currentTrack: r.currentTrack || null,
       players: [...players.values()].map(p => ({
@@ -212,15 +215,14 @@ window.createComm = function(role) {
 
   function sendToPlayer(targetPid, message) {
     message.targetPid = targetPid;
-    // 1. BroadcastChannel
+    // 1. BroadcastChannel (Filtered locally by targetPid on recipient)
     if (broadcastChan) {
       try { broadcastChan.postMessage(message); } catch(e) {}
     }
-    // 2. MQTT
+    // 2. MQTT (Direct to player's private topic only!)
     if (mqttClient && mqttClient.connected) {
       const payload = JSON.stringify(message);
       try { mqttClient.publish(`muzloto/${roomCode}/to_player/${targetPid}`, payload); } catch(e) {}
-      try { mqttClient.publish(`muzloto/${roomCode}/host_to_client`, payload); } catch(e) {}
     }
     // 3. PeerJS
     const p = players.get(targetPid);
@@ -304,15 +306,17 @@ window.createComm = function(role) {
       if (winInfo.win) {
         roomState.state = 'finished';
         roomState.winner = p.name;
+        roomState.winnerPid = p.pid;
         roomState.winnerDetails = {
           name: p.name,
+          pid: p.pid,
           card: cardOut(roomState, p),
           winIndices: winInfo.winIndices
         };
         sendToPlayer(p.pid, {
           type: 'bingo:ack',
           targetPid: p.pid,
-          data: { ok: true, winner: p.name }
+          data: { ok: true, winner: p.name, pid: p.pid }
         });
         broadcastState();
       } else {
@@ -411,6 +415,7 @@ window.createComm = function(role) {
       roomState.called = [];
       roomState.currentTrack = null;
       roomState.winner = null;
+      roomState.winnerPid = null;
       roomState.winnerDetails = null;
       broadcastState();
       if (cb) cb();
@@ -459,6 +464,7 @@ window.createComm = function(role) {
       roomState.called = [];
       roomState.currentTrack = null;
       roomState.winner = null;
+      roomState.winnerPid = null;
       roomState.winnerDetails = null;
       for (const p of players.values()) {
         p.card = newCard(roomState);
@@ -469,6 +475,16 @@ window.createComm = function(role) {
           data: cardOut(roomState, p)
         });
       }
+      broadcastState();
+      if (cb) cb();
+    };
+
+    adapter.hostResume = cb => {
+      if (!roomState) return;
+      roomState.state = 'playing';
+      roomState.winner = null;
+      roomState.winnerPid = null;
+      roomState.winnerDetails = null;
       broadcastState();
       if (cb) cb();
     };
@@ -520,23 +536,30 @@ window.createComm = function(role) {
     function handleIncomingPlayerMessage(msg) {
       if (!msg || !msg.type) return;
 
+      // Broadcast state is for all players
+      if (msg.type === 'state') {
+        emitLocal('state', msg.data);
+        return;
+      }
+
       const myPid = getPlayerPid();
-      // Drop messages intended for a different player
-      if (msg.targetPid && msg.targetPid !== myPid) {
+      // Drop ALL unicast messages not strictly addressed to my PID!
+      if (!msg.targetPid || msg.targetPid !== myPid) {
         return;
       }
 
       if (msg.type === 'join:ack') {
         if (msg.data && msg.data.pid) {
           playerPid = msg.data.pid;
-          try { sessionStorage.setItem('muzloto_session_pid', playerPid); } catch(e) {}
+          try {
+            sessionStorage.setItem('muzloto_session_pid', playerPid);
+            if (joinedRoomCode) sessionStorage.setItem('muzloto_session_pid_' + joinedRoomCode, playerPid);
+          } catch(e) {}
         }
         if (pendingJoinCb) {
           pendingJoinCb(msg.data);
           pendingJoinCb = null;
         }
-      } else if (msg.type === 'state') {
-        emitLocal('state', msg.data);
       } else if (msg.type === 'card') {
         emitLocal('card', msg.data);
       } else if (msg.type === 'bingo:ack') {
@@ -554,6 +577,10 @@ window.createComm = function(role) {
 
       const myPid = (data && data.pid) || getPlayerPid();
       playerPid = myPid;
+      try {
+        sessionStorage.setItem('muzloto_session_pid', myPid);
+        sessionStorage.setItem('muzloto_session_pid_' + code, myPid);
+      } catch(e) {}
 
       const joinPayload = { type: 'join', name: data.name, pid: myPid };
 
