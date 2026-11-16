@@ -646,7 +646,7 @@
             <span style="font-size:0.8rem; color:var(--text-muted);">Игроки могут сверить все номера, вышедшие из мешка</span>
           </div>
           <div class="call-board" id="call-board-container">
-            <span style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>
+            <span class="board-placeholder" style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>
           </div>
         </div>
       </div>
@@ -2137,7 +2137,7 @@
       comm.hostStart();
       $('sec-lobby').style.display = 'none';
       $('sec-game').style.display = 'block';
-      $('call-board-container').innerHTML = '<span style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
+      $('call-board-container').innerHTML = '<span class="board-placeholder" style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
       nextBarrel();
     };
 
@@ -2253,30 +2253,35 @@
 
     function addToCallBoard(track) {
       const board = $('call-board-container');
-      if (board.querySelector('span')) {
-        board.innerHTML = '';
+      if (!board || !track) return;
+      const placeholder = board.querySelector('.board-placeholder');
+      if (placeholder) {
+        placeholder.remove();
       }
+      if (board.querySelector(`[data-keg="${track.kegNum}"]`)) return;
+
       const item = document.createElement('div');
       item.className = 'board-keg-item';
+      item.dataset.keg = track.kegNum;
       item.innerHTML = `
         <span class="board-keg-number">№${track.kegNum}</span>
         <img class="board-keg-cover" src="${track.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
         <span class="board-keg-text">${escapeHtml(track.artist)} — ${escapeHtml(track.title)}</span>
       `;
       board.prepend(item);
-      $('board-count').textContent = board.children.length;
+      $('board-count').textContent = board.querySelectorAll('.board-keg-item').length;
     }
 
     function updateBoard(calledHistory) {
       const board = $('call-board-container');
       if (!board) return;
       if (!calledHistory || !calledHistory.length) {
-        board.innerHTML = '<span style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>';
+        board.innerHTML = '<span class="board-placeholder" style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>';
         $('board-count').textContent = '0';
         return;
       }
       board.innerHTML = calledHistory.slice().reverse().map(item => `
-        <div class="board-keg-item">
+        <div class="board-keg-item" data-keg="${item.kegNum}">
           <span class="board-keg-number">№${item.kegNum}</span>
           <img class="board-keg-cover" src="${item.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
           <span class="board-keg-text">${escapeHtml(item.artist)} — ${escapeHtml(item.title)}</span>
@@ -2314,7 +2319,7 @@
     $('btn-showcase-newround').onclick = () => {
       $('win-showcase-modal').style.display = 'none';
       stopConfetti();
-      $('call-board-container').innerHTML = '<span style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
+      $('call-board-container').innerHTML = '<span class="board-placeholder" style="color:var(--text-faint); padding:8px;">Пока ни один бочонок не сыграл</span>';
       comm.hostNewRound(() => {
         comm.hostStart(() => {
           nextBarrel();
@@ -2352,6 +2357,11 @@
         `).join('');
       } else {
         $('lobby-players-wrap').innerHTML = `<div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым сканируйте QR!</div>`;
+      }
+
+      // Sync called history board on state update
+      if (state.calledHistory && state.calledHistory.length) {
+        updateBoard(state.calledHistory);
       }
 
       // Check Bingo Winner
