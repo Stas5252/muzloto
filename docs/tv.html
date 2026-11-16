@@ -3074,12 +3074,17 @@
         };
 
         if (playFormat === 'timer25') {
+          mainAudio.onended = () => {
+            clearPlaybackTimer();
+            onTrackFinished();
+          };
           let timeLeft = 25;
           trackTimer = setInterval(() => {
             if (!mainAudio.paused) {
               timeLeft--;
               if (timeLeft <= 0) {
-                clearInterval(trackTimer);
+                clearPlaybackTimer();
+                mainAudio.pause();
                 onTrackFinished();
               }
             }
