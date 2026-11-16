@@ -114,6 +114,9 @@ async function testMesh11Players() {
   await new Promise(r => setTimeout(r, 50));
   assert.strictEqual(hostState.state, 'playing', 'Room must transition to playing state');
   console.log('✓ Mesh Host started game');
+  const beforeFirstDraw = hostState;
+  let playerState;
+  playerAdapters[0].on('state', state => { playerState = state; });
 
   // Helper to check line
   function checkLine(card, calledIds, marks) {
@@ -138,6 +141,14 @@ async function testMesh11Players() {
     calls++;
     const barrelId = nextBarrel.id;
     calledIds.push(barrelId);
+    if (calls === 1) {
+      // A slower transport can deliver the previous snapshot after the first draw.
+      const slowChannel = new MockBroadcastChannel('muzloto_' + room.code);
+      slowChannel.postMessage({ type: 'state', data: beforeFirstDraw });
+      slowChannel.close();
+      await new Promise(resolve => setImmediate(resolve));
+      assert.strictEqual(playerState.turn, 1, 'A late state must not undo a draw');
+    }
 
     // All players mark matching cards
     for (const p of playerCards) {

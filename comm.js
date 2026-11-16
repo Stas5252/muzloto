@@ -217,6 +217,7 @@ window.createComm = function(role) {
   function makePub(r) {
     return {
       code: r.code,
+      version: r.version,
       state: r.state,
       mode: r.mode,
       size: r.size,
@@ -254,6 +255,7 @@ window.createComm = function(role) {
   let peerInstance = null;
 
   function broadcastState() {
+    roomState.version = (roomState.version || 0) + 1;
     const pubData = makePub(roomState);
     emitLocal('state', pubData);
 
@@ -631,6 +633,7 @@ window.createComm = function(role) {
     // ==========================================
     let playerPid = null;
     let joinedRoomCode = null;
+    let latestRoomState = null;
     let pendingJoinCb = null;
     let pendingBingoCb = null;
     let playerConn = null;
@@ -674,7 +677,12 @@ window.createComm = function(role) {
 
       // Broadcast state is for all players
       if (msg.type === 'state') {
-        emitLocal('state', msg.data);
+        const state = msg.data;
+        if (state?.code !== joinedRoomCode) return;
+        if (Number.isSafeInteger(latestRoomState?.version) &&
+            (!Number.isSafeInteger(state.version) || state.version <= latestRoomState.version)) return;
+        latestRoomState = state;
+        if (!pendingJoinCb) emitLocal('state', state);
         return;
       }
 
@@ -685,6 +693,7 @@ window.createComm = function(role) {
       }
 
       if (msg.type === 'join:ack') {
+        if (!pendingJoinCb || msg.data?.code !== joinedRoomCode) return;
         if (msg.data && msg.data.pid) {
           playerPid = msg.data.pid;
           try {
@@ -692,10 +701,10 @@ window.createComm = function(role) {
             if (joinedRoomCode) sessionStorage.setItem('muzloto_session_pid_' + joinedRoomCode, playerPid);
           } catch(e) {}
         }
-        if (pendingJoinCb) {
-          pendingJoinCb(msg.data);
-          pendingJoinCb = null;
-        }
+        const callback = pendingJoinCb;
+        pendingJoinCb = null;
+        callback(msg.data);
+        if (latestRoomState) emitLocal('state', latestRoomState);
       } else if (msg.type === 'card') {
         emitLocal('card', msg.data);
       } else if (msg.type === 'bingo:ack') {
@@ -708,6 +717,7 @@ window.createComm = function(role) {
 
     adapter.playerJoin = (data, cb) => {
       const code = String(data.code).trim();
+      if (joinedRoomCode !== code) latestRoomState = null;
       joinedRoomCode = code;
       pendingJoinCb = cb;
 
