@@ -7,20 +7,6 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>">
   <style>
-    #btn-cloud-audio[hidden] {
-      display: none;
-    }
-    #cloud-audio-dialog::backdrop {
-      background: rgba(7, 8, 12, 0.8);
-    }
-    #cloud-audio-email {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: var(--text-main);
-      font: inherit;
-      padding: 10px 12px;
-    }
     #confetti-canvas {
       position: fixed;
       inset: 0;
@@ -80,7 +66,6 @@
         </div>
       </div>
       <div class="row" style="gap:8px;">
-        <button type="button" id="btn-cloud-audio" class="btn btn-gold btn-sm" hidden>Войти для музыки</button>
         <span id="cloud-audio-status" role="status" style="font-size:0.8rem;"></span>
         <input type="file" id="full-audio-folder" webkitdirectory hidden>
         <button type="button" id="btn-full-audio-folder" class="btn btn-secondary btn-sm">Подключить папку с музыкой</button>
@@ -102,22 +87,6 @@
         <a href="index.html" class="btn btn-secondary btn-sm">На главную</a>
       </div>
     </header>
-
-    <dialog id="cloud-audio-dialog" aria-labelledby="cloud-audio-title" class="card"
-      style="width:min(420px,calc(100% - 24px));margin:auto;padding:20px;color:var(--text-main);background:var(--bg-surface);">
-      <form id="cloud-audio-form">
-        <h2 id="cloud-audio-title" style="margin:0 0 12px;">Музыка для ведущего</h2>
-        <p id="cloud-audio-help" style="margin:0 0 12px;">Введи почту, с которой заходишь в Supabase.</p>
-        <label for="cloud-audio-email">Почта</label>
-        <input class="input" id="cloud-audio-email" type="email" autocomplete="email" required
-          style="width:100%;margin:4px 0 12px;">
-        <p id="cloud-audio-message" role="status"></p>
-        <div class="row" style="gap:8px;">
-          <button id="cloud-audio-submit" class="btn btn-gold" type="submit">Отправить ссылку</button>
-          <button id="cloud-audio-close" class="btn btn-secondary" type="button">Закрыть</button>
-        </div>
-      </form>
-    </dialog>
 
     <!-- SECTION 1: SETUP -->
     <section id="sec-setup">
@@ -809,8 +778,8 @@
   <script src="qrcode.min.js"></script>
   <script src="comm.js?v=2"></script>
   <script src="packs-data.js"></script>
-  <script src="cloud-audio-config.js"></script>
-  <script src="cloud-audio.js?v=1"></script>
+  <script src="cloud-audio-config.js?v=2"></script>
+  <script src="cloud-audio.js?v=2"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -2482,9 +2451,9 @@
     let roundFinished = false;
     const fullAudioFiles = new Map();
     const cloudAudioConfig = window.MUZLOTO_CLOUD_AUDIO;
-    let cloudClient = null;
-    let cloudCatalog = null;
-    let cloudUserId = null;
+    const cloudHostKey = new URLSearchParams(location.hash.slice(1)).get('music');
+    const cloudCatalog = cloudHostKey && cloudAudioConfig
+      ? window.createCloudAudioCatalog(cloudAudioConfig, cloudHostKey) : null;
     let cloudRefresh = null;
 
     function fullTrackSource(id) {
@@ -2945,8 +2914,7 @@
     }
 
     function refreshCloudAudio() {
-      if (!cloudUserId || cloudRefresh) return;
-      const userId = cloudUserId;
+      if (!cloudCatalog || cloudRefresh) return;
       const ids = [...new Set(Object.values(allPacks).flatMap(pack => pack.tracks)
         .filter(track => track.fullFile).map(track => String(track.id)))];
       $('cloud-audio-status').textContent = 'Подключаем музыку…';
@@ -2954,104 +2922,19 @@
       const request = cloudCatalog.load(ids);
       cloudRefresh = request;
       request.then(count => {
-        if (cloudUserId !== userId || cloudRefresh !== request) return;
+        if (cloudRefresh !== request) return;
         $('cloud-audio-status').textContent = count
           ? `Музыка в облаке: ${count}/${ids.length}`
-          : 'Облачные треки недоступны для этой почты';
+          : 'В облаке нет записей для выбранного пака';
         if (count !== previousCount) updateCloudAudioUI();
-      }).catch(() => {
-        if (cloudRefresh === request) $('cloud-audio-status').textContent = 'Не удалось загрузить музыку из облака';
+      }).catch(error => {
+        if (cloudRefresh !== request) return;
+        $('cloud-audio-status').textContent = error.status === 403
+          ? 'Ссылка ведущего недействительна' : 'Не удалось подключить облачную музыку. Обнови страницу.';
       }).finally(() => {
         if (cloudRefresh !== request) return;
         cloudRefresh = null;
       });
-    }
-
-    async function initCloudAudio() {
-      if (!cloudAudioConfig?.url || !cloudAudioConfig?.key) return;
-      const accountButton = $('btn-cloud-audio');
-      const dialog = $('cloud-audio-dialog');
-      const form = $('cloud-audio-form');
-      const email = $('cloud-audio-email');
-      const submit = $('cloud-audio-submit');
-      const status = $('cloud-audio-message');
-      accountButton.hidden = false;
-      accountButton.disabled = true;
-
-      try {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-        cloudClient = window.supabase.createClient(cloudAudioConfig.url, cloudAudioConfig.key, {
-          auth: { storageKey: 'muzloto-host-cloud-auth' }
-        });
-        cloudCatalog = window.createCloudAudioCatalog(cloudClient);
-      } catch {
-        $('cloud-audio-status').textContent = 'Облачная музыка недоступна';
-        return;
-      }
-
-      accountButton.disabled = false;
-      accountButton.onclick = () => {
-        if (cloudUserId) {
-          void cloudClient.auth.signOut({ scope: 'local' }).then(({ error }) => {
-            if (error) $('cloud-audio-status').textContent = 'Не удалось выйти из облачной музыки';
-          });
-          return;
-        }
-        status.textContent = '';
-        dialog.showModal();
-      };
-
-      $('cloud-audio-close').onclick = () => dialog.close();
-
-      form.onsubmit = async event => {
-        event.preventDefault();
-        if (submit.disabled) return;
-        submit.disabled = true;
-        status.textContent = '';
-        try {
-          const { error } = await cloudClient.auth.signInWithOtp({ email: email.value.trim() });
-          if (error) throw error;
-          status.textContent = 'Открой ссылку из письма на устройстве ведущего. Проверь «Спам», если письма нет.';
-        } catch {
-          status.textContent = 'Не удалось отправить ссылку. Проверь почту владельца или повтори позже.';
-        } finally {
-          submit.disabled = false;
-        }
-      };
-
-      cloudClient.auth.onAuthStateChange((_event, session) => {
-        const userId = session?.user?.id || null;
-        if (userId === cloudUserId) return;
-        cloudUserId = userId;
-        cloudRefresh = null;
-        cloudCatalog.clear();
-        accountButton.textContent = userId ? 'Выйти из музыки' : 'Войти для музыки';
-        $('cloud-audio-status').textContent = '';
-        if (!userId && fullTrackUrl && !fullTrackUrl.startsWith('blob:')) {
-          releaseFullTrack();
-          onTrackFinished();
-        }
-        if (userId) {
-          if (dialog.open) dialog.close();
-          setTimeout(refreshCloudAudio, 0);
-        } else {
-          updateCloudAudioUI();
-        }
-      });
-
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && cloudUserId &&
-            !Object.values(allPacks).some(pack => pack.tracks.some(track => cloudCatalog.get(track.id)))) {
-          refreshCloudAudio();
-        }
-      });
-      setInterval(refreshCloudAudio, 60 * 60 * 1000);
     }
 
     function updateFullTrackButton() {
@@ -3886,7 +3769,13 @@
     renderSelectedTracks();
     loadCuratedPacks().then(() => {
       checkHostSessionRestore();
-      void initCloudAudio();
+      if (cloudCatalog) {
+        refreshCloudAudio();
+        setInterval(refreshCloudAudio, 60 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden && !cloudCatalog.hasTracks()) refreshCloudAudio();
+        });
+      }
     });
   </script>
 </body>

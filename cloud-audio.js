@@ -1,44 +1,39 @@
 (function () {
   'use strict';
 
-  const lifetime = 2 * 60 * 60;
-  const refreshBefore = 5 * 60 * 1000;
-
-  window.createCloudAudioCatalog = function (client) {
-    const bucket = client.storage.from('muzloto-audio');
-    const urls = new Map();
-    let version = 0;
+  window.createCloudAudioCatalog = function (config, hostKey) {
+    const tracks = new Map();
+    let expiresAt = 0;
 
     return {
-      clear() {
-        version++;
-        urls.clear();
+      hasTracks() {
+        return Date.now() < expiresAt && tracks.size > 0;
       },
 
       get(id) {
-        const entry = urls.get(String(id));
-        return entry && entry.expiresAt > Date.now() ? entry.url : null;
+        return this.hasTracks() ? tracks.get(String(id)) || null : null;
       },
 
       async load(ids) {
-        const requestVersion = version;
-        const paths = Array.from(new Set(ids.map(String)))
-          .filter(id => /^\d+$/.test(id))
-          .map(id => id + '.mp3');
-        if (!paths.length) return 0;
-
-        const expiresAt = Date.now() + lifetime * 1000 - refreshBefore;
-        const { data, error } = await bucket.createSignedUrls(paths, lifetime);
-        if (requestVersion !== version) return 0;
-        if (error) throw error;
-
-        let count = 0;
-        for (const entry of data || []) {
-          if (entry.error || !entry.signedUrl) continue;
-          urls.set(entry.path.slice(0, -4), { url: entry.signedUrl, expiresAt });
-          count++;
+        const response = await fetch(config.url, {
+          method: 'POST',
+          headers: { apikey: config.key, 'x-muzloto-key': hostKey },
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          const error = new Error('Cloud music request failed');
+          error.status = response.status;
+          throw error;
         }
-        return count;
+
+        const data = await response.json();
+        const wanted = new Set(ids);
+        tracks.clear();
+        for (const track of data.tracks) {
+          if (wanted.has(track.id)) tracks.set(track.id, track.url);
+        }
+        expiresAt = Date.now() + (data.expiresIn - 300) * 1000;
+        return tracks.size;
       }
     };
   };
