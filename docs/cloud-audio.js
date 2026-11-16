@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  window.createCloudAudioCatalog = function (config, hostKey) {
+  window.createCloudAudioCatalog = function (config) {
     const tracks = new Map();
     let expiresAt = 0;
 
@@ -16,15 +16,10 @@
 
       async load(ids) {
         const response = await fetch(config.url, {
-          method: 'POST',
-          headers: { apikey: config.key, 'x-muzloto-key': hostKey },
+          headers: { apikey: config.key },
           cache: 'no-store',
         });
-        if (!response.ok) {
-          const error = new Error('Cloud music request failed');
-          error.status = response.status;
-          throw error;
-        }
+        if (!response.ok) throw new Error('Cloud music request failed');
 
         const data = await response.json();
         const wanted = new Set(ids);

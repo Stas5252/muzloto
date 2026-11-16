@@ -84,7 +84,7 @@
         <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display:none;" title="Завершить текущую игру и выйти в меню">
           <span>Выйти в меню</span>
         </button>
-        <a href="index.html" id="host-home-link" class="btn btn-secondary btn-sm">На главную</a>
+        <a href="index.html" class="btn btn-secondary btn-sm">На главную</a>
       </div>
     </header>
 
@@ -778,8 +778,8 @@
   <script src="qrcode.min.js"></script>
   <script src="comm.js?v=2"></script>
   <script src="packs-data.js"></script>
-  <script src="cloud-audio-config.js?v=2"></script>
-  <script src="cloud-audio.js?v=2"></script>
+  <script src="cloud-audio-config.js?v=3"></script>
+  <script src="cloud-audio.js?v=3"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -2451,12 +2451,8 @@
     let roundFinished = false;
     const fullAudioFiles = new Map();
     const cloudAudioConfig = window.MUZLOTO_CLOUD_AUDIO;
-    const cloudHostKey = new URLSearchParams(location.hash.slice(1)).get('music');
-    if (/^[A-Za-z0-9_-]{43}$/.test(cloudHostKey || '')) {
-      $('host-home-link').href = 'index.html#music=' + cloudHostKey;
-    }
-    const cloudCatalog = cloudHostKey && cloudAudioConfig
-      ? window.createCloudAudioCatalog(cloudAudioConfig, cloudHostKey) : null;
+    const cloudCatalog = cloudAudioConfig
+      ? window.createCloudAudioCatalog(cloudAudioConfig) : null;
     let cloudRefresh = null;
 
     function fullTrackSource(id) {
@@ -2930,10 +2926,9 @@
           ? `Музыка в облаке: ${count}/${ids.length}`
           : 'В облаке нет записей для выбранного пака';
         if (count !== previousCount) updateCloudAudioUI();
-      }).catch(error => {
+      }).catch(() => {
         if (cloudRefresh !== request) return;
-        $('cloud-audio-status').textContent = error.status === 403
-          ? 'Ссылка ведущего недействительна' : 'Не удалось подключить облачную музыку. Обнови страницу.';
+        $('cloud-audio-status').textContent = 'Не удалось подключить облачную музыку. Обнови страницу.';
       }).finally(() => {
         if (cloudRefresh !== request) return;
         cloudRefresh = null;
