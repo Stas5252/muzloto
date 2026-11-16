@@ -1,36 +1,411 @@
+// Auto-generated packs data for standalone / GitHub Pages deployment
 window.BUILTIN_PACKS = {
+  "muzloto": {
+    "id": "muzloto",
+    "title": "МузЛото (33 главных хита)",
+    "icon": "🔥",
+    "desc": "Хиты: Дора, Егор Крид, Инстасамка, MACAN, Ваня Дмитриенко, Artik & Asti, Руки Вверх, Тату, Бумбокс и др.",
+    "tracks": [
+      {
+        "id": "6793556682",
+        "artist": "Toxi$ & Дора",
+        "title": "Знак",
+        "displayTitle": "Toxi$ & Дора — Знак",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/71/c0/8e71c053-2ea2-4b17-ec93-ce515b1728ae/mzaf_18307262092983093504.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/01. Toxi$ & Дора — Знак.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1a/c3/dc/1ac3dc86-3154-9b9b-f26b-d82ae4093d68/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 1
+      },
+      {
+        "id": "1737216348",
+        "artist": "Егор Крид",
+        "title": "Потрачу",
+        "displayTitle": "Егор Крид — Потрачу",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9e/55/03/9e5503c1-138b-74f3-7f77-fe375d4e4687/mzaf_17987674277656116190.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/02. Егор Крид — Потрачу.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1c/ec/df/1cecdf13-75f5-947d-cba7-da4fa5c27c51/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 2
+      },
+      {
+        "id": "1211733166",
+        "artist": "Егор Крид & MOLLY",
+        "title": "Если ты меня не любишь",
+        "displayTitle": "Егор Крид & MOLLY — Если ты меня не любишь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/92/29/a9/9229a997-0758-d77e-f26a-25bd3c3184f9/mzaf_4276097845916878607.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/03. Егор Крид & MOLLY — Если ты меня не любишь.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/60/35/00603536-2994-8ac8-91a6-0a5355e59f78/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 3
+      },
+      {
+        "id": "1481988750",
+        "artist": "Дора",
+        "title": "Дорадура",
+        "displayTitle": "Дора — Дорадура",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/43/8e/d9/438ed98d-9b59-6eb3-ddbf-af8a40ef6bcc/mzaf_5637517761756073240.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/04. Дора — Дорадура.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/53/08/eb/5308ebcd-a23a-07b8-aa54-880409655702/cover.jpg/600x600bb.jpg",
+        "genre": "Поп/рок",
+        "kegNum": 4
+      },
+      {
+        "id": "1656019512",
+        "artist": "INSTASAMKA",
+        "title": "За деньги да",
+        "displayTitle": "INSTASAMKA — За деньги да",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/23/8e/6b238e5e-8e3c-582c-1b9a-fa3a4efd8b5c/mzaf_11531777200776049946.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/05. INSTASAMKA — За деньги да.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fa/4b/f4/fa4bf460-52b5-e3b7-acf1-a7babfdf44ff/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 5
+      },
+      {
+        "id": "1679628216",
+        "artist": "MACAN",
+        "title": "ASPHALT 8",
+        "displayTitle": "MACAN — ASPHALT 8",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/a8/23/fea8230a-8cda-7297-9841-79d9bf71a3ba/mzaf_18229323036952052363.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/06. MACAN — ASPHALT 8.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/99/d9/6b/99d96b14-b330-2293-f4c5-c09296b6dc3e/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 6
+      },
+      {
+        "id": "1842815805",
+        "artist": "Ваня Дмитриенко",
+        "title": "Шёлк",
+        "displayTitle": "Ваня Дмитриенко — Шёлк",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bc/3f/69/bc3f698f-694a-8b52-7cfb-21128fe0ba90/mzaf_15819626947471997581.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/07. Ваня Дмитриенко — Шёлк.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ab/3a/4a/ab3a4a4e-7197-004a-a034-1709d5f8a51a/0.jpg/600x600bb.jpg",
+        "genre": "Саундтреки",
+        "kegNum": 7
+      },
+      {
+        "id": "1053096612",
+        "artist": "SEREBRO",
+        "title": "Отпусти меня",
+        "displayTitle": "SEREBRO — Отпусти меня",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1e/b0/81/1eb0811b-e83e-d345-e507-2dc6e155cb3f/mzaf_10080495616844844403.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/08. SEREBRO — Отпусти меня.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music62/v4/3c/e3/a3/3ce3a3db-ca73-e8ea-f355-938749c6b1a1/mzm.bhhllqbx.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 8
+      },
+      {
+        "id": "1755780618",
+        "artist": "Юля Гаврилина",
+        "title": "Драма квин",
+        "displayTitle": "Юля Гаврилина — Драма квин",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6e/b6/5d/6eb65d9c-5897-0a13-648b-768fb811494f/mzaf_1038160018266652612.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/09. Юля Гаврилина — Драма квин.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/13/b5/d4/13b5d4ab-c93d-07d0-d900-568c228e2712/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 9
+      },
+      {
+        "id": "1575451599",
+        "artist": "Artik & Asti",
+        "title": "Лампочки",
+        "displayTitle": "Artik & Asti — Лампочки",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d1/0b/a0/d10ba031-2236-b58a-2a74-dc2c34ae1bdc/mzaf_12233606854226470231.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/10. Artik & Asti — Лампочки.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/34/47/f6/3447f604-2abc-391f-e1f4-ed6d57005a7f/190296541223.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 10
+      },
+      {
+        "id": "1859998201",
+        "artist": "Дима Билан",
+        "title": "Я твой номер один",
+        "displayTitle": "Дима Билан — Я твой номер один",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c9/62/a0/c962a076-58e5-ffa6-f3c9-1557ffaa765f/mzaf_12980538717478075424.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/11. Дима Билан — Я твой номер один.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/5b/24/1d5b2457-deff-2af6-f8d5-7e5595eb793a/0.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 11
+      },
+      {
+        "id": "1652565207",
+        "artist": "Сергей Лазарев",
+        "title": "В самое сердце",
+        "displayTitle": "Сергей Лазарев — В самое сердце",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/32/2a/da/322adab7-fd98-3ed1-904c-2a72f4e24605/mzaf_3475844493202252477.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/12. Сергей Лазарев — В самое сердце.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/c6/6c/fd/c66cfd38-42df-86c4-a01b-ca89e817deba/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 12
+      },
+      {
+        "id": "1712677225",
+        "artist": "Три дня дождя & MONA",
+        "title": "Прощание",
+        "displayTitle": "Три дня дождя & MONA — Прощание",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/04/09/be/0409bed8-4cf8-ee80-0ace-67374d8283c0/mzaf_10253957125396364824.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/13. Три дня дождя & MONA — Прощание.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/55/b1/62/55b162ba-a690-50bf-1486-fb382c3bc6ac/cover.jpg/600x600bb.jpg",
+        "genre": "Рок",
+        "kegNum": 13
+      },
+      {
+        "id": "1576535535",
+        "artist": "Моя Мишель",
+        "title": "Зима в сердце",
+        "displayTitle": "Моя Мишель — Зима в сердце",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/65/69/1f/65691fdc-9a92-9ae7-abc3-88b4788ac937/mzaf_5996866199580519957.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/14. Моя Мишель — Зима в сердце.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6c/0c/06/6c0c0608-416e-1b5c-d79f-44b986b02b19/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 14
+      },
+      {
+        "id": "1650600516",
+        "artist": "LOBODA",
+        "title": "К чёрту любовь",
+        "displayTitle": "LOBODA — К чёрту любовь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/18/46/1e/18461e02-4dcb-713c-a290-5054e34dc2b5/mzaf_15589153715588265365.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/15. LOBODA — К чёрту любовь.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/fc/d7/ca/fcd7ca29-26cf-b3b5-cbb6-4a1e214e35cb/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 15
+      },
+      {
+        "id": "6768974712",
+        "artist": "MIA BOYKA",
+        "title": "Экспонат",
+        "displayTitle": "MIA BOYKA — Экспонат",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0e/3a/c3/0e3ac355-a218-d4a9-0a5c-84c2649f5de3/mzaf_1258381619903469766.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/16. MIA BOYKA — Экспонат.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/ae/22/c2/ae22c281-b7ea-a5d8-5c44-4e034f143faf/0.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 16
+      },
+      {
+        "id": "1777112820",
+        "artist": "Татьяна Куртукова",
+        "title": "Одного",
+        "displayTitle": "Татьяна Куртукова — Одного",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f5/fe/1b/f5fe1b46-f537-1711-1395-ca8a2f8f5323/mzaf_17979267813523908775.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/17. Татьяна Куртукова — Одного.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/af/67/6a/af676ae6-6ab5-146a-2d0c-4c001b2912e0/cover.jpg/600x600bb.jpg",
+        "genre": "Поп-музыка на русском языке",
+        "kegNum": 17
+      },
+      {
+        "id": "1681131635",
+        "artist": "Тату",
+        "title": "Я сошла с ума",
+        "displayTitle": "Тату — Я сошла с ума",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4c/bc/e5/4cbce53a-b2c7-f9bb-a342-3217e996fb61/mzaf_10437333105320520249.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/18. Тату — Я сошла с ума.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/48/07/46/4807468c-2b01-0f04-ae5f-d5a6d5084e44/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 18
+      },
+      {
+        "id": "1394107529",
+        "artist": "Татьяна Буланова",
+        "title": "Мой ненаглядный",
+        "displayTitle": "Татьяна Буланова — Мой ненаглядный",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/32/99/47/329947a2-6f93-9ef7-432a-30ed736d474e/mzaf_12703528446260904449.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/19. Татьяна Буланова — Мой ненаглядный.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/93/69/fc/9369fc25-27ee-6498-a79c-51b775eb8629/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 19
+      },
+      {
+        "id": "1887250179",
+        "artist": "Demo",
+        "title": "Солнышко",
+        "displayTitle": "Demo — Солнышко",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6f/db/e9/6fdbe9be-60dc-3279-bd04-1de732bb0dc7/mzaf_14651879588263526684.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/20. Demo — Солнышко.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d2/fb/76/d2fb7688-d96d-1997-d607-6706abc506fe/0.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 20
+      },
+      {
+        "id": "1604345673",
+        "artist": "Корни",
+        "title": "Вика",
+        "displayTitle": "Корни — Вика",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/57/df/a7/57dfa731-21c2-5358-6288-62a13f95c7c2/mzaf_12490681422666595487.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/21. Корни — Вика.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/a5/1d/ad/a51dadbd-a987-089c-1b24-14048ebffe71/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 21
+      },
+      {
+        "id": "1397019992",
+        "artist": "Руки Вверх!",
+        "title": "Думала",
+        "displayTitle": "Руки Вверх! — Думала",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/59/03/73/59037306-4fcf-2a4e-bf10-e305237c5476/mzaf_13316853370082524492.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/22. Руки Вверх! — Думала.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b0/fc/da/b0fcda38-38bf-147a-9578-78198bfa1964/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 22
+      },
+      {
+        "id": "1083906296",
+        "artist": "Андрей Губин",
+        "title": "Ночь",
+        "displayTitle": "Андрей Губин — Ночь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/df/cd/87/dfcd87d2-ca03-9ac3-fce7-adce8678f866/mzaf_8366382649398127435.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/23. Андрей Губин — Ночь.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a2/a2/bc/a2a2bc40-d043-3bc2-b39b-a4005c8c4ae3/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 23
+      },
+      {
+        "id": "1219351548",
+        "artist": "5sta Family",
+        "title": "Зачем",
+        "displayTitle": "5sta Family — Зачем",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ed/2c/08/ed2c084b-184e-5c62-4fef-9cae21d41d48/mzaf_13714391433808542094.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/24. 5sta Family — Зачем.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0f/1c/73/0f1c7352-17e9-8a52-edf8-60b4079c67d7/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 24
+      },
+      {
+        "id": "6787018763",
+        "artist": "Банд'Эрос",
+        "title": "Про красивую жизнь",
+        "displayTitle": "Банд'Эрос — Про красивую жизнь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5e/4a/62/5e4a6273-e9db-121e-d9b5-6d7cd16b552a/mzaf_18431989858515675319.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/25. Банд'Эрос — Про красивую жизнь.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/61/15/66/61156600-4d5f-ef41-70f5-b7cae75eb0a7/0.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 25
+      },
+      {
+        "id": "1200810425",
+        "artist": "Бумбокс",
+        "title": "Вахтёрам",
+        "displayTitle": "Бумбокс — Вахтёрам",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/0f/75/170f75c8-3d1d-0c72-6ffb-09ea88e20fc5/mzaf_4654927231311644963.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/26. Бумбокс — Вахтёрам.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/4b/cd/12/4bcd12d2-5292-f4b5-b948-08ff7cacf5cd/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 26
+      },
+      {
+        "id": "1151472383",
+        "artist": "Чай вдвоём",
+        "title": "День рождения",
+        "displayTitle": "Чай вдвоём — День рождения",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/b0/a4/f9/b0a4f91a-4de1-d936-e09c-e3f949f94af1/mzaf_17633073999357994091.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/27. Чай вдвоём — День рождения.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/54/6b/fa/546bfa5b-62ca-1403-8d70-92809d4a3876/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 27
+      },
+      {
+        "id": "1580751202",
+        "artist": "Quest Pistols",
+        "title": "Белая стрекоза любви",
+        "displayTitle": "Quest Pistols — Белая стрекоза любви",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/88/90/04/889004e9-f36e-08b0-db02-5d4b86b8e0ca/mzaf_4782181586687839600.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/28. Quest Pistols — Белая стрекоза любви.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/03/9b/4f/039b4f6c-8fca-6fa6-7efe-7599e1b333f8/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 28
+      },
+      {
+        "id": "1776659451",
+        "artist": "Краски",
+        "title": "Он не знает ничего",
+        "displayTitle": "Краски — Он не знает ничего",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d0/04/c3/d004c3fa-7e3f-67a0-2488-f5246ce76d8c/mzaf_8002751840167760179.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/29. Краски — Он не знает ничего.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/4b/aa/ba/4baabab3-9111-c59c-cffe-8ef0f54991ba/0.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 29
+      },
+      {
+        "id": "1598596948",
+        "artist": "Мэйби Бэйби & Дора",
+        "title": "Барбисайз",
+        "displayTitle": "Мэйби Бэйби & Дора — Барбисайз",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/eb/a4/7e/eba47e0b-09a1-19c6-90f8-fb246275762a/mzaf_18036343233904439816.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/30. Мэйби Бэйби & Дора — Барбисайз.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/33/9e/ba/339ebaea-f756-a429-cde2-bfde7e5f73cf/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 30
+      },
+      {
+        "id": "1374155945",
+        "artist": "Бьянка",
+        "title": "А чё чё",
+        "displayTitle": "Бьянка — А чё чё",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/14/1d/84/141d840d-fe5e-8457-d91f-8dd3aa993988/mzaf_18380349772141837155.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/31. Бьянка — А чё чё.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/26/43/86/264386a4-0a6c-8a10-0a9d-c6b479ef25c5/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 31
+      },
+      {
+        "id": "1472166281",
+        "artist": "Don Omar feat. Lucenzo",
+        "title": "Danza Kuduro",
+        "displayTitle": "Don Omar feat. Lucenzo — Danza Kuduro",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/8e/03/2b/8e032b1a-dda9-0fca-d746-3616b59b6b6d/mzaf_3507090112561349417.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/32. Don Omar feat. Lucenzo — Danza Kuduro.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a0/c2/9f/a0c29f32-c1fd-7a35-e4f7-938d0892e4dc/19UMGIM62584.rgb.jpg/600x600bb.jpg",
+        "genre": "Танцевальная",
+        "kegNum": 32
+      },
+      {
+        "id": "1668418517",
+        "artist": "Jakone & Scirena",
+        "title": "Там там",
+        "displayTitle": "Jakone & Scirena — Там там",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/20/03/cd/2003cde9-43f1-dc11-e3cc-123272b17dd4/mzaf_3993129257537584125.plus.aac.p.m4a",
+        "localPreview": "audio/muzloto/33. Jakone & Scirena — Там там.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ed/d3/cb/edd3cbbb-cc90-21c3-7993-c51eea703d94/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 33
+      }
+    ]
+  },
   "new_school": {
     "id": "new_school",
-    "title": "🔥 Новая школа: Крид, Дора, SODA LUV",
+    "title": "Новая школа (50 треков): Крид, MAYOT, Платон, LOVV66, SODA LUV",
     "icon": "🔥",
-    "desc": "Егор Крид, Дора, SODA LUV, Toxi$, Big Baby Tape, OG Buda, Инстасамка, Macan",
+    "desc": "Егор Крид, MAYOT, Молодой Платон, LOVV66, SODA LUV, Дора, OG Buda, Toxi$, Big Baby Tape, MACAN · Партия на ~25-30 минут",
     "tracks": [
       {
         "id": "1472773312",
-        "artist": "Egor Kreed",
+        "artist": "Егор Крид",
         "title": "Сердцеедка",
-        "displayTitle": "Egor Kreed — Сердцеедка",
+        "displayTitle": "Егор Крид — Сердцеедка",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/cd/90/b1/cd90b165-152a-5098-0e2d-d08158430bdb/mzaf_14442385998910394486.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/93/d0/b8/93d0b851-a8a8-29a2-37dc-e252186deab6/190295391379.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 1
       },
       {
         "id": "917537591",
-        "artist": "Egor Kreed",
+        "artist": "Егор Крид",
         "title": "Самая самая",
-        "displayTitle": "Egor Kreed — Самая самая",
+        "displayTitle": "Егор Крид — Самая самая",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/81/9c/da/819cda14-1817-8a9b-bdb3-d34c0db5d733/mzaf_13167506493719874695.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/97/56/0a/97560a61-009a-e9d8-2b95-718b90c6e940/cover.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 2
       },
       {
         "id": "1062887294",
-        "artist": "Egor Kreed",
+        "artist": "Егор Крид",
         "title": "Будильник",
-        "displayTitle": "Egor Kreed — Будильник",
+        "displayTitle": "Егор Крид — Будильник",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/29/2c/e2/292ce227-3f96-f9d5-04b5-8492634c8d59/mzaf_2147446873305517883.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/5e/3b/fd/5e3bfdc2-34f8-4f6b-7768-e9b5eaa7faeb/contsched.ztynmvss.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 3
       },
       {
         "id": "1743190730",
@@ -39,7 +414,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Egor Kreed & JONY — Дым",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ea/d9/07/ead90739-606e-9a9d-6b33-3f5a601dce65/mzaf_17547578603345658810.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/1e/6d/1d/1e6d1db3-465e-5c26-2754-c2a580d3855b/cover.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 4
       },
       {
         "id": "1211733166",
@@ -48,7 +424,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Egor Kreed & MOLLY — Если ты меня не любишь",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/92/29/a9/9229a997-0758-d77e-f26a-25bd3c3184f9/mzaf_4276097845916878607.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/60/35/00603536-2994-8ac8-91a6-0a5355e59f78/cover.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 5
       },
       {
         "id": "6815201397",
@@ -57,7 +434,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "SODA LUV — Тысячи рук",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a3/d8/0c/a3d80c60-e74b-e3a1-a9b5-eb9ae4bb2ec6/mzaf_9860954516344777781.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b7/58/c9/b758c9a3-7ccc-7bc9-1fd0-8b241b4cac8d/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 6
       },
       {
         "id": "1585377359",
@@ -66,7 +444,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "SODA LUV — Прости",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/b2/88/75/b288753f-877c-ae33-7cc2-3b11de0dc4f3/mzaf_10818791063905429650.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b2/78/f9/b278f9e2-2f6c-de74-42a7-afd090d7c89e/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 7
       },
       {
         "id": "1729172171",
@@ -75,7 +454,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "SODA LUV — ДАЛЕКО",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/03/ce/da/03ceda1c-309a-a108-3d10-853028036238/mzaf_720222774635572731.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5a/a5/10/5aa510ee-e80b-5896-f6e8-4d835a2dca30/cover.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 8
       },
       {
         "id": "1618194956",
@@ -84,34 +464,38 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Klava Koka — Думал (feat. SODA LUV)",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ca/3d/b8/ca3db810-cda9-19d9-05cb-10174fd018d4/mzaf_11657613083664861245.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/e9/23/c3/e923c3aa-6509-d5f0-4f08-dea3e4fce204/cover.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 9
       },
       {
         "id": "1833559037",
-        "artist": "Dora",
+        "artist": "Дора",
         "title": "Дорадура",
-        "displayTitle": "Dora — Дорадура",
+        "displayTitle": "Дора — Дорадура",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/66/89/6b668970-3e82-9cce-7b2a-78a599bb3cc2/mzaf_5635759596617363263.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/77/74/c9/7774c973-59d9-0d15-f0d2-f6fca5b9caf7/3616401438037.jpg/400x400bb.jpg",
-        "genre": "Rock"
+        "genre": "Rock",
+        "kegNum": 10
       },
       {
         "id": "1833563113",
-        "artist": "Dora",
+        "artist": "Дора",
         "title": "Втюрилась",
-        "displayTitle": "Dora — Втюрилась",
+        "displayTitle": "Дора — Втюрилась",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/da/48/c5/da48c57f-681d-40bd-35fd-457de88bcb64/mzaf_1170050165272456414.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e0/0e/09/e00e096e-fc3f-2ede-2e3d-4a51fa27f99e/3616408187983.jpg/400x400bb.jpg",
-        "genre": "Rock"
+        "genre": "Rock",
+        "kegNum": 11
       },
       {
         "id": "1833560779",
-        "artist": "Dora",
+        "artist": "Дора",
         "title": "Осень пьяная",
-        "displayTitle": "Dora — Осень пьяная",
+        "displayTitle": "Дора — Осень пьяная",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/df/0f/e9/df0fe9d3-9b96-e2ad-c077-ed37f706f299/mzaf_1959720023164487669.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b9/8f/37/b98f37a9-4ea5-3ab6-e315-0e5bfaa281aa/3616551039269.jpg/400x400bb.jpg",
-        "genre": "Rock"
+        "genre": "Rock",
+        "kegNum": 12
       },
       {
         "id": "1833553164",
@@ -120,7 +504,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Dora & Мэйби Бэйби — Барбисайз",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6b/86/b0/6b86b043-2467-fad2-b14c-450e645f5037/mzaf_9116340405240374655.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a2/a6/a0/a2a6a02d-a463-1dff-c011-993770809d7e/3616842498706.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 13
       },
       {
         "id": "6793556682",
@@ -129,7 +514,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Toxi$ & Dora — ЗНАК",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/71/c0/8e71c053-2ea2-4b17-ec93-ce515b1728ae/mzaf_18307262092983093504.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1a/c3/dc/1ac3dc86-3154-9b9b-f26b-d82ae4093d68/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 14
       },
       {
         "id": "1694074705",
@@ -138,7 +524,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Toxi$ — ХАЙЕГОХО",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/99/20/b6/9920b6c7-da68-d9e9-66bd-a73508db09db/mzaf_15068239164996924689.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/72/c1/c9/72c1c99c-e395-cba0-86b2-aed9bf4a2a25/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 15
       },
       {
         "id": "1446761394",
@@ -147,7 +534,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Big Baby Tape — Gimme the Loot",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/62/43/ee/6243eeb4-335e-ddbb-125e-0a67dd963cf8/mzaf_1521361186445789138.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/41/b0/29/41b029fc-b52a-6d9e-a6b9-b4e8d9c5ef50/190296894299.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 16
       },
       {
         "id": "1752831358",
@@ -156,7 +544,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Big Baby Tape & Aarne — Supersonic",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/b3/c5/17b3c5d9-4022-38f8-0819-a689163bb152/mzaf_16672658488479472547.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/3d/68/c7/3d68c740-a0d2-e3ec-1598-e7796fe66085/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 17
       },
       {
         "id": "1784471407",
@@ -165,7 +554,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Big Baby Tape — Chuchuka",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ba/32/17/ba3217ab-4d48-304f-346e-5e79e98c569d/mzaf_14453353029061266817.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f6/f6/b3/f6f6b3a1-5e69-ef78-cbaa-010a0fc51aca/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 18
       },
       {
         "id": "1724932498",
@@ -174,7 +564,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "OG BUDA & Egor Kreed — Плачут Небеса (feat. Доминик Джокер)",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0d/9c/bf/0d9cbf2f-3971-6854-6369-6d43fa82f147/mzaf_11198061865709773642.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6f/46/4a/6f464afe-5d6d-2335-46c1-a48004a3644e/0.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 19
       },
       {
         "id": "1727572388",
@@ -183,7 +574,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Mary Gu & OG BUDA — толстовка",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f6/95/d0/f695d0ee-e2b7-892d-6a26-9cae97799695/mzaf_13969039394760206211.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/7b/aa/ae/7baaae4e-eee5-959c-b313-034603db692b/0.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 20
       },
       {
         "id": "1656019512",
@@ -192,7 +584,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "INSTASAMKA — ЗА ДЕНЬГИ ДА",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/23/8e/6b238e5e-8e3c-582c-1b9a-fa3a4efd8b5c/mzaf_11531777200776049946.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fa/4b/f4/fa4bf460-52b5-e3b7-acf1-a7babfdf44ff/cover.jpg/400x400bb.jpg",
-        "genre": "Pop"
+        "genre": "Pop",
+        "kegNum": 21
       },
       {
         "id": "1644690309",
@@ -201,7 +594,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "INSTASAMKA — POPSTAR",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/51/de/9a51dedf-9f96-4746-284e-5f1e6f00a667/mzaf_8869797298042631974.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/d9/3d/3b/d93d3bfe-86af-9100-69b3-03eaf8bbc91e/cover.jpg/400x400bb.jpg",
-        "genre": "Indie Pop"
+        "genre": "Indie Pop",
+        "kegNum": 22
       },
       {
         "id": "1679628216",
@@ -210,7 +604,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "MACAN — ASPHALT 8",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/a8/23/fea8230a-8cda-7297-9841-79d9bf71a3ba/mzaf_18229323036952052363.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/99/d9/6b/99d96b14-b330-2293-f4c5-c09296b6dc3e/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 23
       },
       {
         "id": "1684315870",
@@ -219,7 +614,8 @@ window.BUILTIN_PACKS = {
         "displayTitle": "Scally Milano & uglystephan — Дай Мне Шанс",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/02/1a/48021a80-2f55-1d21-9801-30b88f40f3c5/mzaf_6238499353575255000.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/3a/43/9c/3a439c8e-365d-9aba-f97d-825b447239a7/cover.jpg/400x400bb.jpg",
-        "genre": "Hip-Hop/Rap"
+        "genre": "Hip-Hop/Rap",
+        "kegNum": 24
       },
       {
         "id": "1795685914",
@@ -228,7 +624,258 @@ window.BUILTIN_PACKS = {
         "displayTitle": "MORGENSHTERN — ДОМ (Лондон, Прага, Ницца)",
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/26/21/9b/26219bfb-3181-0869-4ac2-c54c1bede510/mzaf_15992735745405041572.plus.aac.p.m4a",
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/25/ed/27/25ed27b8-9244-0fa1-96db-7167ebdbf82a/cover.jpg/400x400bb.jpg",
-        "genre": "Rock in Russian"
+        "genre": "Rock in Russian",
+        "kegNum": 25
+      },
+      {
+        "id": "1805626504",
+        "artist": "Егор Крид",
+        "title": "Девочка с картинки",
+        "displayTitle": "Егор Крид — Девочка с картинки",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/bf/e5/1f/bfe51ff7-f075-d734-7fbc-700f0b54ad9f/mzaf_1407800940450358263.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/a6/fe/54/a6fe54d1-dff2-5a98-04c6-b0ca81fce60d/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 26
+      },
+      {
+        "id": "1553993991",
+        "artist": "Егор Крид",
+        "title": "Голос",
+        "displayTitle": "Егор Крид — Голос",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4d/bb/64/4dbb640e-3fa9-9366-fff5-a804552fb38a/mzaf_15122076160829416951.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/58/4c/85/584c85c4-7be8-263f-fbc3-7b252a22d00c/190296762741.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 27
+      },
+      {
+        "id": "1737216348",
+        "artist": "Егор Крид",
+        "title": "Потрачу",
+        "displayTitle": "Егор Крид — Потрачу",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9e/55/03/9e5503c1-138b-74f3-7f77-fe375d4e4687/mzaf_17987674277656116190.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1c/ec/df/1cecdf13-75f5-947d-cba7-da4fa5c27c51/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 28
+      },
+      {
+        "id": "1001211674",
+        "artist": "Егор Крид",
+        "title": "Невеста",
+        "displayTitle": "Егор Крид — Невеста",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/64/a4/49/64a449de-7cdd-10df-fed7-2b7b12c32f2e/mzaf_16903116685023406175.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music7/v4/b7/f6/2b/b7f62b75-c7f5-c2b7-7044-9a742a25e6a5/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 29
+      },
+      {
+        "id": "1471643254",
+        "artist": "Егор Крид",
+        "title": "Грехи (Acoustic) [feat. Клава Кока]",
+        "displayTitle": "Егор Крид — Грехи (Acoustic) [feat. Клава Кока]",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/80/a5/27/80a527ad-296f-07d2-70fe-56f584823b2e/mzaf_14995076056796387011.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/b2/0c/e7/b20ce737-7989-9b37-30ce-9f078e16c581/190295391249.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 30
+      },
+      {
+        "id": "1574928429",
+        "artist": "MAYOT",
+        "title": "В моих мыслях",
+        "displayTitle": "MAYOT — В моих мыслях",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/b5/8c/fe/b58cfe52-85ab-4032-bc44-1cef9bfbc95b/mzaf_6982389775419545692.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/0d/54/93/0d549353-16b2-9ad3-b10a-066c2b951ed1/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 31
+      },
+      {
+        "id": "1528172910",
+        "artist": "MAYOT",
+        "title": "Снег",
+        "displayTitle": "MAYOT — Снег",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b2/4a/f3/b24af3e8-8dc4-2c0d-5d29-af1de85f6734/mzaf_15564356221631698672.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/3b/ae/7d/3bae7da6-8b46-2f08-cd60-57d9edfb7240/cover.jpg/600x600bb.jpg",
+        "genre": "R&B и соул",
+        "kegNum": 32
+      },
+      {
+        "id": "1698975725",
+        "artist": "MAYOT",
+        "title": "до сих пор",
+        "displayTitle": "MAYOT — до сих пор",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f6/32/74/f632740f-92f3-2e08-7af7-8eb0a3d80fff/mzaf_126313269858256640.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/00/8f/03/008f03b5-42ef-91af-7188-3099bad658ed/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 33
+      },
+      {
+        "id": "1528172902",
+        "artist": "MAYOT",
+        "title": "Звезда упала",
+        "displayTitle": "MAYOT — Звезда упала",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/bf/d8/a9/bfd8a996-fac4-e911-1b3d-c250b8d09353/mzaf_2016715982754591346.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/3b/ae/7d/3bae7da6-8b46-2f08-cd60-57d9edfb7240/cover.jpg/600x600bb.jpg",
+        "genre": "R&B и соул",
+        "kegNum": 34
+      },
+      {
+        "id": "1763651628",
+        "artist": "Молодой Платон & ЛСП",
+        "title": "СЕКРЕТАРША",
+        "displayTitle": "Молодой Платон & ЛСП — СЕКРЕТАРША",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/70/89/63/70896373-316f-eebd-d44c-6f8a5b62b1b2/mzaf_17835924561727827816.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/77/7b/90/777b9094-0462-f94f-e16a-a408a2819e05/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 35
+      },
+      {
+        "id": "1744417960",
+        "artist": "Молодой Платон",
+        "title": "РОЗОВЫЕ ОЧКИ",
+        "displayTitle": "Молодой Платон — РОЗОВЫЕ ОЧКИ",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ac/91/cc/ac91cc09-cf3c-a2d5-89b9-26962c185728/mzaf_9530539845021371319.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/9a/fd/3e/9afd3e3f-9e5d-26f2-c0e8-0c6d89a62b9f/cover.jpg/600x600bb.jpg",
+        "genre": "Поп",
+        "kegNum": 36
+      },
+      {
+        "id": "1687271221",
+        "artist": "Молодой Платон",
+        "title": "ДИАГНОЗ",
+        "displayTitle": "Молодой Платон — ДИАГНОЗ",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/06/79/8f/06798f88-dff3-9033-f9b3-e28e600f9470/mzaf_671504363670244462.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/f9/08/19/f9081913-0ea9-2168-7f37-0a7897e83737/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 37
+      },
+      {
+        "id": "1695170358",
+        "artist": "Молодой Платон",
+        "title": "МАРШМЕЛЛОУ (feat. Пошлая Молли)",
+        "displayTitle": "Молодой Платон — МАРШМЕЛЛОУ (feat. Пошлая Молли)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/61/57/cb/6157cbf0-4f3d-c72d-1caa-97bbc57926cf/mzaf_11435801515504400690.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ef/27/a4/ef27a4d8-c38a-c747-7338-a72cf68d1f1b/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 38
+      },
+      {
+        "id": "1541029647",
+        "artist": "Молодой Платон",
+        "title": "IN DA CLUB",
+        "displayTitle": "Молодой Платон — IN DA CLUB",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d8/b9/b8/d8b9b818-eea2-616f-b674-f60d54d0e430/mzaf_1489378760118083189.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c9/99/2b/c9992b65-30a8-553b-a267-e8eed6d88b53/190295065249.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 39
+      },
+      {
+        "id": "1687271222",
+        "artist": "Молодой Платон",
+        "title": "BIG LIL",
+        "displayTitle": "Молодой Платон — BIG LIL",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b9/a5/77/b9a57788-35fa-265c-4732-dc46834558e7/mzaf_15762561036069308044.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/f9/08/19/f9081913-0ea9-2168-7f37-0a7897e83737/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 40
+      },
+      {
+        "id": "1678253852",
+        "artist": "LOVV66",
+        "title": "МАЙ МАЙ",
+        "displayTitle": "LOVV66 — МАЙ МАЙ",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/13/e6/35/13e6353d-99a4-c8e4-c39e-0a140d482bd9/mzaf_16794370386845553946.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/a1/df/c0/a1dfc07b-6e26-43a2-b018-fe6124ff4ae2/0.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 41
+      },
+      {
+        "id": "1652993035",
+        "artist": "LOVV66",
+        "title": "СЭККС",
+        "displayTitle": "LOVV66 — СЭККС",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1a/1e/b1/1a1eb10b-e0b0-c5ae-dd69-1b34b1f40b96/mzaf_4180250258464435974.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/e1/9d/90/e19d90e5-b6d0-becb-e22a-4ee47686f34b/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 42
+      },
+      {
+        "id": "1701399487",
+        "artist": "LOVV66",
+        "title": "SAMAYA PERVAYA",
+        "displayTitle": "LOVV66 — SAMAYA PERVAYA",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview126/v4/c5/1f/08/c51f08fc-1a1a-c2e6-e79c-8af9e52789ac/mzaf_11635142218513614303.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/21/81/3f/21813f62-f243-1b81-1be7-29d70c7535db/0.jpg/600x600bb.jpg",
+        "genre": "Танцевальная",
+        "kegNum": 43
+      },
+      {
+        "id": "1809134793",
+        "artist": "LOVV66",
+        "title": "Наши фотки (feat. MAYOT)",
+        "displayTitle": "LOVV66 — Наши фотки (feat. MAYOT)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/12/77/f8/1277f8db-970e-33b9-85c8-d8091e76de75/mzaf_8569750386748415364.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/83/c1/1d83c127-715b-28c3-75e1-84fc0950d702/0.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 44
+      },
+      {
+        "id": "1652713955",
+        "artist": "LOVV66",
+        "title": "ОНА ЗАБЫЛА ЕГО",
+        "displayTitle": "LOVV66 — ОНА ЗАБЫЛА ЕГО",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/d6/6e/de/d66ede03-395e-8028-0f77-3e90736a95cc/mzaf_12454736788120432369.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/93/c7/2c/93c72ca6-0b33-19e2-f222-22b870a65f30/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 45
+      },
+      {
+        "id": "1599257903",
+        "artist": "SODA LUV",
+        "title": "ДЕРЖИ РУКАМИ (feat. MAYOT)",
+        "displayTitle": "SODA LUV — ДЕРЖИ РУКАМИ (feat. MAYOT)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/02/53/eb/0253ebae-cf26-7fbb-ab70-b91849e13186/mzaf_17555402256653839080.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/f2/4d/cc/f24dcc93-76d6-da3f-ee17-72d919bd679d/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 46
+      },
+      {
+        "id": "1688600192",
+        "artist": "Igorevitsj",
+        "title": "Море dnb (MAYOT + FEDUK)",
+        "displayTitle": "Igorevitsj — Море dnb (MAYOT + FEDUK)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview126/v4/d2/08/2d/d2082dc1-17d3-bcca-04a6-c946708ea06f/mzaf_8196669477665883664.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/04/5c/bd/045cbda3-926d-8649-dd65-a32aebb7c70e/artwork.jpg/600x600bb.jpg",
+        "genre": "Джангл/драм-н-бэйс",
+        "kegNum": 47
+      },
+      {
+        "id": "1713348656",
+        "artist": "Aarne & BUSHIDO ZHO",
+        "title": "ВМЕСТЕ",
+        "displayTitle": "Aarne & BUSHIDO ZHO — ВМЕСТЕ",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e8/49/01/e8490190-0994-b62a-a27d-02ba689ec6e7/mzaf_9639860525420039122.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/fa/6a/e4/fa6ae413-dbdc-e25a-2314-7a7e73cca19f/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 48
+      },
+      {
+        "id": "1504672927",
+        "artist": "MACAN",
+        "title": "Кино",
+        "displayTitle": "MACAN — Кино",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ab/f7/e7/abf7e74d-d9e1-aeb1-36c8-070228c460d1/mzaf_14127919479116379486.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/34/e1/20/34e12052-3c63-b2b0-e8f3-8c6d38070528/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 49
+      },
+      {
+        "id": "1571276354",
+        "artist": "BRANYA & MACAN",
+        "title": "Пополам",
+        "displayTitle": "BRANYA & MACAN — Пополам",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/1e/04/24/1e04244a-3091-141c-db72-932fda29f068/mzaf_16728607636237589463.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/9b/e9/46/9be946e1-2e1c-4894-1a38-4a547f17e584/cover.jpg/600x600bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 50
       }
     ]
   },
