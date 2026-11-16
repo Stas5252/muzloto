@@ -4,7 +4,7 @@ window.BUILTIN_PACKS = {
     "id": "muzloto",
     "title": "МузЛото (43 хита)",
     "icon": "🔥",
-    "desc": "43 песни из коллекции ведущего: короткие превью и полные версии из вашей папки",
+    "desc": "43 песни с короткими превью и полными версиями онлайн",
     "tracks": [
       {
         "id": "6793556682",
@@ -16,7 +16,11 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1a/c3/dc/1ac3dc86-3154-9b9b-f26b-d82ae4093d68/cover.jpg/600x600bb.jpg",
         "genre": "Хип-хоп",
         "kegNum": 1,
-        "fullFile": "6a7b5d6d2eb8c.mp3"
+        "fullFile": "6a7b5d6d2eb8c.mp3",
+        "onlineMusic": {
+          "page": "https://music.mts.ru/artist/8135481/albums/43201525/153970251",
+          "vkVideo": "https://vkvideo.ru/video-238961180_456239076"
+        }
       },
       {
         "id": "1737216348",
@@ -28,7 +32,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1c/ec/df/1cecdf13-75f5-947d-cba7-da4fa5c27c51/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 2,
-        "fullFile": "egor-krid-potrachu.mp3"
+        "fullFile": "egor-krid-potrachu.mp3",
+        "onlineMusic": {
+          "youtube": "avIgaoE1b7A"
+        }
       },
       {
         "id": "1211733166",
@@ -40,7 +47,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/60/35/00603536-2994-8ac8-91a6-0a5355e59f78/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 3,
-        "fullFile": "5ca59d807b6bd.mp3"
+        "fullFile": "5ca59d807b6bd.mp3",
+        "onlineMusic": {
+          "youtube": "ENd38x0DUlY"
+        }
       },
       {
         "id": "1481988750",
@@ -52,7 +62,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/53/08/eb/5308ebcd-a23a-07b8-aa54-880409655702/cover.jpg/600x600bb.jpg",
         "genre": "Поп/рок",
         "kegNum": 4,
-        "fullFile": "Дорадура - Дора.mp3"
+        "fullFile": "Дорадура - Дора.mp3",
+        "onlineMusic": {
+          "youtube": "KyJSV3BtymM"
+        }
       },
       {
         "id": "1656019512",
@@ -64,7 +77,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fa/4b/f4/fa4bf460-52b5-e3b7-acf1-a7babfdf44ff/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 5,
-        "fullFile": "За Деньги Да - INSTASAMKA.mp3"
+        "fullFile": "За Деньги Да - INSTASAMKA.mp3",
+        "onlineMusic": {
+          "youtube": "iZEca2A3tS4"
+        }
       },
       {
         "id": "1679628216",
@@ -76,7 +92,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/99/d9/6b/99d96b14-b330-2293-f4c5-c09296b6dc3e/cover.jpg/600x600bb.jpg",
         "genre": "Хип-хоп",
         "kegNum": 6,
-        "fullFile": "64282985b15e8.mp3"
+        "fullFile": "64282985b15e8.mp3",
+        "onlineMusic": {
+          "youtube": "y14ulAguQv4"
+        }
       },
       {
         "id": "1842815805",
@@ -88,7 +107,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ab/3a/4a/ab3a4a4e-7197-004a-a034-1709d5f8a51a/0.jpg/600x600bb.jpg",
         "genre": "Саундтреки",
         "kegNum": 7,
-        "fullFile": "ваня-дмитриенко-шелк.mp3"
+        "fullFile": "ваня-дмитриенко-шелк.mp3",
+        "onlineMusic": {
+          "youtube": "3W9oasdtC1k"
+        }
       },
       {
         "id": "1053096612",
@@ -100,7 +122,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music62/v4/3c/e3/a3/3ce3a3db-ca73-e8ea-f355-938749c6b1a1/mzm.bhhllqbx.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 8,
-        "fullFile": "serebro-отпусти-меня.mp3"
+        "fullFile": "serebro-отпусти-меня.mp3",
+        "onlineMusic": {
+          "youtube": "MKWxqJudtcE"
+        }
       },
       {
         "id": "1755780618",
@@ -112,7 +137,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/13/b5/d4/13b5d4ab-c93d-07d0-d900-568c228e2712/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 9,
-        "fullFile": "Yuliya_Gavrilina_Drama_queen.mp3"
+        "fullFile": "Yuliya_Gavrilina_Drama_queen.mp3",
+        "onlineMusic": {
+          "youtube": "JnBVigiinzA"
+        }
       },
       {
         "id": "1575451599",
@@ -124,7 +152,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/34/47/f6/3447f604-2abc-391f-e1f4-ed6d57005a7f/190296541223.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 10,
-        "fullFile": "6a5255a588c17.mp3"
+        "fullFile": "6a5255a588c17.mp3",
+        "onlineMusic": {
+          "youtube": "q_wx_C3ps5U"
+        }
       },
       {
         "id": "1859998201",
@@ -136,7 +167,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1d/5b/24/1d5b2457-deff-2af6-f8d5-7e5595eb793a/0.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 11,
-        "fullFile": "68b69b747eba1.mp3"
+        "fullFile": "68b69b747eba1.mp3",
+        "onlineMusic": {
+          "page": "https://rutube.ru/video/24c8bd03b18d3b4378daf970973066de/"
+        }
       },
       {
         "id": "1652565207",
@@ -148,7 +182,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/c6/6c/fd/c66cfd38-42df-86c4-a01b-ca89e817deba/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 12,
-        "fullFile": "sergey-lazarev_v-samoe-serdce_muzrecord.com.mp3"
+        "fullFile": "sergey-lazarev_v-samoe-serdce_muzrecord.com.mp3",
+        "onlineMusic": {
+          "youtube": "5HAytAKiRQo"
+        }
       },
       {
         "id": "1712677225",
@@ -160,7 +197,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/55/b1/62/55b162ba-a690-50bf-1486-fb382c3bc6ac/cover.jpg/600x600bb.jpg",
         "genre": "Рок",
         "kegNum": 13,
-        "fullFile": "65355f410be05.mp3"
+        "fullFile": "65355f410be05.mp3",
+        "onlineMusic": {
+          "youtube": "SsG6kb4m5Uc"
+        }
       },
       {
         "id": "1576535535",
@@ -172,7 +212,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6c/0c/06/6c0c0608-416e-1b5c-d79f-44b986b02b19/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 14,
-        "fullFile": "моя-мишель-зима-в-сердце.mp3"
+        "fullFile": "моя-мишель-зима-в-сердце.mp3",
+        "onlineMusic": {
+          "youtube": "YMBm_Tzmz6U"
+        }
       },
       {
         "id": "1650600516",
@@ -184,7 +227,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/fc/d7/ca/fcd7ca29-26cf-b3b5-cbb6-4a1e214e35cb/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 15,
-        "fullFile": "1573085193_loboda__k_chertu_lyubov_besplatno_.mp3"
+        "fullFile": "1573085193_loboda__k_chertu_lyubov_besplatno_.mp3",
+        "onlineMusic": {
+          "youtube": "V_8yP2lPhXI"
+        }
       },
       {
         "id": "6768974712",
@@ -196,7 +242,11 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/ae/22/c2/ae22c281-b7ea-a5d8-5c44-4e034f143faf/0.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 16,
-        "fullFile": "6a196dbb73683.mp3"
+        "fullFile": "6a196dbb73683.mp3",
+        "onlineMusic": {
+          "youtube": "04x3RshrpG8",
+          "page": "https://rutube.ru/video/9fca1c6dcd5bd353aeddecb16dadd6b0/"
+        }
       },
       {
         "id": "1777112820",
@@ -208,7 +258,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/af/67/6a/af676ae6-6ab5-146a-2d0c-4c001b2912e0/cover.jpg/600x600bb.jpg",
         "genre": "Поп-музыка на русском языке",
         "kegNum": 17,
-        "fullFile": "татьяна-куртукова-одного.mp3"
+        "fullFile": "татьяна-куртукова-одного.mp3",
+        "onlineMusic": {
+          "youtube": "YJpeJwHsvI8"
+        }
       },
       {
         "id": "1681131635",
@@ -220,7 +273,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/48/07/46/4807468c-2b01-0f04-ae5f-d5a6d5084e44/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 18,
-        "fullFile": "t-a-t-u-я-сошла-с-ума.mp3"
+        "fullFile": "t-a-t-u-я-сошла-с-ума.mp3",
+        "onlineMusic": {
+          "youtube": "IlbhnBbwdwg"
+        }
       },
       {
         "id": "1394107529",
@@ -232,7 +288,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/93/69/fc/9369fc25-27ee-6498-a79c-51b775eb8629/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 19,
-        "fullFile": "татьяна-буланова-мои-ненаглядныи.mp3"
+        "fullFile": "татьяна-буланова-мои-ненаглядныи.mp3",
+        "onlineMusic": {
+          "youtube": "iJUH_sH6GeE"
+        }
       },
       {
         "id": "1887250179",
@@ -244,7 +303,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d2/fb/76/d2fb7688-d96d-1997-d607-6706abc506fe/0.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 20,
-        "fullFile": "demo-солнышко.mp3"
+        "fullFile": "demo-солнышко.mp3",
+        "onlineMusic": {
+          "youtube": "AMsgIhk8aaY"
+        }
       },
       {
         "id": "1604345673",
@@ -256,7 +318,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/a5/1d/ad/a51dadbd-a987-089c-1b24-14048ebffe71/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 21,
-        "fullFile": "корни-с-днем-рождения-вика.mp3"
+        "fullFile": "корни-с-днем-рождения-вика.mp3",
+        "onlineMusic": {
+          "youtube": "ZDtgs6XBUQ8"
+        }
       },
       {
         "id": "1397019992",
@@ -268,7 +333,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b0/fc/da/b0fcda38-38bf-147a-9578-78198bfa1964/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 22,
-        "fullFile": "руки-вверх-думала.mp3"
+        "fullFile": "руки-вверх-думала.mp3",
+        "onlineMusic": {
+          "youtube": "1GjbWgCV3ag"
+        }
       },
       {
         "id": "1083906296",
@@ -280,7 +348,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a2/a2/bc/a2a2bc40-d043-3bc2-b39b-a4005c8c4ae3/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 23,
-        "fullFile": "андреи-губин-ночь.mp3"
+        "fullFile": "андреи-губин-ночь.mp3",
+        "onlineMusic": {
+          "youtube": "ERrYlRb5Srs"
+        }
       },
       {
         "id": "1219351548",
@@ -292,7 +363,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0f/1c/73/0f1c7352-17e9-8a52-edf8-60b4079c67d7/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 24,
-        "fullFile": "5sta-family-зачем.mp3"
+        "fullFile": "5sta-family-зачем.mp3",
+        "onlineMusic": {
+          "youtube": "LLPaFLj73D4"
+        }
       },
       {
         "id": "6787018763",
@@ -304,7 +378,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/61/15/66/61156600-4d5f-ef41-70f5-b7cae75eb0a7/0.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 25,
-        "fullFile": "бандэрос-про-красивую-жизнь.mp3"
+        "fullFile": "бандэрос-про-красивую-жизнь.mp3",
+        "onlineMusic": {
+          "youtube": "a2ENRguEy-g"
+        }
       },
       {
         "id": "1200810425",
@@ -316,7 +393,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/4b/cd/12/4bcd12d2-5292-f4b5-b948-08ff7cacf5cd/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 26,
-        "fullFile": "Вахтерам - БумБокс.mp3"
+        "fullFile": "Вахтерам - БумБокс.mp3",
+        "onlineMusic": {
+          "youtube": "tnZPDs9qepA"
+        }
       },
       {
         "id": "1151472383",
@@ -328,7 +408,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/54/6b/fa/546bfa5b-62ca-1403-8d70-92809d4a3876/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 27,
-        "fullFile": "чаи-вдвоем-день-рождения.mp3"
+        "fullFile": "чаи-вдвоем-день-рождения.mp3",
+        "onlineMusic": {
+          "youtube": "OGaPGb-kbJI"
+        }
       },
       {
         "id": "1580751202",
@@ -340,7 +423,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/03/9b/4f/039b4f6c-8fca-6fa6-7efe-7599e1b333f8/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 28,
-        "fullFile": "quest-pistols-show-белая-стрекоза-любви.mp3"
+        "fullFile": "quest-pistols-show-белая-стрекоза-любви.mp3",
+        "onlineMusic": {
+          "youtube": "Rtev_oSsk2c"
+        }
       },
       {
         "id": "1776659451",
@@ -352,7 +438,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/4b/aa/ba/4baabab3-9111-c59c-cffe-8ef0f54991ba/0.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 29,
-        "fullFile": "краски-он-не-знает-ничего.mp3"
+        "fullFile": "краски-он-не-знает-ничего.mp3",
+        "onlineMusic": {
+          "youtube": "B8m86hfPles"
+        }
       },
       {
         "id": "1598596948",
@@ -364,7 +453,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/33/9e/ba/339ebaea-f756-a429-cde2-bfde7e5f73cf/cover.jpg/600x600bb.jpg",
         "genre": "Поп",
         "kegNum": 30,
-        "fullFile": "61b9bd172fd80.mp3"
+        "fullFile": "61b9bd172fd80.mp3",
+        "onlineMusic": {
+          "youtube": "UBsVaSjgTIs"
+        }
       },
       {
         "id": "1374155945",
@@ -376,7 +468,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/26/43/86/264386a4-0a6c-8a10-0a9d-c6b479ef25c5/cover.jpg/600x600bb.jpg",
         "genre": "Хип-хоп",
         "kegNum": 31,
-        "fullFile": "b61nk1-1-ch64-ch64.mp3"
+        "fullFile": "b61nk1-1-ch64-ch64.mp3",
+        "onlineMusic": {
+          "youtube": "6K5HVQn5pG4"
+        }
       },
       {
         "id": "1472166281",
@@ -388,7 +483,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a0/c2/9f/a0c29f32-c1fd-7a35-e4f7-938d0892e4dc/19UMGIM62584.rgb.jpg/600x600bb.jpg",
         "genre": "Танцевальная",
         "kegNum": 32,
-        "fullFile": "don-omar-lucenzo-danza-kuduro.mp3"
+        "fullFile": "don-omar-lucenzo-danza-kuduro.mp3",
+        "onlineMusic": {
+          "youtube": "7zp1TbLFPp8"
+        }
       },
       {
         "id": "1668418517",
@@ -400,7 +498,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/ed/d3/cb/edd3cbbb-cc90-21c3-7993-c51eea703d94/cover.jpg/600x600bb.jpg",
         "genre": "Хип-хоп",
         "kegNum": 33,
-        "fullFile": "Jakone feat. SCIRENA - Там там.mp3"
+        "fullFile": "Jakone feat. SCIRENA - Там там.mp3",
+        "onlineMusic": {
+          "youtube": "2N6WXpe1b0E"
+        }
       },
       {
         "id": "893658841",
@@ -411,7 +512,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/36/97/ab/3697ab7b-c628-7c61-763d-43a3402f20ff/cover.jpg/400x400bb.jpg",
         "fullFile": "Валерий Меладзе - Салют Вера.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D1%81%D0%B0%D0%BB%D1%8E%D1%82-%D0%B2%D0%B5%D1%80%D0%B0/893658822?i=893658841&uo=4",
-        "kegNum": 34
+        "kegNum": 34,
+        "onlineMusic": {
+          "youtube": "pbnGMgMGtMQ"
+        }
       },
       {
         "id": "898372676",
@@ -422,7 +526,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/7b/0d/4c/7b0d4c86-88e4-3670-ce7d-f2c2d6c2a92b/cover.jpg/400x400bb.jpg",
         "fullFile": "Кислотный DJ - Оксана Почепа (Акула).mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%82%D0%BD%D1%8B%D0%B9-dj/898372661?i=898372676&uo=4",
-        "kegNum": 35
+        "kegNum": 35,
+        "onlineMusic": {
+          "youtube": "5BJQu1H4Abg"
+        }
       },
       {
         "id": "1505607242",
@@ -433,7 +540,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/03/d1/da/03d1da48-c609-db5a-38e7-060758b1457b/190295290191.jpg/400x400bb.jpg",
         "fullFile": "Плачу На Техно - Cream Soda & Хлеб.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D0%BF%D0%BB%D0%B0%D1%87%D1%83-%D0%BD%D0%B0-%D1%82%D0%B5%D1%85%D0%BD%D0%BE/1505607241?i=1505607242&uo=4",
-        "kegNum": 36
+        "kegNum": 36,
+        "onlineMusic": {
+          "youtube": "L1Snj1Pt-Hs"
+        }
       },
       {
         "id": "978658542",
@@ -444,7 +554,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/de/50/05/de50053f-2bd5-bd78-0ca0-3290940f148d/cover.jpg/400x400bb.jpg",
         "fullFile": "Роман - Винтаж.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D1%80%D0%BE%D0%BC%D0%B0%D0%BD/978658537?i=978658542&uo=4",
-        "kegNum": 37
+        "kegNum": 37,
+        "onlineMusic": {
+          "youtube": "YRwrgE-N_fI"
+        }
       },
       {
         "id": "1856588835",
@@ -455,7 +568,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/d2/3f/f5/d23ff5cf-0b18-1b44-99e2-4a07c9b27a94/0.jpg/400x400bb.jpg",
         "fullFile": "alexandros-tsopozidis-elbrus-dzhanmirzoev-brodyaga.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D0%B1%D1%80%D0%BE%D0%B4%D1%8F%D0%B3%D0%B0-feat-alexandros-tsopozidis/1856588834?i=1856588835&uo=4",
-        "kegNum": 38
+        "kegNum": 38,
+        "onlineMusic": {
+          "youtube": "z9ASjQE6Q2Y"
+        }
       },
       {
         "id": "1482620047",
@@ -466,7 +582,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/18/c9/14/18c914df-1caa-9b60-f23e-1cc3ac8637c2/cover.jpg/400x400bb.jpg",
         "fullFile": "elka-provans.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D0%BF%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D1%81/1482620038?i=1482620047&uo=4",
-        "kegNum": 39
+        "kegNum": 39,
+        "onlineMusic": {
+          "youtube": "U0vduC21YwI"
+        }
       },
       {
         "id": "1559230681",
@@ -477,7 +596,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/a2/12/3d/a2123d65-49eb-528d-5002-9490c50534ad/5057805304814.jpg/400x400bb.jpg",
         "fullFile": "irina-allegrova-ugonschica.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D1%83%D0%B3%D0%BE%D0%BD%D1%89%D0%B8%D1%86%D0%B0/1559230677?i=1559230681&uo=4",
-        "kegNum": 40
+        "kegNum": 40,
+        "onlineMusic": {
+          "youtube": "Cqd7MK30I8c"
+        }
       },
       {
         "id": "1112607132",
@@ -488,7 +610,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c7/f2/47/c7f24713-959a-56b5-c42d-58c6baa0f295/cover.jpg/400x400bb.jpg",
         "fullFile": "pexa-stas-grigoriy-leps-ona-ne-tvoya.mp3",
         "appleUrl": "https://music.apple.com/us/album/%D0%BE%D0%BD%D0%B0-%D0%BD%D0%B5-%D1%82%D0%B2%D0%BE%D1%8F-feat-%D1%81%D1%82%D0%B0%D1%81-%D0%BF%D1%8C%D0%B5%D1%85%D0%B0/1112606315?i=1112607132&uo=4",
-        "kegNum": 41
+        "kegNum": 41,
+        "onlineMusic": {
+          "youtube": "qRr7Hn6-NYE"
+        }
       },
       {
         "id": "1103187227",
@@ -499,7 +624,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music49/v4/18/e1/e0/18e1e042-5d85-67b8-912d-b284de27e52f/cover.jpg/400x400bb.jpg",
         "fullFile": "shura-ty-ne-ver-slezam.mp3",
         "appleUrl": "https://music.apple.com/ru/album/%D1%82%D1%8B-%D0%BD%D0%B5-%D0%B2%D0%B5%D1%80%D1%8C-%D1%81%D0%BB%D0%B5%D0%B7%D0%B0%D0%BC/1103187224?i=1103187227&uo=4",
-        "kegNum": 42
+        "kegNum": 42,
+        "onlineMusic": {
+          "youtube": "z8T4d0Ej0WM"
+        }
       },
       {
         "id": "1440860312",
@@ -510,7 +638,10 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/5b/a4/0a/5ba40a95-9bf6-3b0c-ee7b-82f0bf71f589/10UMGIM00578.rgb.jpg/400x400bb.jpg",
         "fullFile": "Telephone (feat. Beyonce) - Lady Gaga.mp3",
         "appleUrl": "https://music.apple.com/us/album/telephone-feat-beyonc%C3%A9/1440860294?i=1440860312&uo=4",
-        "kegNum": 43
+        "kegNum": 43,
+        "onlineMusic": {
+          "youtube": "XkGIneCJRlc"
+        }
       }
     ]
   },
