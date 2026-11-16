@@ -3,10 +3,12 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const { randomBytes, timingSafeEqual } = require('node:crypto');
 const QR = require('qrcode');
 const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 3000;
+const STATS_RESET_PASSWORD = process.env.MUZLOTO_STATS_RESET_PASSWORD;
 const app = express();
 const srv = http.createServer(app);
 const io = new Server(srv, { maxHttpBufferSize: 2e6, cors: { origin: '*' } });
@@ -164,12 +166,10 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-app.post('/api/stats/win', (req, res) => {
-  const record = recordGameWin(req.body);
-  res.json({ ok: true, record });
-});
-
 app.post('/api/stats/reset', (req, res) => {
+  if (!STATS_RESET_PASSWORD || !matchesSecret(req.body?.password, STATS_RESET_PASSWORD)) {
+    return res.status(403).json({ ok: false });
+  }
   saveStatsDb({ leaderboard: {}, history: [] });
   res.json({ ok: true });
 });
@@ -236,7 +236,14 @@ app.get('/qr.svg', async (req, res) => {
 });
 
 // Game state & rooms
-const rooms = {};
+const rooms = Object.create(null);
+
+function matchesSecret(candidate, secret) {
+  if (typeof candidate !== 'string') return false;
+  const provided = Buffer.from(candidate);
+  const expected = Buffer.from(secret);
+  return provided.length === expected.length && timingSafeEqual(provided, expected);
+}
 
 const shuffle = arr => {
   const a = [...arr];
@@ -361,7 +368,10 @@ const pub = r => ({
 const push = r => io.to(r.code).emit('state', pub(r));
 
 io.on('connection', s => {
-  const hostRoom = () => rooms[s.data.host];
+  const hostRoom = () => {
+    const room = rooms[s.data.host];
+    return room?.host === s.id ? room : null;
+  };
 
   s.on('host:create', (d, ack) => {
     const size = d.size === 4 ? 4 : 3;
@@ -400,12 +410,13 @@ io.on('connection', s => {
       winnerDetails: null,
       players: new Map(),
       host: s.id,
+      hostToken: randomBytes(32).toString('hex'),
       created: Date.now()
     };
 
     s.data.host = code;
     s.join(code);
-    ack({ code });
+    ack({ code, hostToken: rooms[code].hostToken });
     push(rooms[code]);
   });
 
@@ -414,7 +425,10 @@ io.on('connection', s => {
     if (!ack) ack = () => {};
     const code = String(d && d.code);
     const r = rooms[code];
-    if (!r) return ack({ error: 'Комната не найдена' });
+    if (!r || (r.host !== s.id && !matchesSecret(d?.hostToken, r.hostToken))) {
+      return ack({ error: 'Комната недоступна для восстановления' });
+    }
+    r.host = s.id;
     s.data.host = code;
     s.join(code);
     ack({ ok: true, state: pub(r), room: {
@@ -532,7 +546,7 @@ io.on('connection', s => {
 
     if (!p) {
       pid = pid || ('p_' + Math.random().toString(36).slice(2, 11) + '_' + Date.now().toString(36));
-      p = { name, card: newCard(r), marks: new Set() };
+      p = { name, pid, card: newCard(r), marks: new Set() };
       r.players.set(pid, p);
     }
     p.name = name;

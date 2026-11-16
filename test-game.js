@@ -1,7 +1,8 @@
+const assert = require('node:assert/strict');
 const { io } = require('socket.io-client');
 
 async function run() {
-  const host = io('http://localhost:3000');
+  let host = io('http://localhost:3000');
   const player = io('http://localhost:3000');
 
   await new Promise(r => host.on('connect', r));
@@ -17,6 +18,16 @@ async function run() {
   const joined = await new Promise(res => player.emit('player:join', { code: room.code, name: 'Tester' }, res));
   console.log('Player Tester joined. Card length:', joined.card.length);
   console.log('Card tracks:', joined.card.map(c => c.title).join(', '));
+
+  host.disconnect();
+  host = io('http://localhost:3000');
+  await new Promise(r => host.on('connect', r));
+  const restored = await host.timeout(3000).emitWithAck('host:restore', {
+    code: room.code,
+    hostToken: room.hostToken
+  });
+  assert.equal(restored.ok, true);
+  assert.equal(restored.state.code, room.code);
 
   // 3. Start game
   const playingPromise = new Promise(res => {
@@ -64,6 +75,8 @@ async function run() {
   }
 
   const finalState = await finishedPromise;
+  assert.equal(finalState.winnerPid, joined.pid);
+  assert.equal(finalState.winnerDetails.pid, joined.pid);
   console.log('Game finished! Winner:', finalState.winner);
 
   if (finalState.winner === 'Tester') {

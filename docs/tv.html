@@ -66,6 +66,9 @@
         </div>
       </div>
       <div class="row" style="gap:8px;">
+        <input type="file" id="full-audio-folder" webkitdirectory hidden>
+        <button type="button" id="btn-full-audio-folder" class="btn btn-secondary btn-sm">Подключить папку с музыкой</button>
+        <span id="full-audio-status" role="status" style="font-size:0.8rem;"></span>
         <button id="btn-open-leaderboard" class="btn btn-secondary btn-sm" title="Таблица лидеров и история побед">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
             <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
@@ -503,9 +506,9 @@
           <label>
             Формат воспроизведения
             <select id="opt-play-format">
-              <option value="party" selected>🔥 Вечеринка: играет без остановки (по кругу, пока танцуют)</option>
+              <option value="party">🔥 Вечеринка: играет без остановки (по кругу, пока танцуют)</option>
               <option value="timer25">⏱ Быстрый квиз: фрагмент 25 сек</option>
-              <option value="once">▶ Одиночный: сыграть 1 раз без повтора</option>
+              <option value="once" selected>▶ Одиночный: сыграть 1 раз без повтора</option>
             </select>
           </label>
           <label>
@@ -590,7 +593,7 @@
           </div>
           <div class="row">
             <label style="flex-direction:row; align-items:center; gap:8px; cursor:pointer;">
-              <input type="checkbox" id="chk-auto-next" style="width:18px; height:18px; accent-color:var(--accent-gold);">
+              <input type="checkbox" id="chk-auto-next" checked style="width:18px; height:18px; accent-color:var(--accent-gold);">
               <span style="color:var(--text-muted); font-size:0.9rem;">Авто-переход</span>
             </label>
           </div>
@@ -647,7 +650,9 @@
             <button id="btn-replay-keg" class="btn btn-secondary">
               <span>Сначала</span>
             </button>
+            <button type="button" id="btn-play-full-track" class="btn btn-secondary" disabled>Доиграть трек</button>
           </div>
+          <div id="track-playback-status" role="status" style="margin:10px auto 0;text-align:center;font-size:0.85rem;color:var(--text-muted);"></div>
         </div>
 
         <!-- CALL BOARD: Табло сыгравших бочонков -->
@@ -779,7 +784,7 @@
     const mainAudio = $('main-audio');
     const previewAudio = $('preview-audio');
 
-    window.BUILTIN_PACKS = {
+    window.BUILTIN_PACKS ||= {
   "muzloto": {
     "id": "muzloto",
     "title": "МузЛото (33 главных хита)",
@@ -2422,6 +2427,7 @@
 };
 
     let allPacks = window.BUILTIN_PACKS;
+    let activePackId = allPacks.muzloto?.id || allPacks.new_school?.id || Object.keys(allPacks)[0];
     let selectedTracks = (window.BUILTIN_PACKS['muzloto'] || window.BUILTIN_PACKS['new_school'] || Object.values(window.BUILTIN_PACKS)[0]).tracks.map((t, i) => ({
       id: t.id || 't_' + i,
       kegNum: i + 1,
@@ -2432,10 +2438,15 @@
       art: t.art || ''
     }));
     let previewAudioBtn = null;
-    let autoNext = false; // Manual control by default for partying!
+    let setupAudioUrl = null;
+    let autoNext = $('chk-auto-next').checked;
     let trackTimer = null;
     let currentRoomCode = null;
     let currentCallingTrack = null;
+    let fullTrackUrl = null;
+    let nextBarrelPending = false;
+    let roundFinished = false;
+    const fullAudioFiles = new Map();
     let isRevealed = false;
 
     // Web Audio Synthesis for Barrel Drop Knock & Fanfare
@@ -2542,7 +2553,7 @@
       };
 
       container.innerHTML = Object.values(allPacks).map(p => `
-        <div class="pack-card ${p.id === 'new_school' ? 'active' : ''}" data-id="${p.id}">
+        <div class="pack-card ${p.id === activePackId ? 'active' : ''}" data-id="${p.id}">
           <div>
             <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[${packTags[p.id] || 'COLLECTION'}]</div>
             <div class="pack-title">${escapeHtml(p.title.replace(/^[^\w\u0400-\u04FF]+\s*/, ''))}</div>
@@ -2560,6 +2571,7 @@
           const packId = card.dataset.id;
           const pack = allPacks[packId];
           if (pack && pack.tracks) {
+            activePackId = packId;
             setTracks(pack.tracks);
             container.querySelectorAll('.pack-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
@@ -2568,7 +2580,7 @@
       });
 
       if (!selectedTracks || selectedTracks.length === 0) {
-        const defaultPack = allPacks['new_school'] || Object.values(allPacks)[0];
+        const defaultPack = allPacks[activePackId] || Object.values(allPacks)[0];
         if (defaultPack && defaultPack.tracks) {
           setTracks(defaultPack.tracks);
         }
@@ -2606,6 +2618,7 @@
     }
 
     function setTracks(tracksList) {
+      stopSetupAudio();
       selectedTracks = tracksList.map((t, i) => ({
         id: t.id || 't_' + i,
         kegNum: i + 1,
@@ -2652,18 +2665,23 @@
             <div class="track-title">${escapeHtml(t.title)}</div>
             <div class="track-artist">${escapeHtml(t.artist)}</div>
           </div>
-          ${t.preview ? `<button class="btn-play-preview" data-preview="${t.preview}">▶</button>` : ''}
+          ${t.preview ? `<button type="button" class="btn btn-sm btn-secondary" data-preview-track="${idx}">Превью</button>` : ''}
+          ${fullAudioFiles.has(String(t.id)) ? `<button type="button" class="btn btn-sm btn-secondary" data-full-track="${idx}">Целиком</button>` : ''}
           <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="${idx}">✕</button>
         </div>
       `).join('');
 
-      container.querySelectorAll('.btn-play-preview').forEach(btn => {
-        btn.onclick = () => playPreview(btn.dataset.preview, btn);
+      container.querySelectorAll('[data-preview-track]').forEach(btn => {
+        btn.onclick = () => playPreview(selectedTracks[btn.dataset.previewTrack].preview, btn);
+      });
+      container.querySelectorAll('[data-full-track]').forEach(btn => {
+        btn.onclick = () => playPreview(fullAudioFiles.get(String(selectedTracks[btn.dataset.fullTrack].id)), btn);
       });
 
       container.querySelectorAll('.btn-secondary[data-idx]').forEach(btn => {
         btn.onclick = () => {
           const idx = parseInt(btn.dataset.idx, 10);
+          stopSetupAudio();
           selectedTracks.splice(idx, 1);
           selectedTracks.forEach((t, i) => t.kegNum = i + 1);
           renderSelectedTracks();
@@ -2672,6 +2690,7 @@
     }
 
     $('btn-clear-tracks').onclick = () => {
+      stopSetupAudio();
       selectedTracks = [];
       renderSelectedTracks();
     };
@@ -2753,37 +2772,42 @@
       });
     }
 
-    function playPreview(url, btn) {
-      if (previewAudioBtn === btn && !previewAudio.paused) {
-        previewAudio.pause();
-        btn.textContent = '▶';
-        btn.classList.remove('playing');
-        previewAudioBtn = null;
-      } else {
-        if (previewAudioBtn) {
-          previewAudioBtn.textContent = '▶';
-          previewAudioBtn.classList.remove('playing');
-        }
-        previewAudio.src = url;
-        previewAudio.play().then(() => {
-          btn.textContent = '⏸';
-          btn.classList.add('playing');
-          previewAudioBtn = btn;
-        }).catch(e => console.warn(e));
-      }
-    }
-
-    previewAudio.onended = () => {
+    function stopSetupAudio() {
+      previewAudio.pause();
+      previewAudio.removeAttribute('src');
+      previewAudio.load();
+      if (setupAudioUrl) URL.revokeObjectURL(setupAudioUrl);
+      setupAudioUrl = null;
       if (previewAudioBtn) {
-        previewAudioBtn.textContent = '▶';
+        previewAudioBtn.textContent = previewAudioBtn.dataset.idleLabel;
         previewAudioBtn.classList.remove('playing');
         previewAudioBtn = null;
       }
-    };
+    }
+
+    function playPreview(source, btn) {
+      const wasPlaying = previewAudioBtn === btn;
+      stopSetupAudio();
+      if (!source || wasPlaying) return;
+      btn.dataset.idleLabel = btn.textContent;
+      btn.textContent = 'Стоп';
+      btn.classList.add('playing');
+      previewAudioBtn = btn;
+      setupAudioUrl = source instanceof File ? URL.createObjectURL(source) : null;
+      const url = setupAudioUrl || source;
+      previewAudio.src = url;
+      previewAudio.play().catch(error => {
+        if (previewAudioBtn !== btn || previewAudio.src !== url) return;
+        stopSetupAudio();
+        console.warn(error);
+      });
+    }
+
+    previewAudio.onended = stopSetupAudio;
 
     // CREATE ROOM
     $('btn-create-room').onclick = async () => {
-      if (previewAudio) previewAudio.pause();
+      stopSetupAudio();
       const size = parseInt($('opt-size').value, 10);
       const mode = $('opt-mode').value;
 
@@ -2855,12 +2879,83 @@
     $('btn-next-keg').onclick = nextBarrel;
     $('btn-pause-keg').onclick = togglePause;
     $('btn-replay-keg').onclick = replayAudio;
+    $('btn-full-audio-folder').onclick = () => $('full-audio-folder').click();
+    $('full-audio-folder').onchange = event => {
+      stopSetupAudio();
+      const filesByName = new Map(Array.from(event.target.files, file => [file.name.normalize(), file]));
+      fullAudioFiles.clear();
+      const tracks = Object.values(allPacks).flatMap(pack => pack.tracks).filter(track => track.fullFile);
+      for (const track of tracks) {
+        const file = filesByName.get(track.fullFile.normalize());
+        if (file) fullAudioFiles.set(String(track.id), file);
+      }
+      $('full-audio-status').textContent = `Полные треки: ${fullAudioFiles.size}/${new Set(tracks.map(track => track.id)).size}`;
+      renderSelectedTracks();
+      updateFullTrackButton();
+    };
+    $('btn-play-full-track').onclick = playFullTrack;
+
+    function updateFullTrackButton() {
+      $('btn-play-full-track').disabled = nextBarrelPending || roundFinished || !!fullTrackUrl ||
+        !fullAudioFiles.has(String(currentCallingTrack?.id));
+    }
+
+    function clearPlaybackTimer() {
+      clearTimeout(trackTimer);
+      trackTimer = null;
+    }
+
+    function releaseFullTrack() {
+      if (!fullTrackUrl) return;
+      mainAudio.pause();
+      mainAudio.onended = null;
+      mainAudio.onerror = null;
+      mainAudio.removeAttribute('src');
+      mainAudio.load();
+      URL.revokeObjectURL(fullTrackUrl);
+      fullTrackUrl = null;
+    }
+
+    function playFullTrack() {
+      const file = fullAudioFiles.get(String(currentCallingTrack?.id));
+      if (!file || nextBarrelPending || roundFinished || fullTrackUrl) return;
+      clearPlaybackTimer();
+      const url = URL.createObjectURL(file);
+      fullTrackUrl = url;
+      updateFullTrackButton();
+      mainAudio.onloadedmetadata = null;
+      mainAudio.loop = false;
+      mainAudio.onended = onTrackFinished;
+      const handleError = () => {
+        if (fullTrackUrl !== url) return;
+        releaseFullTrack();
+        updateFullTrackButton();
+        onTrackFinished();
+        $('track-playback-status').textContent = 'Не удалось запустить полную запись';
+      };
+      mainAudio.onerror = handleError;
+      $('track-playback-status').textContent = 'Полная запись · автопереход после окончания';
+      mainAudio.src = url;
+      mainAudio.play().then(() => {
+        if (fullTrackUrl === url) showAudioPlaying();
+      }).catch(handleError);
+    }
 
     function nextBarrel() {
-      clearTimeout(trackTimer);
+      if (nextBarrelPending) return;
+      clearPlaybackTimer();
+      nextBarrelPending = true;
+      updateFullTrackButton();
       comm.hostNext(res => {
+        nextBarrelPending = false;
+        updateFullTrackButton();
         if (!res || res.error) return;
+        releaseFullTrack();
+        mainAudio.onended = null;
         if (res.end) {
+          $('track-playback-status').textContent = '';
+          currentCallingTrack = null;
+          updateFullTrackButton();
           $('tv-track-artist').textContent = 'МЕШОК ПУСТ!';
           $('tv-track-title').textContent = 'Все бочонки раунда сыграли!';
           $('equalizer-wave').classList.remove('active');
@@ -2871,6 +2966,7 @@
         }
 
         currentCallingTrack = res.track;
+        updateFullTrackButton();
 
         // Save last drawn barrel locally for 100% session persistence on reload
         try {
@@ -2915,6 +3011,10 @@
         $('game-remaining-text').textContent = `В мешке: ${res.remaining} бочонков`;
 
         // Play Audio (Party format: plays completely!)
+        $('track-playback-status').textContent = 'Превью Apple Music';
+        mainAudio.onerror = () => {
+          $('track-playback-status').textContent = 'Превью не загрузилось. Можно включить полную запись или вытянуть следующий бочонок.';
+        };
         mainAudio.src = res.track.preview;
         const playFormat = $('opt-play-format') ? $('opt-play-format').value : 'party';
 
@@ -2922,12 +3022,7 @@
           mainAudio.currentTime = 0;
           // In party mode, loop seamlessly so music never stops while guests dance & sing!
           mainAudio.loop = (playFormat === 'party' || playFormat === 'loop');
-          mainAudio.play().then(() => {
-            $('equalizer-wave').classList.add('active');
-            $('lotto-keg-ball').classList.add('playing');
-            $('tv-album-cover-box').classList.add('playing');
-            $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
-          }).catch(e => console.warn(e));
+          mainAudio.play().then(showAudioPlaying).catch(e => console.warn(e));
         };
 
         if (playFormat === 'timer25') {
@@ -2950,13 +3045,22 @@
     }
 
     function onTrackFinished() {
+      $('track-playback-status').textContent = fullTrackUrl ? 'Полная запись закончилась' : 'Превью закончилось';
       $('equalizer-wave').classList.remove('active');
       $('lotto-keg-ball').classList.remove('playing');
       $('tv-album-cover-box').classList.remove('playing');
 
-      if (autoNext) {
-        trackTimer = setTimeout(nextBarrel, 4000);
+      if (autoNext && !roundFinished) {
+        clearPlaybackTimer();
+        trackTimer = setTimeout(() => { if (autoNext) nextBarrel(); }, 4000);
       }
+    }
+
+    function showAudioPlaying() {
+      $('equalizer-wave').classList.add('active');
+      $('lotto-keg-ball').classList.add('playing');
+      $('tv-album-cover-box').classList.add('playing');
+      $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
     }
 
     function addToCallBoard(track) {
@@ -3025,6 +3129,7 @@
 
     function togglePause() {
       if (mainAudio.paused) {
+        if (mainAudio.ended && fullTrackUrl) clearPlaybackTimer();
         mainAudio.play();
         $('equalizer-wave').classList.add('active');
         $('lotto-keg-ball').classList.add('playing');
@@ -3040,6 +3145,7 @@
     }
 
     function replayAudio() {
+      if (fullTrackUrl) clearPlaybackTimer();
       mainAudio.currentTime = 0;
       mainAudio.play();
       $('equalizer-wave').classList.add('active');
@@ -3080,6 +3186,13 @@
     // State events
     comm.on('state', state => {
       if (!currentRoomCode) return;
+      roundFinished = state.state === 'finished';
+      if (state.state === 'lobby') {
+        clearPlaybackTimer();
+        releaseFullTrack();
+        currentCallingTrack = null;
+      }
+      updateFullTrackButton();
       $('lobby-players-count').textContent = state.players.length;
       if (state.players.length) {
         $('lobby-players-wrap').innerHTML = state.players.map(p => `
@@ -3140,8 +3253,8 @@
 
       // Check Bingo Winner
       if (state.state === 'finished' && state.winner) {
-        clearInterval(trackTimer);
-        mainAudio.pause();
+        clearPlaybackTimer();
+        if (!fullTrackUrl) mainAudio.pause();
         $('equalizer-wave').classList.remove('active');
         $('lotto-keg-ball').classList.remove('playing');
 
@@ -3317,6 +3430,7 @@
 
           if (restoredTrack) {
             currentCallingTrack = restoredTrack;
+            updateFullTrackButton();
             const coverImg = $('tv-stage-cover');
             const placeholder = $('tv-stage-cover-placeholder');
             if (coverImg) {
@@ -3477,16 +3591,6 @@
         localStorage.setItem('muzloto_db_stats', JSON.stringify(db));
       } catch(e) {}
 
-      // Also send to server API if in socket.io mode
-      if (comm && comm.mode === 'socket.io') {
-        try {
-          await fetch('/api/stats/win', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(winnerDetails)
-          });
-        } catch(e) {}
-      }
     }
 
     async function openLeaderboardModal() {
@@ -3553,7 +3657,7 @@
                 </span>
               </div>
               <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;">
-                Режим: ${escapeHtml(item.mode)} · За ${item.turn} ходов · Комната #${escapeHtml(item.roomCode)}
+                Режим: ${escapeHtml(item.mode)} · За ${escapeHtml(item.turn)} ходов · Комната #${escapeHtml(item.roomCode)}
               </div>
               ${item.winningTracks && item.winningTracks.length ? `
                 <div style="font-size:0.75rem; color:var(--text-faint); margin-top:4px;">
@@ -3593,15 +3697,26 @@
     $('btn-clear-stats').onclick = async () => {
       if (confirm('Сбросить всю историю побед и рейтинг игроков?')) {
         try {
-          localStorage.removeItem('muzloto_db_stats');
           if (comm && comm.mode === 'socket.io') {
-            await fetch('/api/stats/reset', { method: 'POST' });
+            const password = prompt('Введите пароль администратора для сброса статистики');
+            if (!password) return;
+            const response = await fetch('/api/stats/reset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password })
+            });
+            if (!response.ok) throw new Error('Сброс отклонён. Проверьте пароль и настройки сервера.');
           }
-        } catch(e) {}
+          localStorage.removeItem('muzloto_db_stats');
+        } catch (error) {
+          alert(error.message);
+          return;
+        }
         renderLeaderboardUI();
       }
     };
 
+    renderSelectedTracks();
     loadCuratedPacks().then(() => {
       checkHostSessionRestore();
     });

@@ -42,8 +42,17 @@ window.createComm = function(role) {
     socket.on('card', c => emitLocal('card', c));
 
     if (role === 'host') {
-      adapter.hostCreate = (data, cb) => socket.emit('host:create', data, cb);
-      adapter.hostRestore = (savedCode, cb) => socket.emit('host:restore', { code: savedCode }, cb);
+      adapter.hostCreate = (data, cb) => socket.emit('host:create', data, result => {
+        if (result?.code && result.hostToken) {
+          try { localStorage.setItem('muzloto_host_token_' + result.code, result.hostToken); } catch (e) {}
+        }
+        cb(result);
+      });
+      adapter.hostRestore = (savedCode, cb) => {
+        let hostToken;
+        try { hostToken = localStorage.getItem('muzloto_host_token_' + savedCode); } catch (e) {}
+        socket.emit('host:restore', { code: savedCode, hostToken }, cb);
+      };
       adapter.hostStart = cb => socket.emit('host:start', {}, cb);
       adapter.hostNext = cb => socket.emit('host:next', {}, cb);
       adapter.hostNewRound = cb => socket.emit('host:newround', {}, cb);
