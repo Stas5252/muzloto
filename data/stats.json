@@ -132,9 +132,33 @@
       "games": 1,
       "lastWin": 1794791891916,
       "lastWinDate": "16.11.2026, 05:18"
+    },
+    "Гриша": {
+      "name": "Гриша",
+      "wins": 1,
+      "games": 1,
+      "lastWin": 1794792968308,
+      "lastWinDate": "16.11.2026, 05:36"
     }
   },
   "history": [
+    {
+      "id": "win_1794792968308_gqr3",
+      "roomCode": "7528",
+      "winnerName": "Гриша",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 27,
+      "totalBarrels": 50,
+      "timestamp": 1794792968308,
+      "dateStr": "16.11.2026, 05:36",
+      "winningTracks": [
+        "Big Baby Tape — Gimme the Loot",
+        "LOVV66 — Наши фотки (feat. MAYOT)",
+        "INSTASAMKA — POPSTAR"
+      ],
+      "playerCount": 2
+    },
     {
       "id": "win_1794791892766_8i16",
       "roomCode": "5624",
