@@ -44,17 +44,6 @@
       font-size: 0.85rem;
       text-transform: uppercase;
     }
-    #online-track-dialog {
-      width: min(720px, calc(100% - 24px));
-      max-height: calc(100% - 24px);
-      padding: clamp(14px, 3vw, 24px);
-      color: var(--text-main, #fff);
-      background: var(--bg-card, #141722);
-      border: 1px solid var(--border-subtle);
-      border-radius: 18px;
-    }
-    #online-track-dialog::backdrop { background: rgba(0, 0, 0, 0.75); }
-    #online-track-dialog [hidden] { display: none; }
   </style>
 </head>
 <body>
@@ -661,7 +650,7 @@
             <button id="btn-replay-keg" class="btn btn-secondary">
               <span>Сначала</span>
             </button>
-            <button type="button" id="btn-play-full-track" class="btn btn-secondary" disabled>Слушать целиком</button>
+            <button type="button" id="btn-play-full-track" class="btn btn-secondary" disabled>Доиграть трек</button>
           </div>
           <div id="track-playback-status" role="status" style="margin:10px auto 0;text-align:center;font-size:0.85rem;color:var(--text-muted);"></div>
         </div>
@@ -778,16 +767,6 @@
     </div>
   </div>
 
-  <dialog id="online-track-dialog" aria-labelledby="online-track-title">
-    <h2 id="online-track-title" style="margin:0;font-size:1.25rem;"></h2>
-    <p id="online-track-status" role="status" style="margin:8px 0 14px;color:var(--text-muted);"></p>
-    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:14px;">
-      <a id="online-track-youtube" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Открыть на YouTube ↗</a>
-      <a id="online-track-source" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Найти в Яндекс Музыке ↗</a>
-      <a id="online-track-alternate" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer" hidden>Открыть в VK Видео ↗</a>
-      <button type="button" id="online-track-done" class="btn btn-gold btn-sm">Вернуться в игру</button>
-    </div>
-  </dialog>
   <audio id="main-audio" crossorigin="anonymous"></audio>
   <audio id="preview-audio" crossorigin="anonymous"></audio>
 
@@ -797,7 +776,7 @@
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
   <script src="comm.js?v=2"></script>
-  <script src="packs-data.js?v=online-2"></script>
+  <script src="packs-data.js"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -2468,7 +2447,6 @@
     let nextBarrelPending = false;
     let roundFinished = false;
     const fullAudioFiles = new Map();
-    let onlinePlayback;
     let isRevealed = false;
 
     // Web Audio Synthesis for Barrel Drop Knock & Fanfare
@@ -2619,7 +2597,7 @@
       const tryPaths = ['packs.json', './packs.json', 'muzloto/packs.json', '/muzloto/packs.json'];
       for (const p of tryPaths) {
         try {
-          const res = await fetch(p + '?v=online-2');
+          const res = await fetch(p);
           if (res.ok) {
             const data = await res.json();
             if (data && Object.keys(data).length) {
@@ -2688,7 +2666,7 @@
             <div class="track-artist">${escapeHtml(t.artist)}</div>
           </div>
           ${t.preview ? `<button type="button" class="btn btn-sm btn-secondary" data-preview-track="${idx}">Превью</button>` : ''}
-          ${hasFullTrack(t) ? `<button type="button" class="btn btn-sm btn-secondary" data-full-track="${idx}">Целиком</button>` : ''}
+          ${fullAudioFiles.has(String(t.id)) ? `<button type="button" class="btn btn-sm btn-secondary" data-full-track="${idx}">Целиком</button>` : ''}
           <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="${idx}">✕</button>
         </div>
       `).join('');
@@ -2697,12 +2675,7 @@
         btn.onclick = () => playPreview(selectedTracks[btn.dataset.previewTrack].preview, btn);
       });
       container.querySelectorAll('[data-full-track]').forEach(btn => {
-        btn.onclick = () => {
-          const track = selectedTracks[btn.dataset.fullTrack];
-          const file = fullAudioFiles.get(String(track.id));
-          if (file) playPreview(file, btn);
-          else openOnlineTrack(track, false);
-        };
+        btn.onclick = () => playPreview(fullAudioFiles.get(String(selectedTracks[btn.dataset.fullTrack].id)), btn);
       });
 
       container.querySelectorAll('.btn-secondary[data-idx]').forEach(btn => {
@@ -2921,69 +2894,10 @@
       updateFullTrackButton();
     };
     $('btn-play-full-track').onclick = playFullTrack;
-    $('online-track-done').onclick = () => closeOnlineTrack(true);
-    $('online-track-dialog').addEventListener('cancel', event => {
-      event.preventDefault();
-      closeOnlineTrack(true);
-    });
-
-    function catalogTrack(track) {
-      return allPacks.muzloto?.tracks.find(entry => String(entry.id) === String(track?.id));
-    }
-
-    function hasFullTrack(track) {
-      return fullAudioFiles.has(String(track?.id)) || Boolean(catalogTrack(track)?.onlineMusic);
-    }
-
-    function openOnlineTrack(track, duringRound) {
-      const entry = catalogTrack(track);
-      if (!entry?.onlineMusic || onlinePlayback) return;
-      stopSetupAudio();
-      if (duringRound) {
-        clearPlaybackTimer();
-        mainAudio.pause();
-        $('track-playback-status').textContent = 'Полная версия онлайн · автопереход на паузе';
-      }
-      onlinePlayback = { duringRound };
-      const title = entry.displayTitle;
-      const youtubeId = entry.onlineMusic.youtube;
-      const youtube = $('online-track-youtube');
-      const source = $('online-track-source');
-      const alternate = $('online-track-alternate');
-      const status = $('online-track-status');
-      $('online-track-title').textContent = title;
-      source.href = entry.onlineMusic.page || 'https://music.yandex.ru/search?text=' + encodeURIComponent(title);
-      source.textContent = entry.onlineMusic.page?.startsWith('https://rutube.ru/')
-        ? 'Открыть на RUTUBE ↗'
-        : (entry.onlineMusic.page ? 'Открыть запись ↗' : 'Найти в Яндекс Музыке ↗');
-      alternate.hidden = !entry.onlineMusic.vkVideo;
-      if (entry.onlineMusic.vkVideo) alternate.href = entry.onlineMusic.vkVideo;
-      youtube.hidden = !youtubeId;
-      if (youtubeId) youtube.href = 'https://www.youtube.com/watch?v=' + youtubeId;
-      status.textContent = duringRound
-        ? 'Автопереход на паузе. После прослушивания нажми «Вернуться в игру».'
-        : 'Запись откроется в новой вкладке. Если вкладка не открылась, нажми на ссылку ниже.';
-      $('online-track-dialog').showModal();
-      updateFullTrackButton();
-      const link = youtubeId ? youtube : (entry.onlineMusic.vkVideo ? alternate : source);
-      link.click();
-    }
-
-    function closeOnlineTrack(resumeRound) {
-      if (!onlinePlayback) return;
-      const { duringRound } = onlinePlayback;
-      onlinePlayback = null;
-      $('online-track-dialog').close();
-      updateFullTrackButton();
-      if (resumeRound && duringRound && !roundFinished) {
-        onTrackFinished();
-        $('track-playback-status').textContent = 'Прослушивание полной версии завершено';
-      }
-    }
 
     function updateFullTrackButton() {
       $('btn-play-full-track').disabled = nextBarrelPending || roundFinished || !!fullTrackUrl ||
-        !!onlinePlayback || !hasFullTrack(currentCallingTrack);
+        !fullAudioFiles.has(String(currentCallingTrack?.id));
     }
 
     function clearPlaybackTimer() {
@@ -3004,11 +2918,7 @@
 
     function playFullTrack() {
       const file = fullAudioFiles.get(String(currentCallingTrack?.id));
-      if (nextBarrelPending || roundFinished || fullTrackUrl || onlinePlayback) return;
-      if (!file) {
-        openOnlineTrack(currentCallingTrack, true);
-        return;
-      }
+      if (!file || nextBarrelPending || roundFinished || fullTrackUrl) return;
       clearPlaybackTimer();
       const url = URL.createObjectURL(file);
       fullTrackUrl = url;
@@ -3280,7 +3190,6 @@
       if (state.state === 'lobby') {
         clearPlaybackTimer();
         releaseFullTrack();
-        if (onlinePlayback?.duringRound) closeOnlineTrack(false);
         currentCallingTrack = null;
       }
       updateFullTrackButton();
@@ -3345,7 +3254,6 @@
       // Check Bingo Winner
       if (state.state === 'finished' && state.winner) {
         clearPlaybackTimer();
-        if (onlinePlayback?.duringRound) closeOnlineTrack(false);
         if (!fullTrackUrl) mainAudio.pause();
         $('equalizer-wave').classList.remove('active');
         $('lotto-keg-ball').classList.remove('playing');
