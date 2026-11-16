@@ -2260,13 +2260,28 @@
       }
       if (board.querySelector(`[data-keg="${track.kegNum}"]`)) return;
 
+      board.querySelectorAll('.board-keg-item.fresh').forEach(el => {
+        el.classList.remove('fresh');
+        const badge = el.querySelector('.board-keg-right');
+        if (badge) badge.innerHTML = '';
+      });
+
       const item = document.createElement('div');
-      item.className = 'board-keg-item';
+      item.className = 'board-keg-item fresh';
       item.dataset.keg = track.kegNum;
       item.innerHTML = `
-        <span class="board-keg-number">№${track.kegNum}</span>
-        <img class="board-keg-cover" src="${track.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
-        <span class="board-keg-text">${escapeHtml(track.artist)} — ${escapeHtml(track.title)}</span>
+        <div class="board-keg-left">
+          <span class="board-keg-number">№${track.kegNum}</span>
+          <img class="board-keg-cover" src="${track.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
+          <div class="board-keg-track-info">
+            <span class="board-keg-artist">${escapeHtml(track.artist)}</span>
+            <span class="board-keg-divider">—</span>
+            <span class="board-keg-title">${escapeHtml(track.title)}</span>
+          </div>
+        </div>
+        <div class="board-keg-right">
+          <span class="board-keg-fresh-badge">ПОСЛЕДНИЙ</span>
+        </div>
       `;
       board.prepend(item);
       $('board-count').textContent = board.querySelectorAll('.board-keg-item').length;
@@ -2276,15 +2291,25 @@
       const board = $('call-board-container');
       if (!board) return;
       if (!calledHistory || !calledHistory.length) {
-        board.innerHTML = '<span class="board-placeholder" style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>';
+        board.innerHTML = '<span class="board-placeholder" style="color:var(--text-faint); font-size:0.9rem; padding:12px; text-align:center;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>';
         $('board-count').textContent = '0';
         return;
       }
-      board.innerHTML = calledHistory.slice().reverse().map(item => `
-        <div class="board-keg-item" data-keg="${item.kegNum}">
-          <span class="board-keg-number">№${item.kegNum}</span>
-          <img class="board-keg-cover" src="${item.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
-          <span class="board-keg-text">${escapeHtml(item.artist)} — ${escapeHtml(item.title)}</span>
+      const total = calledHistory.length;
+      board.innerHTML = calledHistory.slice().reverse().map((item, idx) => `
+        <div class="board-keg-item ${idx === 0 ? 'fresh' : ''}" data-keg="${item.kegNum}">
+          <div class="board-keg-left">
+            <span class="board-keg-number">№${item.kegNum}</span>
+            <img class="board-keg-cover" src="${item.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
+            <div class="board-keg-track-info">
+              <span class="board-keg-artist">${escapeHtml(item.artist)}</span>
+              <span class="board-keg-divider">—</span>
+              <span class="board-keg-title">${escapeHtml(item.title)}</span>
+            </div>
+          </div>
+          <div class="board-keg-right">
+            ${idx === 0 ? '<span class="board-keg-fresh-badge">ПОСЛЕДНИЙ</span>' : `<span class="board-keg-turn-tag">Ход ${total - idx}</span>`}
+          </div>
         </div>
       `).join('');
       $('board-count').textContent = calledHistory.length;

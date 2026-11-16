@@ -771,48 +771,153 @@ label {
 }
 
 /* Call Board / Табло сыгравших бочонков */
+/* Call Board / Табло сыгравших бочонков (Вертикальный список) */
 .call-board {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
-  max-height: 220px;
+  max-height: 280px;
   overflow-y: auto;
+  overflow-x: hidden;
   margin-top: 12px;
-  padding: 8px;
+  padding: 8px 10px;
+  background: rgba(10, 12, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.3) rgba(0, 0, 0, 0.2);
+}
+
+.call-board::-webkit-scrollbar {
+  width: 6px;
+}
+.call-board::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.25);
-  border-radius: var(--radius-md);
+  border-radius: 4px;
+}
+.call-board::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.35);
+  border-radius: 4px;
+}
+.call-board::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.6);
 }
 
 .board-keg-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  padding: 4px 10px 4px 5px;
-  font-size: 0.825rem;
-  animation: popIn 0.3s ease;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  animation: fadeIn 0.25s ease;
+  box-sizing: border-box;
+}
+
+.board-keg-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.board-keg-item.fresh {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.12);
+}
+
+.board-keg-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
 
 .board-keg-number {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  min-width: 36px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
   background: var(--gold-gradient);
   color: #000;
   font-family: var(--font-mono);
   font-weight: 900;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-.board-keg-text {
+.board-keg-cover {
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111420;
+}
+
+.board-keg-track-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  font-size: 0.85rem;
+}
+
+.board-keg-artist {
+  color: #fbbf24;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.board-keg-divider {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.board-keg-title {
   color: #f3f4f6;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.board-keg-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.board-keg-fresh-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fef08a;
+  text-transform: uppercase;
+}
+
+.board-keg-turn-tag {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  opacity: 0.7;
 }
 
 /* ========================================================
