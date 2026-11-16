@@ -166,6 +166,14 @@
   <audio id="demo-player"></audio>
 
   <script>
+    const hostMusicKey = new URLSearchParams(location.hash.slice(1)).get('music');
+    const hostScreen = /^[A-Za-z0-9_-]{43}$/.test(hostMusicKey || '')
+      ? 'tv.html#music=' + hostMusicKey : 'tv.html';
+
+    document.querySelectorAll('a[href="tv.html"]').forEach(link => {
+      link.href = hostScreen;
+    });
+
     const searchInput = document.getElementById('demo-search');
     const resultsBox = document.getElementById('demo-results');
     const spinner = document.getElementById('demo-spinner');
@@ -210,7 +218,7 @@
             <div class="track-artist">${escapeHtml(t.artist)}</div>
           </div>
           <button class="btn-play-preview" data-preview="${t.preview}" title="Слушать отрывок">▶</button>
-          <a href="tv.html" class="btn btn-sm" style="padding: 6px 12px; font-size: 0.8rem;">Играть</a>
+          <a href="${hostScreen}" class="btn btn-sm" style="padding: 6px 12px; font-size: 0.8rem;">Играть</a>
         </div>
       `).join('');
       resultsBox.style.display = 'flex';
