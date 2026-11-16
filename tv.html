@@ -96,7 +96,7 @@
           <span>Шаг 1 · Загрузка бочонков в мешок</span>
         </div>
         <h2>Выберите готовый пак или найдите треки в интернете</h2>
-        <p>Каждой песне присваивается свой номер бочонка. В игре бочонки выпадают <b>совершенно случайно</b>. На каждом ходу играет превью. Ведущий может включить полную запись.</p>
+        <p>Бочонки выпадают случайно. В паке «МузЛото» сначала звучат первые 30 секунд записи. Кнопка «Продолжить трек» позволяет дослушать её.</p>
 
         <!-- Curated Packs Quick Buttons -->
         <div style="margin: 20px 0 10px 0;">
@@ -509,7 +509,7 @@
             <select id="opt-play-format">
               <option value="party">🔥 Вечеринка: играет без остановки (по кругу, пока танцуют)</option>
               <option value="timer25">⏱ Быстрый квиз: фрагмент 25 сек</option>
-              <option value="once" selected>▶ Одиночный: сыграть 1 раз без повтора</option>
+              <option value="once" selected>▶ Одиночный: фрагмент один раз</option>
             </select>
           </label>
           <label>
@@ -651,7 +651,7 @@
             <button id="btn-replay-keg" class="btn btn-secondary">
               <span>Сначала</span>
             </button>
-            <button type="button" id="btn-play-full-track" class="btn btn-secondary" disabled>Доиграть трек</button>
+            <button type="button" id="btn-play-full-track" class="btn btn-secondary" disabled>Продолжить трек</button>
           </div>
           <div id="track-playback-status" role="status" style="margin:10px auto 0;text-align:center;font-size:0.85rem;color:var(--text-muted);"></div>
         </div>
@@ -2446,10 +2446,13 @@
     let trackTimer = null;
     let currentRoomCode = null;
     let currentCallingTrack = null;
-    let fullTrackUrl = null;
+    const introSeconds = 30;
+    let roundAudio = null;
+    let pendingRecordingStart = false;
     let nextBarrelPending = false;
     let roundFinished = false;
     const fullAudioFiles = new Map();
+    const recordedTrackIds = new Set(recordedTracks().map(track => String(track.id)));
     const cloudAudioConfig = window.MUZLOTO_CLOUD_AUDIO;
     const cloudCatalog = cloudAudioConfig
       ? window.createCloudAudioCatalog(cloudAudioConfig) : null;
@@ -2457,6 +2460,10 @@
 
     function fullTrackSource(id) {
       return fullAudioFiles.get(String(id)) || cloudCatalog?.get(id);
+    }
+
+    function recordedTracks() {
+      return Object.values(allPacks).flatMap(pack => pack.tracks).filter(track => track.fullFile);
     }
     let isRevealed = false;
 
@@ -2551,6 +2558,7 @@
     function renderPacksUI(packs) {
       if (!packs || !Object.keys(packs).length) return;
       allPacks = packs;
+      for (const track of recordedTracks()) recordedTrackIds.add(String(track.id));
       const container = $('curated-packs-list');
       if (!container) return;
 
@@ -2668,7 +2676,11 @@
         return;
       }
 
-      container.innerHTML = selectedTracks.map((t, idx) => `
+      container.innerHTML = selectedTracks.map((t, idx) => {
+        const recording = fullTrackSource(t.id);
+        const excerptLabel = recording ? '30 сек' : 'Превью';
+        const canPlayExcerpt = recording || (t.preview && !recordedTrackIds.has(String(t.id)));
+        return `
         <div class="track-item">
           <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№${idx + 1}</span>
           <img class="track-cover-mini" src="${t.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
@@ -2676,14 +2688,15 @@
             <div class="track-title">${escapeHtml(t.title)}</div>
             <div class="track-artist">${escapeHtml(t.artist)}</div>
           </div>
-          ${t.preview ? `<button type="button" class="btn btn-sm btn-secondary" data-preview-track="${idx}">Превью</button>` : ''}
-          ${fullTrackSource(t.id) ? `<button type="button" class="btn btn-sm btn-secondary" data-full-track="${idx}">Целиком</button>` : ''}
+          ${canPlayExcerpt ? `<button type="button" class="btn btn-sm btn-secondary" data-preview-track="${idx}">${excerptLabel}</button>` : ''}
+          ${recording ? `<button type="button" class="btn btn-sm btn-secondary" data-full-track="${idx}">Целиком</button>` : ''}
           <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="${idx}">✕</button>
         </div>
-      `).join('');
+        `;
+      }).join('');
 
       container.querySelectorAll('[data-preview-track]').forEach(btn => {
-        btn.onclick = () => playPreview(selectedTracks[btn.dataset.previewTrack].preview, btn);
+        btn.onclick = () => playTrackExcerpt(selectedTracks[btn.dataset.previewTrack], btn);
       });
       container.querySelectorAll('[data-full-track]').forEach(btn => {
         btn.onclick = () => playPreview(fullTrackSource(selectedTracks[btn.dataset.fullTrack].id), btn);
@@ -2752,21 +2765,21 @@
         return;
       }
 
-      searchResults.innerHTML = list.map(t => `
+      searchResults.innerHTML = list.map((t, idx) => `
         <div class="track-item">
           <img class="track-cover-mini" src="${t.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
           <div class="track-info" style="margin-left:8px;">
             <div class="track-title">${escapeHtml(t.title)}</div>
             <div class="track-artist">${escapeHtml(t.artist)}</div>
           </div>
-          <button class="btn-play-preview" data-preview="${t.preview}">▶</button>
+          <button class="btn-play-preview" data-search-preview="${idx}">▶</button>
           <button class="btn btn-sm btn-gold btn-add-track" data-track='${escapeAttr(JSON.stringify(t))}'>+ В мешок</button>
         </div>
       `).join('');
       searchResults.style.display = 'flex';
 
-      searchResults.querySelectorAll('.btn-play-preview').forEach(btn => {
-        btn.onclick = () => playPreview(btn.dataset.preview, btn);
+      searchResults.querySelectorAll('[data-search-preview]').forEach(btn => {
+        btn.onclick = () => playTrackExcerpt(list[btn.dataset.searchPreview], btn);
       });
 
       searchResults.querySelectorAll('.btn-add-track').forEach(btn => {
@@ -2785,6 +2798,7 @@
 
     function stopSetupAudio() {
       previewAudio.pause();
+      previewAudio.ontimeupdate = null;
       previewAudio.removeAttribute('src');
       previewAudio.load();
       if (setupAudioUrl) URL.revokeObjectURL(setupAudioUrl);
@@ -2796,7 +2810,13 @@
       }
     }
 
-    function playPreview(source, btn) {
+    function playTrackExcerpt(track, btn) {
+      const recording = fullTrackSource(track.id);
+      if (recording) playPreview(recording, btn, introSeconds);
+      else if (!recordedTrackIds.has(String(track.id))) playPreview(track.preview, btn);
+    }
+
+    function playPreview(source, btn, limit = null) {
       const wasPlaying = previewAudioBtn === btn;
       stopSetupAudio();
       if (!source || wasPlaying) return;
@@ -2806,6 +2826,11 @@
       previewAudioBtn = btn;
       setupAudioUrl = source instanceof File ? URL.createObjectURL(source) : null;
       const url = setupAudioUrl || source;
+      if (limit) {
+        previewAudio.ontimeupdate = () => {
+          if (previewAudio.currentTime >= limit) stopSetupAudio();
+        };
+      }
       previewAudio.src = url;
       previewAudio.play().catch(error => {
         if (previewAudioBtn !== btn || previewAudio.src !== url) return;
@@ -2892,30 +2917,30 @@
     $('btn-replay-keg').onclick = replayAudio;
     $('btn-full-audio-folder').onclick = () => $('full-audio-folder').click();
     $('full-audio-folder').onchange = event => {
-      stopSetupAudio();
       const filesByName = new Map(Array.from(event.target.files, file => [file.name.normalize(), file]));
       fullAudioFiles.clear();
-      const tracks = Object.values(allPacks).flatMap(pack => pack.tracks).filter(track => track.fullFile);
+      const tracks = recordedTracks();
       for (const track of tracks) {
         const file = filesByName.get(track.fullFile.normalize());
         if (file) fullAudioFiles.set(String(track.id), file);
       }
       $('full-audio-status').textContent = `Полные треки: ${fullAudioFiles.size}/${new Set(tracks.map(track => track.id)).size}`;
-      renderSelectedTracks();
-      updateFullTrackButton();
+      updateRecordingAvailability();
     };
-    $('btn-play-full-track').onclick = playFullTrack;
+    $('btn-play-full-track').onclick = continueTrack;
 
-    function updateCloudAudioUI() {
+    function updateRecordingAvailability() {
       stopSetupAudio();
       renderSelectedTracks();
-      updateFullTrackButton();
+      if (!roundAudio && currentCallingTrack && !roundFinished && fullTrackSource(currentCallingTrack.id)) {
+        prepareRoundAudio(currentCallingTrack, pendingRecordingStart);
+      }
+      updatePlaybackControls();
     }
 
     function refreshCloudAudio() {
       if (!cloudCatalog || cloudRefresh) return;
-      const ids = [...new Set(Object.values(allPacks).flatMap(pack => pack.tracks)
-        .filter(track => track.fullFile).map(track => String(track.id)))];
+      const ids = [...new Set(recordedTracks().map(track => String(track.id)))];
       $('cloud-audio-status').textContent = 'Подключаем музыку…';
       const previousCount = ids.filter(id => cloudCatalog.get(id)).length;
       const request = cloudCatalog.load(ids);
@@ -2925,7 +2950,7 @@
         $('cloud-audio-status').textContent = count
           ? `Музыка в облаке: ${count}/${ids.length}`
           : 'В облаке нет записей для выбранного пака';
-        if (count !== previousCount) updateCloudAudioUI();
+        if (count !== previousCount || (count && !roundAudio && currentCallingTrack)) updateRecordingAvailability();
       }).catch(() => {
         if (cloudRefresh !== request) return;
         $('cloud-audio-status').textContent = 'Не удалось подключить облачную музыку. Обнови страницу.';
@@ -2935,9 +2960,11 @@
       });
     }
 
-    function updateFullTrackButton() {
-      $('btn-play-full-track').disabled = nextBarrelPending || roundFinished || !!fullTrackUrl ||
-        !fullTrackSource(currentCallingTrack?.id);
+    function updatePlaybackControls() {
+      $('btn-play-full-track').disabled = nextBarrelPending || roundFinished ||
+        !roundAudio?.recording || roundAudio.continued || mainAudio.ended;
+      $('btn-pause-keg').disabled = !roundAudio || !!(roundAudio.recording && roundAudio.atLimit);
+      $('btn-replay-keg').disabled = !roundAudio;
     }
 
     function clearPlaybackTimer() {
@@ -2945,65 +2972,119 @@
       trackTimer = null;
     }
 
-    function releaseFullTrack() {
-      if (!fullTrackUrl) return;
+    function releaseRoundAudio() {
+      pendingRecordingStart = false;
+      if (!roundAudio) return;
+      const { url, isLocalFile } = roundAudio;
+      roundAudio = null;
       mainAudio.pause();
       mainAudio.onended = null;
       mainAudio.onerror = null;
+      mainAudio.ontimeupdate = null;
       mainAudio.removeAttribute('src');
       mainAudio.load();
-      if (fullTrackUrl.startsWith('blob:')) URL.revokeObjectURL(fullTrackUrl);
-      fullTrackUrl = null;
+      if (isLocalFile) URL.revokeObjectURL(url);
     }
 
-    function playFullTrack() {
-      const source = fullTrackSource(currentCallingTrack?.id);
-      if (!source || nextBarrelPending || roundFinished || fullTrackUrl) return;
-      clearPlaybackTimer();
-      const url = source instanceof File ? URL.createObjectURL(source) : source;
-      fullTrackUrl = url;
-      updateFullTrackButton();
-      mainAudio.onloadedmetadata = null;
-      mainAudio.loop = false;
-      mainAudio.onended = onTrackFinished;
-      const handleError = () => {
-        if (fullTrackUrl !== url) return;
-        releaseFullTrack();
-        updateFullTrackButton();
-        onTrackFinished();
-        $('track-playback-status').textContent = 'Не удалось запустить полную запись';
-      };
-      mainAudio.onerror = handleError;
-      $('track-playback-status').textContent = 'Полная запись · автопереход после окончания';
-      mainAudio.src = url;
+    function playRoundAudio() {
+      const audio = roundAudio;
+      if (!audio) return;
       mainAudio.play().then(() => {
-        if (fullTrackUrl === url) showAudioPlaying();
+        if (roundAudio === audio && !mainAudio.paused) {
+          showRoundAudioStatus(audio);
+          showAudioPlaying();
+        }
       }).catch(error => {
-        if (fullTrackUrl !== url) return;
-        if (error.name === 'NotAllowedError') {
-          $('btn-pause-keg').querySelector('span').textContent = 'Продолжить';
-          $('track-playback-status').textContent = 'Нажми «Продолжить», чтобы включить полную запись';
+        if (roundAudio !== audio || error.name === 'AbortError' || mainAudio.error) return;
+        showAudioPaused();
+        $('track-playback-status').textContent = 'Нажмите «Воспроизвести», чтобы включить звук';
+      });
+    }
+
+    function showRoundAudioStatus(audio) {
+      $('track-playback-status').textContent = audio.continued ? 'Полная запись' :
+        audio.recording ? `Первые ${audio.limit} секунд записи` : 'Превью Apple Music';
+    }
+
+    function prepareRoundAudio(track, autoplay) {
+      const recording = fullTrackSource(track.id);
+      const expectsRecording = recordedTrackIds.has(String(track.id));
+      const source = recording || (!expectsRecording && track.preview);
+      if (!source) {
+        pendingRecordingStart = autoplay;
+        $('track-playback-status').textContent = expectsRecording
+          ? 'Запись пока недоступна. Проверьте подключение музыки.' : 'Для этого трека нет аудио';
+        if (expectsRecording && !cloudCatalog?.hasTracks()) refreshCloudAudio();
+        updatePlaybackControls();
+        return;
+      }
+
+      pendingRecordingStart = false;
+      const format = $('opt-play-format').value;
+      const isLocalFile = source instanceof File;
+      const audio = {
+        url: isLocalFile ? URL.createObjectURL(source) : source,
+        isLocalFile,
+        recording: Boolean(recording),
+        limit: format === 'timer25' ? 25 : (recording ? introSeconds : null),
+        atLimit: false,
+        continued: false
+      };
+      roundAudio = audio;
+      mainAudio.loop = format === 'party';
+      mainAudio.onended = onTrackFinished;
+      mainAudio.ontimeupdate = () => {
+        if (!audio.limit || audio.atLimit || mainAudio.paused || mainAudio.currentTime < audio.limit) return;
+        if (mainAudio.loop) {
+          mainAudio.currentTime = 0;
           return;
         }
-        handleError();
-      });
+        audio.atLimit = true;
+        mainAudio.pause();
+        mainAudio.currentTime = audio.limit;
+        onTrackFinished();
+      };
+      mainAudio.onerror = () => {
+        clearPlaybackTimer();
+        releaseRoundAudio();
+        showAudioPaused();
+        updatePlaybackControls();
+        $('track-playback-status').textContent = 'Не удалось загрузить звук. Можно вытянуть следующий бочонок.';
+      };
+      showRoundAudioStatus(audio);
+      mainAudio.src = audio.url;
+      showAudioPaused();
+      updatePlaybackControls();
+      if (autoplay) playRoundAudio();
+    }
+
+    function continueTrack() {
+      if (!roundAudio?.recording || roundAudio.continued || roundFinished || nextBarrelPending || mainAudio.ended) return;
+      clearPlaybackTimer();
+      roundAudio.limit = null;
+      roundAudio.atLimit = false;
+      roundAudio.continued = true;
+      mainAudio.loop = false;
+      showRoundAudioStatus(roundAudio);
+      updatePlaybackControls();
+      if (mainAudio.paused) playRoundAudio();
     }
 
     function nextBarrel() {
       if (nextBarrelPending) return;
       clearPlaybackTimer();
       nextBarrelPending = true;
-      updateFullTrackButton();
+      updatePlaybackControls();
       comm.hostNext(res => {
         nextBarrelPending = false;
-        updateFullTrackButton();
+        updatePlaybackControls();
         if (!res || res.error) return;
-        releaseFullTrack();
-        mainAudio.onended = null;
+        clearPlaybackTimer();
+        releaseRoundAudio();
         if (res.end) {
           $('track-playback-status').textContent = '';
           currentCallingTrack = null;
-          updateFullTrackButton();
+          updatePlaybackControls();
           $('tv-track-artist').textContent = 'МЕШОК ПУСТ!';
           $('tv-track-title').textContent = 'Все бочонки раунда сыграли!';
           $('equalizer-wave').classList.remove('active');
@@ -3014,7 +3095,7 @@
         }
 
         currentCallingTrack = res.track;
-        updateFullTrackButton();
+        updatePlaybackControls();
 
         // Save last drawn barrel locally for 100% session persistence on reload
         try {
@@ -3058,53 +3139,18 @@
         $('game-turn-badge').textContent = `Ход ${res.turn}`;
         $('game-remaining-text').textContent = `В мешке: ${res.remaining} бочонков`;
 
-        // Play Audio (Party format: plays completely!)
-        $('track-playback-status').textContent = 'Превью Apple Music';
-        mainAudio.onerror = () => {
-          $('track-playback-status').textContent = 'Превью не загрузилось. Можно включить полную запись или вытянуть следующий бочонок.';
-        };
-        mainAudio.src = res.track.preview;
-        const playFormat = $('opt-play-format') ? $('opt-play-format').value : 'party';
-
-        mainAudio.onloadedmetadata = () => {
-          mainAudio.currentTime = 0;
-          // In party mode, loop seamlessly so music never stops while guests dance & sing!
-          mainAudio.loop = (playFormat === 'party' || playFormat === 'loop');
-          mainAudio.play().then(showAudioPlaying).catch(e => console.warn(e));
-        };
-
-        if (playFormat === 'timer25') {
-          mainAudio.onended = () => {
-            clearPlaybackTimer();
-            onTrackFinished();
-          };
-          let timeLeft = 25;
-          trackTimer = setInterval(() => {
-            if (!mainAudio.paused) {
-              timeLeft--;
-              if (timeLeft <= 0) {
-                clearPlaybackTimer();
-                mainAudio.pause();
-                onTrackFinished();
-              }
-            }
-          }, 1000);
-        } else if (playFormat === 'once') {
-          mainAudio.onended = () => {
-            onTrackFinished();
-          };
-        }
+        prepareRoundAudio(res.track, true);
       });
     }
 
     function onTrackFinished() {
-      $('track-playback-status').textContent = fullTrackUrl ? 'Полная запись закончилась' : 'Превью закончилось';
-      $('equalizer-wave').classList.remove('active');
-      $('lotto-keg-ball').classList.remove('playing');
-      $('tv-album-cover-box').classList.remove('playing');
+      clearPlaybackTimer();
+      showAudioPaused();
+      updatePlaybackControls();
+      $('track-playback-status').textContent = roundAudio?.continued ? 'Полная запись закончилась' :
+        roundAudio?.recording ? 'Фрагмент закончился' : 'Превью закончилось';
 
-      if (autoNext && !roundFinished) {
-        clearPlaybackTimer();
+      if (autoNext && !roundFinished && !nextBarrelPending) {
         trackTimer = setTimeout(() => { if (autoNext) nextBarrel(); }, 4000);
       }
     }
@@ -3114,6 +3160,13 @@
       $('lotto-keg-ball').classList.add('playing');
       $('tv-album-cover-box').classList.add('playing');
       $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
+    }
+
+    function showAudioPaused() {
+      $('equalizer-wave').classList.remove('active');
+      $('lotto-keg-ball').classList.remove('playing');
+      $('tv-album-cover-box').classList.remove('playing');
+      $('btn-pause-keg').querySelector('span').textContent = 'Воспроизвести';
     }
 
     function addToCallBoard(track) {
@@ -3181,30 +3234,27 @@
     }
 
     function togglePause() {
+      if (!roundAudio) return;
       if (mainAudio.paused) {
-        if (mainAudio.ended && fullTrackUrl) clearPlaybackTimer();
-        mainAudio.play();
-        $('equalizer-wave').classList.add('active');
-        $('lotto-keg-ball').classList.add('playing');
-        $('tv-album-cover-box').classList.add('playing');
-        $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
+        if (roundAudio.atLimit || mainAudio.ended) {
+          replayAudio();
+          return;
+        }
+        clearPlaybackTimer();
+        playRoundAudio();
       } else {
         mainAudio.pause();
-        $('equalizer-wave').classList.remove('active');
-        $('lotto-keg-ball').classList.remove('playing');
-        $('tv-album-cover-box').classList.remove('playing');
-        $('btn-pause-keg').querySelector('span').textContent = 'Продолжить';
+        showAudioPaused();
       }
     }
 
     function replayAudio() {
-      if (fullTrackUrl) clearPlaybackTimer();
+      if (!roundAudio) return;
+      clearPlaybackTimer();
+      roundAudio.atLimit = false;
       mainAudio.currentTime = 0;
-      mainAudio.play();
-      $('equalizer-wave').classList.add('active');
-      $('lotto-keg-ball').classList.add('playing');
-      $('tv-album-cover-box').classList.add('playing');
-      $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
+      updatePlaybackControls();
+      playRoundAudio();
     }
 
     // WIN & SHOWCASE
@@ -3242,10 +3292,10 @@
       roundFinished = state.state === 'finished';
       if (state.state === 'lobby') {
         clearPlaybackTimer();
-        releaseFullTrack();
+        releaseRoundAudio();
         currentCallingTrack = null;
       }
-      updateFullTrackButton();
+      updatePlaybackControls();
       $('lobby-players-count').textContent = state.players.length;
       if (state.players.length) {
         $('lobby-players-wrap').innerHTML = state.players.map(p => `
@@ -3307,7 +3357,7 @@
       // Check Bingo Winner
       if (state.state === 'finished' && state.winner) {
         clearPlaybackTimer();
-        if (!fullTrackUrl) mainAudio.pause();
+        if (!roundAudio?.continued) mainAudio.pause();
         $('equalizer-wave').classList.remove('active');
         $('lotto-keg-ball').classList.remove('playing');
 
@@ -3430,6 +3480,7 @@
 
         currentRoomCode = savedCode;
         const state = res.state;
+        roundFinished = state.state === 'finished';
         selectedTracks = (res.room && res.room.tracks) ? res.room.tracks : (state.tracks || selectedTracks);
 
         $('btn-reset-session').style.display = 'inline-flex';
@@ -3483,7 +3534,7 @@
 
           if (restoredTrack) {
             currentCallingTrack = restoredTrack;
-            updateFullTrackButton();
+            updatePlaybackControls();
             const coverImg = $('tv-stage-cover');
             const placeholder = $('tv-stage-cover-placeholder');
             if (coverImg) {
@@ -3498,9 +3549,7 @@
             if ($('tv-track-artist')) $('tv-track-artist').textContent = restoredTrack.artist || 'АРТИСТ';
             if ($('tv-track-title')) $('tv-track-title').textContent = restoredTrack.title || 'Название песни';
 
-            if (restoredTrack.preview) {
-              mainAudio.src = restoredTrack.preview;
-            }
+            prepareRoundAudio(restoredTrack, false);
           }
         } else {
           $('sec-setup').style.display = 'none';
