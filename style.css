@@ -1226,11 +1226,16 @@ label {
   z-index: 10000;
   display: none;
   align-items: center;
-  justify-content: center;
   flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 20px;
   text-align: center;
 }
+
+.win-showcase-overlay > * { flex-shrink: 0; }
+.win-showcase-overlay > :first-child { margin-top: auto; }
+.win-showcase-overlay > :last-child { margin-bottom: auto; }
 
 .card-showcase-grid {
   display: grid;
