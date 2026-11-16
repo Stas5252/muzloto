@@ -342,7 +342,8 @@
         $('player-display-name').textContent = name;
         $('player-avatar-initial').textContent = (name.charAt(0) || 'И').toUpperCase();
         $('room-code-badge').textContent = `Комната #${code}`;
-        $('mode-badge').textContent = (res.mode === 'full') ? 'Вся карточка' : 'Линия';
+        const modeText = (res.mode === 'full') ? 'Вся карточка' : (res.mode === 'two_lines' ? '2 Линии' : 'Линия');
+        $('mode-badge').textContent = modeText;
 
         $('sec-join').style.display = 'none';
         $('sec-play').style.display = 'flex';
@@ -447,6 +448,18 @@
       lines.push(R.map(j => j * n + j));
       lines.push(R.map(j => j * n + (n - 1 - j)));
 
+      if (currentMode === 'two_lines') {
+        let minNeeded = n * 2;
+        for (let a = 0; a < lines.length; a++) {
+          for (let b = a + 1; b < lines.length; b++) {
+            const unionSet = new Set([...lines[a], ...lines[b]]);
+            const missing = [...unionSet].filter(idx => !isMarked(idx)).length;
+            if (missing < minNeeded) minNeeded = missing;
+          }
+        }
+        return minNeeded;
+      }
+
       let minRemaining = n;
       for (const line of lines) {
         const missing = line.filter(idx => !isMarked(idx)).length;
@@ -471,25 +484,26 @@
       const badge = $('proximity-badge');
       const bingoBtn = $('btn-bingo');
 
+      const modeLabel = (currentMode === 'full') ? 'всей карточки' : (currentMode === 'two_lines' ? 'двух линий' : 'победной линии');
+
       if (minToWin === 0) {
         badge.className = 'proximity-badge urgent';
-        badge.textContent = (currentMode === 'full') ? 'Карточка закрыта — жмите Бинго!' : 'Линия закрыта — жмите Бинго!';
+        badge.textContent = (currentMode === 'full') ? 'Карточка закрыта — жмите Бинго!' : (currentMode === 'two_lines' ? '2 Линии закрыты — жмите Бинго!' : 'Линия закрыта — жмите Бинго!');
         bingoBtn.classList.add('ready');
         bingoBtn.disabled = false;
         bingoBtn.querySelector('span').textContent = 'БИНГО! ЗАЯВИТЬ ПОБЕДУ';
       } else if (minToWin === 1) {
         badge.className = 'proximity-badge urgent';
-        badge.textContent = (currentMode === 'full') ? 'Остался 1 бочонок до всей карточки' : 'Остался 1 бочонок до победной линии';
+        badge.textContent = `Остался 1 бочонок до ${modeLabel}`;
         bingoBtn.classList.remove('ready');
         bingoBtn.disabled = true;
-        bingoBtn.querySelector('span').textContent = (currentMode === 'full') ? 'Карточка ещё не закрыта' : 'Линия ещё не закрыта';
+        bingoBtn.querySelector('span').textContent = 'Ещё не закрыто';
       } else {
         badge.className = 'proximity-badge';
-        const targetWord = (currentMode === 'full') ? 'закрытия карточки' : 'победной линии';
-        badge.textContent = `До ${targetWord}: ${formatKegsCount(minToWin)}`;
+        badge.textContent = `До ${modeLabel}: ${formatKegsCount(minToWin)}`;
         bingoBtn.classList.remove('ready');
         bingoBtn.disabled = true;
-        bingoBtn.querySelector('span').textContent = (currentMode === 'full') ? 'Карточка ещё не закрыта' : 'Линия ещё не закрыта';
+        bingoBtn.querySelector('span').textContent = 'Ещё не закрыто';
       }
     }
 

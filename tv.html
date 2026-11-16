@@ -493,10 +493,11 @@
             </select>
           </label>
           <label>
-            Условие победы
+            Условие победы (длительность игры)
             <select id="opt-mode">
-              <option value="full" selected>Вся карточка целиком (чтобы сыграли все треки вечеринки)</option>
-              <option value="line">Линия (быстрая игра: ряд, колонка, диагональ)</option>
+              <option value="full" selected>🏆 Вся карточка целиком — ~20–30 минут (для компаний от 4 чел, никто не выиграет быстро!)</option>
+              <option value="two_lines">✌️ 2 линии (крест / параллель) — ~12–16 минут</option>
+              <option value="line">⚡ 1 линия (быстрый блиц) — ~5–8 минут</option>
             </select>
           </label>
           <label>
@@ -551,6 +552,18 @@
           <h2 style="font-size:1.5rem;">Игроки за столом (<span id="lobby-players-count">0</span>):</h2>
           <div class="players-pill-wrap" id="lobby-players-wrap" style="justify-content:center;">
             <div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым наведите камеру!</div>
+          </div>
+
+          <!-- Dynamic Duration & Anti-Rush Balance Calculator -->
+          <div id="lobby-estimate-card" style="margin: 18px auto 0 auto; max-width: 580px; padding: 12px 18px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box;">
+            <div style="display:flex; align-items:center; gap:12px; text-align:left;">
+              <span style="font-size:1.5rem;">⏱</span>
+              <div>
+                <div style="font-size:0.95rem; font-weight:800; color:#fbbf24;" id="lobby-estimate-time">Расчётное время: ~25 минут</div>
+                <div style="font-size:0.8rem; color:var(--text-muted);" id="lobby-estimate-desc">Математически рассчитано на 50 бочонков: никто не выиграет быстро!</div>
+              </div>
+            </div>
+            <div class="badge" id="lobby-estimate-mode" style="margin:0; background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); color:#fef08a; font-size:0.75rem; white-space:nowrap;">Вся карточка</div>
           </div>
         </div>
 
@@ -2659,6 +2672,47 @@
         `).join('');
       } else {
         $('lobby-players-wrap').innerHTML = `<div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым сканируйте QR!</div>`;
+      }
+
+      // Update dynamic duration & anti-rush balance estimate
+      const pCount = state.players ? state.players.length : 0;
+      const curMode = state.mode || 'full';
+      const estTimeEl = $('lobby-estimate-time');
+      const estDescEl = $('lobby-estimate-desc');
+      const estModeEl = $('lobby-estimate-mode');
+
+      if (estTimeEl && estDescEl && estModeEl) {
+        if (curMode === 'full') {
+          estModeEl.textContent = 'Вся карточка';
+          if (pCount <= 3) {
+            estTimeEl.textContent = 'Расчётное время: ~25–30 минут';
+            estDescEl.textContent = 'Для небольшой компании: победа на 40–44 ходу из 50.';
+          } else if (pCount <= 12) {
+            estTimeEl.textContent = 'Расчётное время: ~22–26 минут';
+            estDescEl.textContent = `Для ${pCount} игроков: победа на 37–40 ходу. Идеальный темп вечеринки!`;
+          } else {
+            estTimeEl.textContent = 'Расчётное время: ~20–24 минуты';
+            estDescEl.textContent = `Для большой компании (${pCount} игроков): победа на 33–36 ходу. Никто не выиграет случайно на первых ходах!`;
+          }
+        } else if (curMode === 'two_lines') {
+          estModeEl.textContent = '2 линии';
+          if (pCount <= 5) {
+            estTimeEl.textContent = 'Расчётное время: ~15–18 минут';
+            estDescEl.textContent = 'Средняя партия: победа при сборе двух линий (20–23 хода).';
+          } else {
+            estTimeEl.textContent = 'Расчётное время: ~12–15 минут';
+            estDescEl.textContent = `Для ${pCount} игроков: победа на 15–18 ходу.`;
+          }
+        } else {
+          estModeEl.textContent = '1 линия (блиц)';
+          if (pCount >= 10) {
+            estTimeEl.textContent = 'Расчётное время: ~5–8 минут (блиц)';
+            estDescEl.textContent = `⚠️ При ${pCount} игроках 1 линия закроется быстро (~8–10 ходов). Для вечеринки на 25 минут выберите «Вся карточка»!`;
+          } else {
+            estTimeEl.textContent = 'Расчётное время: ~8–12 минут (блиц)';
+            estDescEl.textContent = 'Быстрый разогрев: победа на 12–15 ходу.';
+          }
+        }
       }
 
       // Sync called history board on state update

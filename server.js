@@ -247,6 +247,32 @@ function getWinInfo(r, p) {
     return isFull ? { win: true, winIndices: p.card.map((_, i) => i) } : { win: false, winIndices: [] };
   }
 
+  if (r.mode === 'two_lines') {
+    let completedLines = 0;
+    const allWinIndices = [];
+    for (let i = 0; i < n; i++) {
+      if (R.every(j => ok(i * n + j))) {
+        completedLines++;
+        allWinIndices.push(...R.map(j => i * n + j));
+      }
+    }
+    for (let j = 0; j < n; j++) {
+      if (R.every(i => ok(i * n + j))) {
+        completedLines++;
+        allWinIndices.push(...R.map(i => i * n + j));
+      }
+    }
+    if (R.every(j => ok(j * n + j))) {
+      completedLines++;
+      allWinIndices.push(...R.map(j => j * n + j));
+    }
+    if (R.every(j => ok(j * n + (n - 1 - j)))) {
+      completedLines++;
+      allWinIndices.push(...R.map(j => j * n + (n - 1 - j)));
+    }
+    return completedLines >= 2 ? { win: true, winIndices: [...new Set(allWinIndices)] } : { win: false, winIndices: [] };
+  }
+
   // Rows
   for (let i = 0; i < n; i++) {
     if (R.every(j => ok(i * n + j))) {
@@ -336,7 +362,7 @@ io.on('connection', s => {
       code,
       tracks,
       size,
-      mode: d.mode === 'line' ? 'line' : 'full',
+      mode: (d.mode === 'line' || d.mode === 'two_lines') ? d.mode : 'full',
       state: 'lobby',
       order: [],
       called: [],
