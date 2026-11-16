@@ -797,7 +797,7 @@
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
   <script src="comm.js?v=2"></script>
-  <script src="packs-data.js?v=online-1"></script>
+  <script src="packs-data.js?v=online-2"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -2619,7 +2619,7 @@
       const tryPaths = ['packs.json', './packs.json', 'muzloto/packs.json', '/muzloto/packs.json'];
       for (const p of tryPaths) {
         try {
-          const res = await fetch(p + '?v=online-1');
+          const res = await fetch(p + '?v=online-2');
           if (res.ok) {
             const data = await res.json();
             if (data && Object.keys(data).length) {
@@ -2953,7 +2953,9 @@
       const status = $('online-track-status');
       $('online-track-title').textContent = title;
       source.href = entry.onlineMusic.page || 'https://music.yandex.ru/search?text=' + encodeURIComponent(title);
-      source.textContent = entry.onlineMusic.page ? 'Открыть запись ↗' : 'Найти в Яндекс Музыке ↗';
+      source.textContent = entry.onlineMusic.page?.startsWith('https://rutube.ru/')
+        ? 'Открыть на RUTUBE ↗'
+        : (entry.onlineMusic.page ? 'Открыть запись ↗' : 'Найти в Яндекс Музыке ↗');
       alternate.hidden = !entry.onlineMusic.vkVideo;
       if (entry.onlineMusic.vkVideo) alternate.href = entry.onlineMusic.vkVideo;
       youtube.hidden = !youtubeId;

@@ -64,7 +64,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 4,
         "fullFile": "Дорадура - Дора.mp3",
         "onlineMusic": {
-          "youtube": "KyJSV3BtymM"
+          "youtube": "KyJSV3BtymM",
+          "page": "https://rutube.ru/video/3cd86e97ccedba9e02c7ed53fb27f47d/"
         }
       },
       {
@@ -109,7 +110,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 7,
         "fullFile": "ваня-дмитриенко-шелк.mp3",
         "onlineMusic": {
-          "youtube": "3W9oasdtC1k"
+          "youtube": "3W9oasdtC1k",
+          "page": "https://rutube.ru/video/df3fa5a6d47368fbcbb84d4039cd1d12/"
         }
       },
       {
@@ -124,7 +126,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 8,
         "fullFile": "serebro-отпусти-меня.mp3",
         "onlineMusic": {
-          "youtube": "MKWxqJudtcE"
+          "youtube": "MKWxqJudtcE",
+          "page": "https://rutube.ru/video/71bd367460a8ff2a4263e0b35e7113c4/"
         }
       },
       {
@@ -184,7 +187,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 12,
         "fullFile": "sergey-lazarev_v-samoe-serdce_muzrecord.com.mp3",
         "onlineMusic": {
-          "youtube": "5HAytAKiRQo"
+          "youtube": "5HAytAKiRQo",
+          "page": "https://rutube.ru/video/e201b499bec1fa246d65656c46ac4b8d/"
         }
       },
       {
@@ -199,7 +203,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 13,
         "fullFile": "65355f410be05.mp3",
         "onlineMusic": {
-          "youtube": "SsG6kb4m5Uc"
+          "youtube": "SsG6kb4m5Uc",
+          "page": "https://rutube.ru/video/72687159df071205c2ff3702c8750483/"
         }
       },
       {
@@ -229,7 +234,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 15,
         "fullFile": "1573085193_loboda__k_chertu_lyubov_besplatno_.mp3",
         "onlineMusic": {
-          "youtube": "V_8yP2lPhXI"
+          "youtube": "V_8yP2lPhXI",
+          "page": "https://rutube.ru/video/bc0c9e77ae823365c8442f7285a2945c/"
         }
       },
       {
@@ -260,7 +266,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 17,
         "fullFile": "татьяна-куртукова-одного.mp3",
         "onlineMusic": {
-          "youtube": "YJpeJwHsvI8"
+          "youtube": "YJpeJwHsvI8",
+          "page": "https://rutube.ru/video/ecd0dff266193eb0a97a18ab23250e7c/"
         }
       },
       {
@@ -290,7 +297,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 19,
         "fullFile": "татьяна-буланова-мои-ненаглядныи.mp3",
         "onlineMusic": {
-          "youtube": "iJUH_sH6GeE"
+          "youtube": "iJUH_sH6GeE",
+          "page": "https://rutube.ru/video/8ab53394c219e50f349744ac4b7093c6/"
         }
       },
       {
@@ -305,7 +313,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 20,
         "fullFile": "demo-солнышко.mp3",
         "onlineMusic": {
-          "youtube": "AMsgIhk8aaY"
+          "youtube": "AMsgIhk8aaY",
+          "page": "https://rutube.ru/video/3500cf9062f2d72b58da6308ab47e8a9/"
         }
       },
       {
@@ -365,7 +374,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 24,
         "fullFile": "5sta-family-зачем.mp3",
         "onlineMusic": {
-          "youtube": "LLPaFLj73D4"
+          "youtube": "LLPaFLj73D4",
+          "page": "https://rutube.ru/video/979915e4ba1d05e3a411115d355b8b99/"
         }
       },
       {
@@ -455,7 +465,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 30,
         "fullFile": "61b9bd172fd80.mp3",
         "onlineMusic": {
-          "youtube": "UBsVaSjgTIs"
+          "youtube": "UBsVaSjgTIs",
+          "page": "https://rutube.ru/video/27daf7b9ee3fd32835805fa3a998f176/"
         }
       },
       {
@@ -470,7 +481,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 31,
         "fullFile": "b61nk1-1-ch64-ch64.mp3",
         "onlineMusic": {
-          "youtube": "6K5HVQn5pG4"
+          "youtube": "6K5HVQn5pG4",
+          "page": "https://rutube.ru/video/59f43a9da7823ba89243420cdb2709cb/"
         }
       },
       {
@@ -485,7 +497,8 @@ window.BUILTIN_PACKS = {
         "kegNum": 32,
         "fullFile": "don-omar-lucenzo-danza-kuduro.mp3",
         "onlineMusic": {
-          "youtube": "7zp1TbLFPp8"
+          "youtube": "7zp1TbLFPp8",
+          "page": "https://rutube.ru/video/6e8e573e76ff935a155bc1879023ff17/"
         }
       },
       {
@@ -514,7 +527,8 @@ window.BUILTIN_PACKS = {
         "appleUrl": "https://music.apple.com/ru/album/%D1%81%D0%B0%D0%BB%D1%8E%D1%82-%D0%B2%D0%B5%D1%80%D0%B0/893658822?i=893658841&uo=4",
         "kegNum": 34,
         "onlineMusic": {
-          "youtube": "pbnGMgMGtMQ"
+          "youtube": "pbnGMgMGtMQ",
+          "page": "https://rutube.ru/video/33f95f8ad22c44d99327c074198bbfd4/"
         }
       },
       {
@@ -528,7 +542,8 @@ window.BUILTIN_PACKS = {
         "appleUrl": "https://music.apple.com/ru/album/%D0%BA%D0%B8%D1%81%D0%BB%D0%BE%D1%82%D0%BD%D1%8B%D0%B9-dj/898372661?i=898372676&uo=4",
         "kegNum": 35,
         "onlineMusic": {
-          "youtube": "5BJQu1H4Abg"
+          "youtube": "5BJQu1H4Abg",
+          "page": "https://rutube.ru/video/08b6e9b710a5037945d277eb86975ad7/"
         }
       },
       {
@@ -556,7 +571,8 @@ window.BUILTIN_PACKS = {
         "appleUrl": "https://music.apple.com/ru/album/%D1%80%D0%BE%D0%BC%D0%B0%D0%BD/978658537?i=978658542&uo=4",
         "kegNum": 37,
         "onlineMusic": {
-          "youtube": "YRwrgE-N_fI"
+          "youtube": "YRwrgE-N_fI",
+          "page": "https://rutube.ru/video/d71581e0de58b9b35a74caead26b31ac/"
         }
       },
       {
@@ -584,7 +600,8 @@ window.BUILTIN_PACKS = {
         "appleUrl": "https://music.apple.com/ru/album/%D0%BF%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D1%81/1482620038?i=1482620047&uo=4",
         "kegNum": 39,
         "onlineMusic": {
-          "youtube": "U0vduC21YwI"
+          "youtube": "U0vduC21YwI",
+          "page": "https://rutube.ru/video/213d755a944d53e601693def07d35ce5/"
         }
       },
       {
