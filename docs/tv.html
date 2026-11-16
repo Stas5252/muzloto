@@ -2447,8 +2447,11 @@
     let currentRoomCode = null;
     let currentCallingTrack = null;
     const introSeconds = 30;
+    const playbackStorageKey = 'muzloto_round_playback';
     let roundAudio = null;
     let pendingRecordingStart = false;
+    let pendingPlaybackRestore = null;
+    let lastPlaybackSave = 0;
     let nextBarrelPending = false;
     let roundFinished = false;
     const fullAudioFiles = new Map();
@@ -2850,6 +2853,7 @@
       comm.hostCreate({ tracks: selectedTracks, size, mode }, async r => {
         if (r.error) return alert(r.error);
         currentRoomCode = r.code;
+        clearSavedPlayback();
         $('btn-reset-session').style.display = 'inline-flex';
         localStorage.setItem('muzloto_active_host_code', r.code);
 
@@ -2892,6 +2896,7 @@
       if (confirm('Завершить текущую игру и выйти в меню выбора треков?')) {
         localStorage.removeItem('muzloto_active_host_code');
         localStorage.removeItem('muzloto_last_keg');
+        clearSavedPlayback();
         if (currentRoomCode) {
           localStorage.removeItem('muzloto_mesh_room_' + currentRoomCode);
         }
@@ -2910,6 +2915,7 @@
 
     $('chk-auto-next').onchange = e => {
       autoNext = e.target.checked;
+      saveRoundPlayback();
     };
 
     $('btn-next-keg').onclick = nextBarrel;
@@ -2933,7 +2939,7 @@
       stopSetupAudio();
       renderSelectedTracks();
       if (!roundAudio && currentCallingTrack && !roundFinished && fullTrackSource(currentCallingTrack.id)) {
-        prepareRoundAudio(currentCallingTrack, pendingRecordingStart);
+        prepareRoundAudio(currentCallingTrack, pendingRecordingStart, pendingPlaybackRestore);
       }
       updatePlaybackControls();
     }
@@ -2961,11 +2967,49 @@
     }
 
     function updatePlaybackControls() {
+      const locked = !roundAudio || roundAudio.restoring;
       $('btn-play-full-track').disabled = nextBarrelPending || roundFinished ||
-        !roundAudio?.recording || roundAudio.continued || mainAudio.ended;
-      $('btn-pause-keg').disabled = !roundAudio || !!(roundAudio.recording && roundAudio.atLimit);
-      $('btn-replay-keg').disabled = !roundAudio;
+        locked || !roundAudio.recording || roundAudio.continued || mainAudio.ended;
+      $('btn-pause-keg').disabled = locked || (roundAudio.recording && roundAudio.atLimit);
+      $('btn-replay-keg').disabled = locked;
     }
+
+    function saveRoundPlayback() {
+      if (!roundAudio || roundAudio.restoring || !currentRoomCode || !currentCallingTrack?.turn) return;
+      const position = mainAudio.currentTime;
+      if (!Number.isFinite(position)) return;
+      lastPlaybackSave = Date.now();
+      try {
+        localStorage.setItem(playbackStorageKey, JSON.stringify({
+          roomCode: currentRoomCode,
+          turn: currentCallingTrack.turn,
+          trackId: String(currentCallingTrack.id),
+          position,
+          format: roundAudio.format,
+          continued: roundAudio.continued,
+          atLimit: roundAudio.atLimit,
+          autoNext
+        }));
+      } catch(e) {}
+    }
+
+    function readSavedPlayback(track) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(playbackStorageKey));
+        if (saved?.roomCode === currentRoomCode && saved.turn === track.turn &&
+          saved.trackId === String(track.id) && Number.isFinite(saved.position) && saved.position >= 0) return saved;
+      } catch(e) {}
+      return null;
+    }
+
+    function clearSavedPlayback() {
+      try { localStorage.removeItem(playbackStorageKey); } catch(e) {}
+    }
+
+    window.addEventListener('pagehide', saveRoundPlayback);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) saveRoundPlayback();
+    });
 
     function clearPlaybackTimer() {
       clearTimeout(trackTimer);
@@ -2974,6 +3018,7 @@
 
     function releaseRoundAudio() {
       pendingRecordingStart = false;
+      pendingPlaybackRestore = null;
       if (!roundAudio) return;
       const { url, isLocalFile } = roundAudio;
       roundAudio = null;
@@ -2981,6 +3026,7 @@
       mainAudio.onended = null;
       mainAudio.onerror = null;
       mainAudio.ontimeupdate = null;
+      mainAudio.onloadedmetadata = null;
       mainAudio.removeAttribute('src');
       mainAudio.load();
       if (isLocalFile) URL.revokeObjectURL(url);
@@ -3006,12 +3052,13 @@
         audio.recording ? `Первые ${audio.limit} секунд записи` : 'Превью Apple Music';
     }
 
-    function prepareRoundAudio(track, autoplay) {
+    function prepareRoundAudio(track, autoplay, savedPlayback = null) {
       const recording = fullTrackSource(track.id);
       const expectsRecording = recordedTrackIds.has(String(track.id));
       const source = recording || (!expectsRecording && track.preview);
       if (!source) {
         pendingRecordingStart = autoplay;
+        pendingPlaybackRestore = savedPlayback;
         $('track-playback-status').textContent = expectsRecording
           ? 'Запись пока недоступна. Проверьте подключение музыки.' : 'Для этого трека нет аудио';
         if (expectsRecording && !cloudCatalog?.hasTracks()) refreshCloudAudio();
@@ -3020,20 +3067,27 @@
       }
 
       pendingRecordingStart = false;
+      pendingPlaybackRestore = null;
       const format = $('opt-play-format').value;
       const isLocalFile = source instanceof File;
+      const continued = Boolean(recording && savedPlayback?.continued === true);
+      const limit = continued ? null : (format === 'timer25' ? 25 : (recording ? introSeconds : null));
       const audio = {
         url: isLocalFile ? URL.createObjectURL(source) : source,
         isLocalFile,
+        format,
         recording: Boolean(recording),
-        limit: format === 'timer25' ? 25 : (recording ? introSeconds : null),
-        atLimit: false,
-        continued: false
+        limit,
+        atLimit: Boolean(limit && savedPlayback?.atLimit === true),
+        continued,
+        restoring: Boolean(savedPlayback)
       };
       roundAudio = audio;
-      mainAudio.loop = format === 'party';
+      mainAudio.loop = format === 'party' && !continued;
       mainAudio.onended = onTrackFinished;
       mainAudio.ontimeupdate = () => {
+        if (audio.restoring) return;
+        if (Date.now() - lastPlaybackSave >= 1000) saveRoundPlayback();
         if (!audio.limit || audio.atLimit || mainAudio.paused || mainAudio.currentTime < audio.limit) return;
         if (mainAudio.loop) {
           mainAudio.currentTime = 0;
@@ -3051,6 +3105,20 @@
         updatePlaybackControls();
         $('track-playback-status').textContent = 'Не удалось загрузить звук. Можно вытянуть следующий бочонок.';
       };
+      if (savedPlayback) {
+        mainAudio.onloadedmetadata = () => {
+          if (roundAudio !== audio) return;
+          mainAudio.onloadedmetadata = null;
+          const position = audio.atLimit ? limit : savedPlayback.position;
+          const duration = Number.isFinite(mainAudio.duration) ? mainAudio.duration : Infinity;
+          mainAudio.currentTime = Math.min(position, limit ?? Infinity, duration);
+          audio.restoring = false;
+          updatePlaybackControls();
+          $('track-playback-status').textContent = audio.recording && audio.atLimit
+            ? 'Фрагмент закончился. Нажмите «Продолжить трек».'
+            : 'Позиция восстановлена. Нажмите «Воспроизвести».';
+        };
+      }
       showRoundAudioStatus(audio);
       mainAudio.src = audio.url;
       showAudioPaused();
@@ -3059,12 +3127,13 @@
     }
 
     function continueTrack() {
-      if (!roundAudio?.recording || roundAudio.continued || roundFinished || nextBarrelPending || mainAudio.ended) return;
+      if (!roundAudio?.recording || roundAudio.restoring || roundAudio.continued || roundFinished || nextBarrelPending || mainAudio.ended) return;
       clearPlaybackTimer();
       roundAudio.limit = null;
       roundAudio.atLimit = false;
       roundAudio.continued = true;
       mainAudio.loop = false;
+      saveRoundPlayback();
       showRoundAudioStatus(roundAudio);
       updatePlaybackControls();
       if (mainAudio.paused) playRoundAudio();
@@ -3081,6 +3150,7 @@
         if (!res || res.error) return;
         clearPlaybackTimer();
         releaseRoundAudio();
+        clearSavedPlayback();
         if (res.end) {
           $('track-playback-status').textContent = '';
           currentCallingTrack = null;
@@ -3145,6 +3215,7 @@
 
     function onTrackFinished() {
       clearPlaybackTimer();
+      saveRoundPlayback();
       showAudioPaused();
       updatePlaybackControls();
       $('track-playback-status').textContent = roundAudio?.continued ? 'Полная запись закончилась' :
@@ -3234,7 +3305,7 @@
     }
 
     function togglePause() {
-      if (!roundAudio) return;
+      if (!roundAudio || roundAudio.restoring) return;
       if (mainAudio.paused) {
         if (roundAudio.atLimit || mainAudio.ended) {
           replayAudio();
@@ -3244,15 +3315,17 @@
         playRoundAudio();
       } else {
         mainAudio.pause();
+        saveRoundPlayback();
         showAudioPaused();
       }
     }
 
     function replayAudio() {
-      if (!roundAudio) return;
+      if (!roundAudio || roundAudio.restoring) return;
       clearPlaybackTimer();
       roundAudio.atLimit = false;
       mainAudio.currentTime = 0;
+      saveRoundPlayback();
       updatePlaybackControls();
       playRoundAudio();
     }
@@ -3293,6 +3366,7 @@
       if (state.state === 'lobby') {
         clearPlaybackTimer();
         releaseRoundAudio();
+        clearSavedPlayback();
         currentCallingTrack = null;
       }
       updatePlaybackControls();
@@ -3533,7 +3607,16 @@
           }
 
           if (restoredTrack) {
-            currentCallingTrack = restoredTrack;
+            currentCallingTrack = { ...restoredTrack, turn: turnNum };
+            const savedPlayback = readSavedPlayback(currentCallingTrack);
+            if (savedPlayback) {
+              if (['once', 'timer25', 'party'].includes(savedPlayback.format)) {
+                $('opt-play-format').value = savedPlayback.format;
+              }
+              if (typeof savedPlayback.autoNext === 'boolean') {
+                $('chk-auto-next').checked = autoNext = savedPlayback.autoNext;
+              }
+            }
             updatePlaybackControls();
             const coverImg = $('tv-stage-cover');
             const placeholder = $('tv-stage-cover-placeholder');
@@ -3549,7 +3632,7 @@
             if ($('tv-track-artist')) $('tv-track-artist').textContent = restoredTrack.artist || 'АРТИСТ';
             if ($('tv-track-title')) $('tv-track-title').textContent = restoredTrack.title || 'Название песни';
 
-            prepareRoundAudio(restoredTrack, false);
+            prepareRoundAudio(currentCallingTrack, false, savedPlayback);
           }
         } else {
           $('sec-setup').style.display = 'none';
