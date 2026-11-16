@@ -20,7 +20,24 @@ const DB_PATH = path.join(__dirname, 'data', 'stats.json');
 function loadStatsDb() {
   try {
     if (fs.existsSync(DB_PATH)) {
-      return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+      const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+      if (Array.isArray(db.history)) {
+        // Auto-heal duplicate records if any exist
+        const cleanHistory = [];
+        const seen = new Set();
+        for (const item of db.history) {
+          const key = `${item.roomCode || ''}_${item.winnerName || ''}_${item.turn || ''}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            cleanHistory.push(item);
+          }
+        }
+        if (cleanHistory.length !== db.history.length) {
+          db.history = cleanHistory;
+          saveStatsDb(db);
+        }
+      }
+      return db;
     }
   } catch (e) {
     console.warn('Failed to load stats DB:', e.message);
@@ -45,17 +62,29 @@ function recordGameWin({ winnerName, winnerPid, roomCode, mode, size, turn, tota
   if (!Array.isArray(db.history)) db.history = [];
 
   const now = Date.now();
+  const rCode = roomCode || '—';
+
+  // Deduplication check: ignore if same room & winner recorded within 30 seconds
+  const isDuplicate = db.history.some(h => 
+    h.roomCode === rCode && 
+    h.winnerName === winnerName && 
+    Math.abs((h.timestamp || 0) - now) < 30000
+  );
+  if (isDuplicate) return null;
+
   const dateStr = new Date(now).toLocaleString('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
 
+  const modeText = mode === 'line' ? 'Линия' : (mode === 'two_lines' ? '2 Линии' : 'Вся карточка');
+
   const record = {
     id: 'win_' + now + '_' + Math.random().toString(36).slice(2, 6),
-    roomCode: roomCode || '—',
+    roomCode: rCode,
     winnerName,
     winnerPid: winnerPid || null,
-    mode: mode === 'line' ? 'Линия' : 'Вся карточка',
+    mode: modeText,
     turn: turn || 1,
     totalBarrels: totalBarrels || 25,
     timestamp: now,

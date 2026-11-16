@@ -2727,31 +2727,16 @@
         $('equalizer-wave').classList.remove('active');
         $('lotto-keg-ball').classList.remove('playing');
 
-        $('showcase-winner-name').textContent = `Победитель: ${state.winner}!`;
-        renderWinningCard(state.winnerDetails);
+        const winKey = `${currentRoomCode || ''}_${state.winner}_${state.turn || (state.called ? state.called.length : '')}`;
+        if (window.__lastShowcasedWinKey !== winKey) {
+          window.__lastShowcasedWinKey = winKey;
+          $('showcase-winner-name').textContent = `Победитель: ${state.winner}!`;
+          renderWinningCard(state.winnerDetails);
 
-        $('win-showcase-modal').style.display = 'flex';
-        playFanfare();
-        startConfetti();
-
-        // Record to persistent Database!
-        try {
-          const winTracks = (state.winnerDetails && state.winnerDetails.winIndices) ? 
-            state.winnerDetails.winIndices.map(idx => {
-              const cardItem = state.winnerDetails.card && state.winnerDetails.card[idx];
-              return cardItem ? `${cardItem.artist} — ${cardItem.title}` : `Бочонок #${idx+1}`;
-            }) : [];
-          recordWinInDb({
-            winnerName: state.winner,
-            winnerPid: state.winnerPid || (state.winnerDetails ? state.winnerDetails.pid : null),
-            roomCode: currentRoomCode || '—',
-            mode: state.mode === 'line' ? 'Линия' : 'Вся карточка',
-            turn: state.turn || (state.called ? state.called.length : 1),
-            totalBarrels: selectedTracks.length,
-            winningTracks: winTracks,
-            playerCount: (state.players && state.players.length) ? state.players.length : 1
-          });
-        } catch(e) {}
+          $('win-showcase-modal').style.display = 'flex';
+          playFanfare();
+          startConfetti();
+        }
       }
     });
 
@@ -2955,11 +2940,52 @@
         } catch(e) {}
       }
 
-      // 2. Fallback to localStorage
+      // 2. Fallback to localStorage (used in GitHub Pages mesh mode)
       try {
         const raw = localStorage.getItem('muzloto_db_stats');
         if (raw) {
           const db = JSON.parse(raw);
+          if (Array.isArray(db.history)) {
+            // Auto-heal / deduplicate any duplicate records (same roomCode + winnerName + turn)
+            const cleanHistory = [];
+            const seen = new Set();
+            for (const item of db.history) {
+              const key = `${item.roomCode || ''}_${item.winnerName || ''}_${item.turn || ''}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                cleanHistory.push(item);
+              } else {
+                // If previous duplicate had dummy "Бочонок #" and current has real tracks, prefer real
+                const exIdx = cleanHistory.findIndex(h => `${h.roomCode || ''}_${h.winnerName || ''}_${h.turn || ''}` === key);
+                if (exIdx !== -1) {
+                  const ex = cleanHistory[exIdx];
+                  const exIsDummy = (ex.winningTracks || []).some(t => typeof t === 'string' && t.startsWith('Бочонок #'));
+                  const curIsReal = (item.winningTracks || []).some(t => typeof t === 'string' && !t.startsWith('Бочонок #'));
+                  if (exIsDummy && curIsReal) {
+                    cleanHistory[exIdx] = item;
+                  }
+                }
+              }
+            }
+            if (cleanHistory.length !== db.history.length) {
+              db.history = cleanHistory;
+              const newBoard = {};
+              for (const h of cleanHistory) {
+                const name = h.winnerName;
+                if (!newBoard[name]) {
+                  newBoard[name] = { name, wins: 0, games: 0, lastWin: h.timestamp || 0, lastWinDate: h.dateStr };
+                }
+                newBoard[name].wins += 1;
+                newBoard[name].games = newBoard[name].wins;
+                if ((h.timestamp || 0) > newBoard[name].lastWin) {
+                  newBoard[name].lastWin = h.timestamp;
+                  newBoard[name].lastWinDate = h.dateStr;
+                }
+              }
+              db.leaderboard = newBoard;
+              localStorage.setItem('muzloto_db_stats', JSON.stringify(db));
+            }
+          }
           const leaderboardArr = Object.values(db.leaderboard || {})
             .sort((a, b) => b.wins - a.wins || (b.lastWin || 0) - (a.lastWin || 0));
           return {
@@ -2974,7 +3000,7 @@
 
     async function recordWinInDb(winnerDetails) {
       if (!winnerDetails || !winnerDetails.winnerName) return;
-      // Record locally
+      // Record locally with strict deduplication
       try {
         let db = { leaderboard: {}, history: [] };
         const raw = localStorage.getItem('muzloto_db_stats');
@@ -2983,6 +3009,17 @@
         if (!Array.isArray(db.history)) db.history = [];
 
         const now = Date.now();
+        const rCode = winnerDetails.roomCode || currentRoomCode || '—';
+        const wName = winnerDetails.winnerName;
+
+        // Deduplication: do not record if same room & winner recorded within 30 seconds
+        const isDup = db.history.some(h => 
+          h.roomCode === rCode && 
+          h.winnerName === wName && 
+          Math.abs((h.timestamp || 0) - now) < 30000
+        );
+        if (isDup) return;
+
         const dateStr = new Date(now).toLocaleString('ru-RU', {
           day: '2-digit', month: '2-digit', year: 'numeric',
           hour: '2-digit', minute: '2-digit'
@@ -2990,8 +3027,8 @@
 
         const record = {
           id: 'win_' + now + '_' + Math.random().toString(36).slice(2, 6),
-          roomCode: winnerDetails.roomCode || currentRoomCode || '—',
-          winnerName: winnerDetails.winnerName,
+          roomCode: rCode,
+          winnerName: wName,
           winnerPid: winnerDetails.winnerPid || null,
           mode: winnerDetails.mode || 'Вся карточка',
           turn: winnerDetails.turn || 1,
@@ -3005,7 +3042,6 @@
         db.history.unshift(record);
         if (db.history.length > 200) db.history = db.history.slice(0, 200);
 
-        const wName = winnerDetails.winnerName;
         if (!db.leaderboard[wName]) {
           db.leaderboard[wName] = {
             name: wName,

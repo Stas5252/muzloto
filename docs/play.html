@@ -607,7 +607,7 @@
           $('player-display-name').textContent = savedName;
           $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
           $('room-code-badge').textContent = `Комната #${savedCode}`;
-          $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : 'Линия';
+          $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : (currentMode === 'two_lines' ? '2 Линии' : 'Линия');
 
           $('sec-join').style.display = 'none';
           $('sec-play').style.display = 'flex';
@@ -646,7 +646,7 @@
         $('player-display-name').textContent = savedName;
         $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
         $('room-code-badge').textContent = `Комната #${savedCode}`;
-        $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : 'Линия';
+        $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : (currentMode === 'two_lines' ? '2 Линии' : 'Линия');
 
         $('sec-join').style.display = 'none';
         $('sec-play').style.display = 'flex';

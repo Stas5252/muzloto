@@ -75,17 +75,29 @@ window.createComm = function(role) {
       if (!Array.isArray(db.history)) db.history = [];
 
       const now = Date.now();
+      const rCode = roomCode || '—';
+
+      // Deduplication: do not record if same room & winner recorded within 30 seconds
+      const isDup = db.history.some(h => 
+        h.roomCode === rCode && 
+        h.winnerName === winnerName && 
+        Math.abs((h.timestamp || 0) - now) < 30000
+      );
+      if (isDup) return;
+
       const dateStr = new Date(now).toLocaleString('ru-RU', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit'
       });
 
+      const modeText = mode === 'line' ? 'Линия' : (mode === 'two_lines' ? '2 Линии' : 'Вся карточка');
+
       const record = {
         id: 'win_' + now + '_' + Math.random().toString(36).slice(2, 6),
-        roomCode: roomCode || '—',
+        roomCode: rCode,
         winnerName,
         winnerPid: winnerPid || null,
-        mode: mode === 'line' ? 'Линия' : 'Вся карточка',
+        mode: modeText,
         turn: turn || 1,
         totalBarrels: totalBarrels || 25,
         timestamp: now,
