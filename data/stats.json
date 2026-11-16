@@ -135,13 +135,30 @@
     },
     "Гриша": {
       "name": "Гриша",
-      "wins": 1,
-      "games": 1,
-      "lastWin": 1794792968308,
-      "lastWinDate": "16.11.2026, 05:36"
+      "wins": 2,
+      "games": 2,
+      "lastWin": 1794793505160,
+      "lastWinDate": "16.11.2026, 05:45"
     }
   },
   "history": [
+    {
+      "id": "win_1794793505160_mm69",
+      "roomCode": "4776",
+      "winnerName": "Гриша",
+      "winnerPid": null,
+      "mode": "Линия",
+      "turn": 30,
+      "totalBarrels": 50,
+      "timestamp": 1794793505160,
+      "dateStr": "16.11.2026, 05:45",
+      "winningTracks": [
+        "Егор Крид — Девочка с картинки",
+        "MACAN — Кино",
+        "Egor Kreed & MOLLY — Если ты меня не любишь"
+      ],
+      "playerCount": 2
+    },
     {
       "id": "win_1794792968308_gqr3",
       "roomCode": "7528",

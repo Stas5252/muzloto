@@ -1,4 +1,6 @@
 const { chromium } = require('playwright-core');
+const ffmpeg = require('@ffmpeg-installer/ffmpeg');
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -6,7 +8,7 @@ async function run() {
   const outputDir = path.join(__dirname, 'recorded_videos');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-  console.log('🎥 Запуск Chromium 1080p для записи презентационного видео МузЛото...');
+  console.log('🎥 Запуск Chromium 1080p для записи презентационного видео МузЛото со звуком...');
   const browser = await chromium.launch({
     executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     headless: true,
@@ -44,6 +46,14 @@ async function run() {
   const tvFrame = page.frameLocator('#tv-frame');
   const p1Frame = page.frameLocator('#p1-frame');
   const p2Frame = page.frameLocator('#p2-frame');
+
+  // Start internal audio capture on TV Frame
+  console.log('🎙️ Запуск студийного захвата аудиодорожки на ТВ (музыка + звуки игры)...');
+  await tvFrame.locator('body').evaluate(() => {
+    if (window.startStudioAudioRecording) {
+      window.startStudioAudioRecording();
+    }
+  });
 
   // 1. Setup on TV: Select Mode "1 Линия" for dynamic blitz game
   console.log('⚙️ Ведущий настраивает игру: Режим "1 Линия (быстрый блиц)"...');
@@ -185,25 +195,58 @@ async function run() {
   await tvFrame.locator('#btn-close-leaderboard').click({ force: true });
   await page.waitForTimeout(2000);
 
-  console.log('🎬 Завершение записи видео...');
+  // Stop Audio Recording & Retrieve Base64 data
+  console.log('🎵 Остановка захвата аудиодорожки...');
+  const base64Audio = await tvFrame.locator('body').evaluate(async () => {
+    if (window.stopStudioAudioRecording) {
+      return await window.stopStudioAudioRecording();
+    }
+    return null;
+  });
+
+  const tempAudioPath = path.join(outputDir, 'captured_audio.webm');
+  if (base64Audio) {
+    fs.writeFileSync(tempAudioPath, Buffer.from(base64Audio, 'base64'));
+    console.log(`✓ Записанная аудиодорожка сохранена (${(base64Audio.length * 0.75 / 1024).toFixed(1)} KB)`);
+  } else {
+    console.warn('⚠️ Аудио захват вернул пустые данные');
+  }
+
+  console.log('🎬 Завершение записи видеопотока...');
   const videoObj = page.video();
   await context.close();
   await browser.close();
 
-  const videoPath = await videoObj.path();
-  console.log('📹 Видео успешно сохранено:', videoPath);
+  const rawVideoPath = await videoObj.path();
+  console.log('📹 Сырое видео сохранено:', rawVideoPath);
 
-  const finalVideoName = 'muzloto_party_gameplay.webm';
-  const finalDest = path.join(__dirname, 'public', finalVideoName);
-  fs.copyFileSync(videoPath, finalDest);
-  console.log('✓ Видео скопировано в public/:', finalDest);
+  // 9. Use FFmpeg to Mux Video + Audio into High-Quality MP4
+  const finalMp4Name = 'muzloto_party_gameplay.mp4';
+  const finalMp4Public = path.join(__dirname, 'public', finalMp4Name);
+  const artifactDest = 'C:\\Users\\stasb\\.gemini\\antigravity\\brain\\44776fc6-db86-49b7-9071-00b3ec2c8562\\muzloto_party_gameplay.mp4';
 
-  // Also copy to artifact directory
-  const artifactDest = 'C:\\Users\\stasb\\.gemini\\antigravity\\brain\\44776fc6-db86-49b7-9071-00b3ec2c8562\\muzloto_party_gameplay.webm';
-  fs.copyFileSync(videoPath, artifactDest);
-  console.log('✓ Видео скопировано в артефакты:', artifactDest);
+  console.log('⚡ Запуск FFmpeg: финальный рендеринг видео в формате MP4 (H.264 + AAC со звуком)...');
+  try {
+    let ffmpegCmd = '';
+    if (fs.existsSync(tempAudioPath) && fs.statSync(tempAudioPath).size > 1000) {
+      // Merge captured video and captured audio
+      ffmpegCmd = `"${ffmpeg.path}" -y -i "${rawVideoPath}" -i "${tempAudioPath}" -c:v libx264 -preset fast -crf 22 -c:a aac -b:a 192k -pix_fmt yuv420p -movflags +faststart "${finalMp4Public}"`;
+    } else {
+      // Fallback: encode video to MP4
+      ffmpegCmd = `"${ffmpeg.path}" -y -i "${rawVideoPath}" -c:v libx264 -preset fast -crf 22 -pix_fmt yuv420p -movflags +faststart "${finalMp4Public}"`;
+    }
+    
+    execSync(ffmpegCmd, { stdio: 'inherit' });
+    console.log('✓ MP4 видео со звуком успешно скомпилировано:', finalMp4Public);
 
-  console.log('🌟 ВСЯ ЗАПИСЬ ЗАВЕРШЕНА НА 100%!');
+    // Copy to artifact directory
+    fs.copyFileSync(finalMp4Public, artifactDest);
+    console.log('✓ MP4 видео скопировано в артефакты:', artifactDest);
+  } catch(e) {
+    console.error('Ошибка при работе FFmpeg:', e.message);
+  }
+
+  console.log('🌟 ВСЯ ЗАПИСЬ ВИДЕО СО ЗВУКОМ ЗАВЕРШЕНА НА 100%!');
 }
 
 run().catch(err => {

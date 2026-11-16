@@ -762,8 +762,8 @@
     </div>
   </div>
 
-  <audio id="main-audio"></audio>
-  <audio id="preview-audio"></audio>
+  <audio id="main-audio" crossorigin="anonymous"></audio>
+  <audio id="preview-audio" crossorigin="anonymous"></audio>
 
   <!-- Libraries -->
   <script src="/socket.io/socket.io.js"></script>
@@ -2069,6 +2069,51 @@
 
     // Web Audio Synthesis for Barrel Drop Knock & Fanfare
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStreamDest = null;
+    let mainAudioNode = null;
+    let studioMediaRecorder = null;
+    let studioAudioChunks = [];
+
+    window.startStudioAudioRecording = function() {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (!audioStreamDest) audioStreamDest = audioCtx.createMediaStreamDestination();
+        if (!mainAudioNode) {
+          mainAudioNode = audioCtx.createMediaElementSource(mainAudio);
+          mainAudioNode.connect(audioCtx.destination);
+          mainAudioNode.connect(audioStreamDest);
+        }
+        studioAudioChunks = [];
+        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+        studioMediaRecorder = new MediaRecorder(audioStreamDest.stream, { mimeType: mime });
+        studioMediaRecorder.ondataavailable = e => {
+          if (e.data && e.data.size > 0) studioAudioChunks.push(e.data);
+        };
+        studioMediaRecorder.start(100);
+        return true;
+      } catch(e) {
+        console.warn('startStudioAudioRecording error:', e);
+        return false;
+      }
+    };
+
+    window.stopStudioAudioRecording = async function() {
+      return new Promise(resolve => {
+        if (!studioMediaRecorder || studioMediaRecorder.state === 'inactive') {
+          return resolve(null);
+        }
+        studioMediaRecorder.onstop = () => {
+          const blob = new Blob(studioAudioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result || '').split(',')[1] || '';
+            resolve(base64);
+          };
+          reader.readAsDataURL(blob);
+        };
+        studioMediaRecorder.stop();
+      });
+    };
     
     function playBarrelDropSound() {
       try {
@@ -2083,6 +2128,7 @@
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
+        if (audioStreamDest) gain.connect(audioStreamDest);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.25);
       } catch(e) {}
@@ -2102,6 +2148,7 @@
           gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.1 + 0.6);
           osc.connect(gain);
           gain.connect(audioCtx.destination);
+          if (audioStreamDest) gain.connect(audioStreamDest);
           osc.start(audioCtx.currentTime + idx * 0.1);
           osc.stop(audioCtx.currentTime + idx * 0.1 + 0.7);
         });
