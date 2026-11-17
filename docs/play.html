@@ -65,31 +65,6 @@
       flex-shrink: 0;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
-    .proximity-badge {
-      font-size: 0.76rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      padding: 4px 14px;
-      border-radius: var(--radius-full);
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      color: #c2e6cb;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    .proximity-badge.urgent {
-      background: rgba(54,233,121, 0.2);
-      border-color: #4bea83;
-      color: #a6f5be;
-      box-shadow: 0 0 14px rgba(54,233,121, 0.4);
-      animation: pulseUrgent 1s infinite alternate;
-    }
-    @keyframes pulseUrgent {
-      from { transform: scale(0.98); }
-      to { transform: scale(1.02); }
-    }
     .sticky-bottom-actions {
       margin-top: auto;
       padding-top: 10px;
@@ -154,22 +129,13 @@
           </div>
         </div>
         <div class="row" style="gap:8px; align-items:center;">
-          <div class="badge" id="mode-badge" style="margin-bottom:0; font-size:0.72rem; padding: 4px 10px; background:rgba(54,233,121,0.14); border-color:rgba(54,233,121,0.35); color:#a6f5be; font-weight:700;">
-            Вся карточка
-          </div>
           <button id="btn-leave-room" class="btn btn-secondary btn-sm" style="display:none; padding:4px 8px; font-size:0.72rem; color:var(--text-muted);" title="Сменить имя или комнату">Выйти</button>
         </div>
       </div>
 
-      <!-- Compact Live Status Banner -->
-      <div class="compact-status-card">
+      <!-- Show only waiting and round results, without song hints. -->
+      <div class="compact-status-card" id="player-round-status" role="status" aria-live="polite">
         <div style="display:flex; align-items:center; gap:8px;">
-          <div class="soundwave-indicator" id="soundwave-indicator" style="display:none;">
-            <div class="soundwave-bar"></div>
-            <div class="soundwave-bar"></div>
-            <div class="soundwave-bar"></div>
-            <div class="soundwave-bar"></div>
-          </div>
           <div>
             <div id="game-banner-status" style="font-weight:700; font-size:0.85rem; color:#fff; line-height:1.2;">
               Ожидание старта игры на ТВ
@@ -179,16 +145,6 @@
             </div>
           </div>
         </div>
-        <div id="game-banner-meta" class="mono" style="font-size:0.75rem; color:#4bea83; font-weight:800; text-align:right; white-space:nowrap;">
-          0 / 0
-        </div>
-      </div>
-
-      <!-- Proximity Indicator -->
-      <div style="text-align:center; margin-bottom: 8px;">
-        <span class="proximity-badge" id="proximity-badge">
-          Слушайте трек и отмечайте клетки с номером бочонка
-        </span>
       </div>
 
       <!-- The Responsive Bingo Grid with Album Artwork -->
@@ -197,12 +153,8 @@
 
       <!-- Bottom Actions & Bingo Button -->
       <div class="sticky-bottom-actions">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; font-size:0.78rem; color:var(--text-muted); padding: 0 4px;">
-          <span>Отмечено: <b id="marks-count-text" style="color:#4bea83; font-weight:800;">0 из 9</b></span>
-          <span style="font-size:0.72rem;">Нажмите на клетку для отметки</span>
-        </div>
         <button id="btn-bingo" class="btn-bingo" disabled>
-          <span>Линия ещё не закрыта</span>
+          <span>Бинго!</span>
         </button>
       </div>
     </section>
@@ -343,8 +295,6 @@
         $('player-display-name').textContent = name;
         $('player-avatar-initial').textContent = (name.charAt(0) || 'И').toUpperCase();
         $('room-code-badge').textContent = `Комната #${code}`;
-        const modeText = (res.mode === 'full') ? 'Вся карточка' : (res.mode === 'two_lines' ? '2 Линии' : 'Линия');
-        $('mode-badge').textContent = modeText;
 
         $('sec-join').style.display = 'none';
         $('sec-play').style.display = 'flex';
@@ -387,7 +337,6 @@
       }).join('');
 
       updateProgress();
-      updateReadyToStamp();
 
       grid.querySelectorAll('.bingo-cell').forEach(cell => {
         cell.onclick = () => {
@@ -409,11 +358,9 @@
 
           if (willMark) {
             cell.classList.add('marked');
-            cell.classList.remove('ready-to-stamp');
             myMarks.add(id);
           } else {
             cell.classList.remove('marked');
-            if (calledTrackIds.has(id)) cell.classList.add('ready-to-stamp');
             myMarks.delete(id);
           }
 
@@ -469,43 +416,12 @@
       return minRemaining;
     }
 
-    function formatKegsCount(n) {
-      const mod10 = n % 10;
-      const mod100 = n % 100;
-      if (mod100 >= 11 && mod100 <= 19) return `${n} бочонков`;
-      if (mod10 === 1) return `${n} бочонок`;
-      if (mod10 >= 2 && mod10 <= 4) return `${n} бочонка`;
-      return `${n} бочонков`;
-    }
-
     function updateProgress() {
-      $('marks-count-text').textContent = `${myMarks.size} из ${myCard.length}`;
-
-      const minToWin = calculateMinRemainingToWin();
-      const badge = $('proximity-badge');
       const bingoBtn = $('btn-bingo');
-
-      const modeLabel = (currentMode === 'full') ? 'всей карточки' : (currentMode === 'two_lines' ? 'двух линий' : 'победной линии');
-
-      if (minToWin === 0) {
-        badge.className = 'proximity-badge urgent';
-        badge.textContent = (currentMode === 'full') ? 'Карточка закрыта — жмите Бинго!' : (currentMode === 'two_lines' ? '2 Линии закрыты — жмите Бинго!' : 'Линия закрыта — жмите Бинго!');
-        bingoBtn.classList.add('ready');
-        bingoBtn.disabled = false;
-        bingoBtn.querySelector('span').textContent = 'Бинго!';
-      } else if (minToWin === 1) {
-        badge.className = 'proximity-badge urgent';
-        badge.textContent = `Остался 1 бочонок до ${modeLabel}`;
-        bingoBtn.classList.remove('ready');
-        bingoBtn.disabled = true;
-        bingoBtn.querySelector('span').textContent = 'Ещё не закрыто';
-      } else {
-        badge.className = 'proximity-badge';
-        badge.textContent = `До ${modeLabel}: ${formatKegsCount(minToWin)}`;
-        bingoBtn.classList.remove('ready');
-        bingoBtn.disabled = true;
-        bingoBtn.querySelector('span').textContent = 'Ещё не закрыто';
-      }
+      const ready = currentGameState === 'playing' && myCard.length > 0 && calculateMinRemainingToWin() === 0;
+      bingoBtn.classList.toggle('ready', ready);
+      bingoBtn.disabled = !ready;
+      bingoBtn.querySelector('span').textContent = currentGameState === 'finished' ? 'Раунд завершён' : 'Бинго!';
     }
 
     $('btn-bingo').onclick = () => {
@@ -529,28 +445,20 @@
       } else if (state.calledHistory && Array.isArray(state.calledHistory)) {
         calledTrackIds = new Set(state.calledHistory.map(h => h.id));
       }
-      updateReadyToStamp();
 
       const banner = $('game-banner-status');
       const bannerSub = $('game-banner-sub');
-      const meta = $('game-banner-meta');
-      const soundwave = $('soundwave-indicator');
       const bingoBtn = $('btn-bingo');
 
-      meta.textContent = `${state.calledCount} / ${state.totalCount}`;
+      $('player-round-status').style.display = state.state === 'playing' ? 'none' : 'flex';
 
       if (state.state === 'lobby') {
         banner.textContent = 'Ожидание старта раунда на ТВ';
         bannerSub.textContent = 'Ведущий скоро запустит игру';
-        soundwave.style.display = 'none';
         bingoBtn.disabled = true;
       } else if (state.state === 'playing') {
-        banner.textContent = 'Слушайте трек и сверяйте бочонки';
-        bannerSub.textContent = state.currentTrack ? `Сейчас звучит бочонок № ${state.currentTrack.kegNum}` : 'Песня играет на ТВ';
-        soundwave.style.display = 'inline-flex';
         updateProgress();
       } else if (state.state === 'finished') {
-        soundwave.style.display = 'none';
         if (state.winner) {
           const isWinner = (state.winnerPid && myPlayerPid)
             ? (state.winnerPid === myPlayerPid)
@@ -577,19 +485,6 @@
       }
     });
 
-    function updateReadyToStamp() {
-      const grid = $('bingo-grid');
-      if (!grid) return;
-      grid.querySelectorAll('.bingo-cell').forEach(cell => {
-        const id = cell.dataset.id;
-        if (calledTrackIds.has(id) && !cell.classList.contains('marked')) {
-          cell.classList.add('ready-to-stamp');
-        } else {
-          cell.classList.remove('ready-to-stamp');
-        }
-      });
-    }
-
     function checkPlayerAutoRestore() {
       const urlRoom = urlParams.get('room');
       const savedCode = urlRoom || localStorage.getItem('muzloto_joined_room');
@@ -608,7 +503,6 @@
           $('player-display-name').textContent = savedName;
           $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
           $('room-code-badge').textContent = `Комната #${savedCode}`;
-          $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : (currentMode === 'two_lines' ? '2 Линии' : 'Линия');
 
           $('sec-join').style.display = 'none';
           $('sec-play').style.display = 'flex';
@@ -647,7 +541,6 @@
         $('player-display-name').textContent = savedName;
         $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
         $('room-code-badge').textContent = `Комната #${savedCode}`;
-        $('mode-badge').textContent = (currentMode === 'full') ? 'Вся карточка' : (currentMode === 'two_lines' ? '2 Линии' : 'Линия');
 
         $('sec-join').style.display = 'none';
         $('sec-play').style.display = 'flex';
