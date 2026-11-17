@@ -353,7 +353,7 @@
   <script src="mqtt.min.js"></script>
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
-  <script src="comm.js?v=2"></script>
+  <script src="comm.js?v=3"></script>
   <script src="packs-data.js"></script>
   <script src="cloud-audio-config.js?v=3"></script>
   <script src="cloud-audio.js?v=3"></script>
@@ -2959,6 +2959,7 @@
       if (!currentRoomCode) return;
       roundFinished = state.state === 'finished';
       if (state.state === 'lobby') {
+        window.__lastShowcasedWinKey = null;
         clearPlaybackTimer();
         releaseRoundAudio();
         clearSavedPlayback();
@@ -2977,45 +2978,21 @@
         $('lobby-players-wrap').innerHTML = `<div style="color:var(--text-faint); padding:10px;">Пока никто не подключился</div>`;
       }
 
-      // Update dynamic duration & anti-rush balance estimate
-      const pCount = state.players ? state.players.length : 0;
-      const curMode = state.mode || 'full';
+      // Estimate only the known playback time; a winning draw is random.
       const estTimeEl = $('lobby-estimate-time');
       const estDescEl = $('lobby-estimate-desc');
       const estModeEl = $('lobby-estimate-mode');
-
       if (estTimeEl && estDescEl && estModeEl) {
-        if (curMode === 'full') {
-          estModeEl.textContent = 'Вся карточка';
-          if (pCount <= 3) {
-            estTimeEl.textContent = 'Расчётное время: ~25–30 минут';
-            estDescEl.textContent = 'Для небольшой компании: победа на 40–44 ходу из 50.';
-          } else if (pCount <= 12) {
-            estTimeEl.textContent = 'Расчётное время: ~22–26 минут';
-            estDescEl.textContent = `Для ${pCount} игроков: победа на 37–40 ходу. Идеальный темп вечеринки!`;
-          } else {
-            estTimeEl.textContent = 'Расчётное время: ~20–24 минуты';
-            estDescEl.textContent = `Для большой компании (${pCount} игроков): победа на 33–36 ходу. Никто не выиграет случайно на первых ходах!`;
-          }
-        } else if (curMode === 'two_lines') {
-          estModeEl.textContent = '2 линии';
-          if (pCount <= 5) {
-            estTimeEl.textContent = 'Расчётное время: ~15–18 минут';
-            estDescEl.textContent = 'Средняя партия: победа при сборе двух линий (20–23 хода).';
-          } else {
-            estTimeEl.textContent = 'Расчётное время: ~12–15 минут';
-            estDescEl.textContent = `Для ${pCount} игроков: победа на 15–18 ходу.`;
-          }
-        } else {
-          estModeEl.textContent = '1 линия (блиц)';
-          if (pCount >= 10) {
-            estTimeEl.textContent = 'Расчётное время: ~5–8 минут (блиц)';
-            estDescEl.textContent = `⚠️ При ${pCount} игроках 1 линия закроется быстро (~8–10 ходов). Для вечеринки на 25 минут выберите «Вся карточка»!`;
-          } else {
-            estTimeEl.textContent = 'Расчётное время: ~8–12 минут (блиц)';
-            estDescEl.textContent = 'Быстрый разогрев: победа на 12–15 ходу.';
-          }
-        }
+        const mode = state.mode || 'full';
+        const format = $('opt-play-format').value;
+        const seconds = format === 'timer25' ? 25 : introSeconds;
+        const minutes = Math.ceil(state.totalCount * (seconds + 4) / 60);
+        estModeEl.textContent = mode === 'full' ? 'Вся карточка' : mode === 'two_lines' ? '2 линии' : '1 линия';
+        estTimeEl.textContent = format === 'party' ? 'Темп задаёт ведущий' : 'Все фрагменты: ≈' + minutes + ' мин';
+        estDescEl.textContent = state.totalCount + ' треков · карточка ' + state.size + '×' + state.size + '. ' +
+          (format === 'party'
+            ? 'Фрагмент повторяется до смены трека ведущим.'
+            : 'Расчёт при автопереходе: ' + seconds + ' секунд песни и 4 секунды паузы. Победа может быть раньше; полные песни увеличат время.');
       }
 
       // Sync called history board on state update

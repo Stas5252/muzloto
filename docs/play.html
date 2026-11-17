@@ -166,7 +166,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="mqtt.min.js"></script>
   <script src="peerjs.min.js"></script>
-  <script src="comm.js?v=2"></script>
+  <script src="comm.js?v=3"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -552,6 +552,7 @@
 
     function leaveRoom() {
       if (!confirm('Выйти из текущей комнаты?')) return;
+      comm.playerLeave();
       localStorage.removeItem('muzloto_joined_room');
       if (joinedCode) sessionStorage.removeItem('muzloto_player_card_' + joinedCode);
       joinedCode = null;

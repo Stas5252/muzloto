@@ -59,6 +59,7 @@ window.createComm = function(role) {
       adapter.hostResume = cb => socket.emit('host:resume', {}, cb);
     } else {
       adapter.playerJoin = (data, cb) => socket.emit('player:join', data, cb);
+      adapter.playerLeave = () => socket.emit('player:leave');
       adapter.playerMark = arg => socket.emit('player:mark', arg);
       adapter.playerBingo = (arg, cb) => {
         if (typeof arg === 'function') { cb = arg; arg = {}; }
@@ -80,19 +81,11 @@ window.createComm = function(role) {
       let db = { leaderboard: {}, history: [] };
       const raw = localStorage.getItem('muzloto_db_stats');
       if (raw) db = JSON.parse(raw);
-      if (!db.leaderboard) db.leaderboard = {};
+      db.leaderboard = Object.assign(Object.create(null), db.leaderboard || {});
       if (!Array.isArray(db.history)) db.history = [];
 
       const now = Date.now();
       const rCode = roomCode || '—';
-
-      // Deduplication: do not record if same room & winner recorded within 30 seconds
-      const isDup = db.history.some(h => 
-        h.roomCode === rCode && 
-        h.winnerName === winnerName && 
-        Math.abs((h.timestamp || 0) - now) < 30000
-      );
-      if (isDup) return;
 
       const dateStr = new Date(now).toLocaleString('ru-RU', {
         day: '2-digit', month: '2-digit', year: 'numeric',
@@ -344,6 +337,8 @@ window.createComm = function(role) {
         }
       });
       broadcastState();
+    } else if (msg.type === 'leave') {
+      if (players.delete(msg.pid)) broadcastState();
     } else if (msg.type === 'mark') {
       const p = players.get(msg.pid);
       if (!p || roomState.state !== 'playing') return;
@@ -637,6 +632,19 @@ window.createComm = function(role) {
     let pendingJoinCb = null;
     let pendingBingoCb = null;
     let playerConn = null;
+    let joinTimer = null;
+
+    function closePlayerChannels() {
+      clearTimeout(joinTimer);
+      joinTimer = null;
+      if (broadcastChan) { try { broadcastChan.close(); } catch(e) {} }
+      if (mqttClient) { try { mqttClient.end(); } catch(e) {} }
+      if (peerInstance) { try { peerInstance.destroy(); } catch(e) {} }
+      broadcastChan = null;
+      mqttClient = null;
+      peerInstance = null;
+      playerConn = null;
+    }
 
     function getPlayerPid() {
       if (playerPid) return playerPid;
@@ -716,6 +724,7 @@ window.createComm = function(role) {
     }
 
     adapter.playerJoin = (data, cb) => {
+      closePlayerChannels();
       const code = String(data.code).trim();
       if (joinedRoomCode !== code) latestRoomState = null;
       joinedRoomCode = code;
@@ -773,12 +782,21 @@ window.createComm = function(role) {
       } catch(e) {}
 
       // Safety timeout in case room code does not exist
-      setTimeout(() => {
+      joinTimer = setTimeout(() => {
         if (pendingJoinCb) {
           pendingJoinCb({ error: 'Не удалось найти комнату #' + code + '. Проверьте 4 цифры на экране ТВ.' });
           pendingJoinCb = null;
         }
       }, 7000);
+    };
+
+    adapter.playerLeave = () => {
+      sendToHost({ type: 'leave' });
+      closePlayerChannels();
+      joinedRoomCode = null;
+      latestRoomState = null;
+      pendingJoinCb = null;
+      pendingBingoCb = null;
     };
 
     adapter.playerMark = arg => {

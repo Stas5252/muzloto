@@ -28,7 +28,7 @@ function loadStatsDb() {
         const cleanHistory = [];
         const seen = new Set();
         for (const item of db.history) {
-          const key = `${item.roomCode || ''}_${item.winnerName || ''}_${item.turn || ''}`;
+          const key = item.id || `${item.roomCode || ''}_${item.winnerName || ''}_${item.timestamp || item.dateStr || ''}_${item.turn || ''}`;
           if (!seen.has(key)) {
             seen.add(key);
             cleanHistory.push(item);
@@ -60,19 +60,11 @@ function saveStatsDb(data) {
 function recordGameWin({ winnerName, winnerPid, roomCode, mode, size, turn, totalBarrels, winningTracks, playerCount }) {
   if (!winnerName) return null;
   const db = loadStatsDb();
-  if (!db.leaderboard) db.leaderboard = {};
+  db.leaderboard = Object.assign(Object.create(null), db.leaderboard || {});
   if (!Array.isArray(db.history)) db.history = [];
 
   const now = Date.now();
   const rCode = roomCode || '—';
-
-  // Deduplication check: ignore if same room & winner recorded within 30 seconds
-  const isDuplicate = db.history.some(h => 
-    h.roomCode === rCode && 
-    h.winnerName === winnerName && 
-    Math.abs((h.timestamp || 0) - now) < 30000
-  );
-  if (isDuplicate) return null;
 
   const dateStr = new Date(now).toLocaleString('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -563,6 +555,20 @@ io.on('connection', s => {
       ...cardOut(r, p)
     });
     push(r);
+  });
+
+  s.on('player:leave', (d, ack) => {
+    if (typeof d === 'function') ack = d;
+    const r = rooms[s.data.room];
+    const p = r && r.players.get(s.data.pid);
+    if (p && p.sid === s.id) {
+      r.players.delete(s.data.pid);
+      s.leave(r.code);
+      push(r);
+    }
+    delete s.data.room;
+    delete s.data.pid;
+    if (typeof ack === 'function') ack({ ok: true });
   });
 
   s.on('player:mark', d => {
