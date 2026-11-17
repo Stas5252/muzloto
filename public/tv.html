@@ -16,11 +16,11 @@
     .keg-nickname {
       font-size: 1.15rem;
       font-weight: 800;
-      color: #fef08a;
+      color: #a6f5be;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-top: 4px;
-      text-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+      text-shadow: 0 0 12px rgba(54,233,121, 0.6);
     }
     #lobby-qr-container {
       display: flex;
@@ -35,9 +35,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(236,72,153,0.2) 100%);
-      border: 1px solid rgba(245,158,11,0.4);
-      color: #fef08a;
+      background: linear-gradient(135deg, rgba(54,233,121,0.2) 0%, rgba(236,72,153,0.2) 100%);
+      border: 1px solid rgba(54,233,121,0.4);
+      color: #a6f5be;
       padding: 5px 12px;
       border-radius: var(--radius-full);
       font-weight: 800;
@@ -45,33 +45,25 @@
       text-transform: uppercase;
     }
   </style>
+  <link rel="stylesheet" href="stream-theme.css?v=1">
 </head>
-<body>
+<body class="host-page">
   <canvas id="confetti-canvas"></canvas>
 
   <div class="wrap">
     <!-- Header -->
-    <header style="display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; padding: 10px 0 20px 0; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:42px; height:42px; border-radius:50%; background:radial-gradient(circle, #2d1f05 0%, #111420 70%); border:1px solid rgba(245,158,11,0.5); box-shadow:0 0 16px rgba(245,158,11,0.4); display:flex; align-items:center; justify-content:center;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 2a10 10 0 0 1 10 10" stroke-opacity="0.5"/>
-          </svg>
-        </div>
-        <div>
-          <div style="font-weight:900; font-size:1.5rem; color:#fff; letter-spacing:-0.02em;">МУЗЛОТО <span style="font-size:0.82rem; color:#fbbf24; font-weight:800; background:rgba(245,158,11,0.15); padding:2px 8px; border-radius:4px; border:1px solid rgba(245,158,11,0.3); letter-spacing:0.04em;">TV STAGE</span></div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">Музыкальное лото · Режим живого эфира</div>
-        </div>
-      </div>
-      <div class="row" style="gap:8px;">
+    <header class="stream-header host-header">
+      <a class="stream-brand" href="index.html" aria-label="МузЛото · главная">
+        <span class="brand-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <span>МузЛото</span>
+      </a>
+      <div class="stream-header-actions host-header-actions">
         <span id="cloud-audio-status" role="status" style="font-size:0.8rem;"></span>
         <input type="file" id="full-audio-folder" webkitdirectory hidden>
         <button type="button" id="btn-full-audio-folder" class="btn btn-secondary btn-sm">Подключить папку с музыкой</button>
         <span id="full-audio-status" role="status" style="font-size:0.8rem;"></span>
-        <button id="btn-open-leaderboard" class="btn btn-secondary btn-sm" title="Таблица лидеров и история побед">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+        <button id="btn-open-leaderboard" class="btn btn-secondary btn-sm" title="Топ игроков и история">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4bea83" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
             <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
             <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
             <path d="M4 22h16"/>
@@ -88,601 +80,185 @@
       </div>
     </header>
 
-    <!-- SECTION 1: SETUP -->
     <section id="sec-setup">
-      <div class="card" style="margin-bottom: 20px;">
-        <div class="badge" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fef08a;">
-          <span class="badge-pulse" style="background:#fbbf24; box-shadow:0 0 10px #fbbf24;"></span>
-          <span>Шаг 1 · Загрузка бочонков в мешок</span>
-        </div>
-        <h2>Выберите готовый пак или найдите треки в интернете</h2>
-        <p>Бочонки выпадают случайно. В паке «МузЛото» сначала звучат первые 30 секунд записи. Кнопка «Продолжить трек» позволяет дослушать её.</p>
+      <div class="host-heading">
+        <h1>Создание игры</h1>
+        <button id="btn-create-room" class="btn btn-gold" type="button"><span>Создать комнату для ТВ</span><span aria-hidden="true">→</span></button>
+      </div>
 
-        <!-- Curated Packs Quick Buttons -->
-        <div style="margin: 20px 0 10px 0;">
-          <label style="margin-bottom: 10px; font-weight:700; color:#fff;">Готовые коллекции треков (загрузка в 1 клик):</label>
-          <div class="packs-grid" id="curated-packs-list">
-
-          <div class="pack-card active" data-id="new_school">
-            <div>
-              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[NEW SCHOOL]</div>
-              <div class="pack-title">Новая школа: Крид, Дора, SODA LUV</div>
-              <div class="pack-desc">Егор Крид, Дора, SODA LUV, Toxi$, Big Baby Tape, OG Buda, Инстасамка, Macan</div>
+      <div class="setup-layout">
+        <aside class="card setup-library" aria-labelledby="packs-heading">
+          <h2 id="packs-heading">Подборки</h2>
+          <div class="packs-grid" id="curated-packs-list"></div>
+          <details class="setup-local-details">
+            <summary>Свои MP3</summary>
+            <input type="file" id="local-files" accept="audio/*" multiple>
+          </details>
+        </aside>
+        <div class="setup-right">
+          <section class="card setup-mix" aria-labelledby="mix-heading">
+            <div class="stream-section-heading">
+              <h2 id="mix-heading">Треки <span class="quantity-pill" id="tracks-count">43</span></h2>
+              <button id="btn-clear-tracks" class="btn btn-secondary btn-sm" type="button">Очистить все</button>
             </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">25 бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
-          </div>
-
-          <div class="pack-card " data-id="rock">
-            <div>
-              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[ROCK LEGENDS]</div>
-              <div class="pack-title">Русский Рок & Легенды</div>
-              <div class="pack-desc">Культовые гитарные риффы и песни, которые поёт вся страна</div>
-            </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">18 бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
-          </div>
-
-          <div class="pack-card " data-id="retro">
-            <div>
-              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[RETRO 90S]</div>
-              <div class="pack-title">Хиты 90-х и 2000-х</div>
-              <div class="pack-desc">Ностальгия, дискотеки и треки из магнитофонов и первых MP3-плееров</div>
-            </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">18 бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
-          </div>
-
-          <div class="pack-card " data-id="world">
-            <div>
-              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[POP HITS]</div>
-              <div class="pack-title">Мировые Поп-Хиты</div>
-              <div class="pack-desc">Платиновые синглы, взрывавшие стадионы и мировые радиостанции</div>
-            </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">16 бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
-          </div>
-
-          <div class="pack-card " data-id="charts">
-            <div>
-              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[CHARTS]</div>
-              <div class="pack-title">Современные Чарты</div>
-              <div class="pack-desc">Свежие бэнгеры, тренды TikTok и главные стриминговые хиты</div>
-            </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">16 бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
-          </div>
-
-          <div class="pack-card " data-id="ost">
-            <div>
-              <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[SOUNDTRACKS]</div>
-              <div class="pack-title">Кино & Саундтреки</div>
-              <div class="pack-desc">Узнаваемые с первых секунд мелодии из любимых фильмов и сериалов</div>
-            </div>
-            <div class="row" style="justify-content:space-between; margin-top:8px;">
-              <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">12 бочонков</span>
-              <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-            </div>
-          </div>
-        </div>
-        </div>
-
-        <!-- Search Bar -->
-        <div style="margin: 24px 0 16px 0;">
-          <label style="font-weight:700; color:#fff;">Или найдите любые песни в интернете:</label>
-          <div class="search-container">
             <div class="search-input-wrap">
-              <span class="search-icon">🔍</span>
-              <input id="search-input" type="text" placeholder="Поиск по артисту или треку (например: Егор Крид, Дора, Soda Luv, Кино)..." autocomplete="off">
+              <span class="stream-search-icon" aria-hidden="true"></span>
+              <input id="search-input" type="search" placeholder="Найти песню или артиста" aria-label="Найти песню или артиста" autocomplete="off">
               <div class="search-spinner" id="search-spinner"></div>
             </div>
             <div id="search-results" class="search-results" style="display:none;"></div>
-          </div>
-        </div>
+            <div class="selected-tracks-list" id="selected-tracks-container"></div>
+            <div id="tracks-status-msg" class="setup-status" role="status"></div>
+          </section>
 
-        <!-- Local files fallback -->
-        <details style="margin-top: 14px; color: var(--text-muted); font-size: 0.9rem;">
-          <summary style="cursor:pointer; color:#a78bfa; font-weight:600;">Есть свои MP3 файлы? Загрузить с компьютера</summary>
-          <div style="margin-top: 10px; padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-            <input type="file" id="local-files" accept="audio/*" multiple>
-          </div>
-        </details>
-      </div>
-
-      <!-- Selected Tracks & Game Settings -->
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom: 16px;">
-          <div>
-            <h3>Бочонки в мешке (<span id="tracks-count" class="mono" style="color:#fbbf24;">25</span>)</h3>
-            <span id="tracks-status-msg" style="font-size:0.875rem; color:var(--accent-green);">Готово! В мешке будет 25 случайных бочонков</span>
-          </div>
-          <button id="btn-clear-tracks" class="btn btn-secondary btn-sm" style="display:inline-flex;">Очистить все</button>
-        </div>
-
-        <div class="selected-tracks-list" id="selected-tracks-container">
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№1</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/93/d0/b8/93d0b851-a8a8-29a2-37dc-e252186deab6/190295391379.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Сердцеедка</div>
-            <div class="track-artist">Egor Kreed</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/cd/90/b1/cd90b165-152a-5098-0e2d-d08158430bdb/mzaf_14442385998910394486.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="0">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№2</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/97/56/0a/97560a61-009a-e9d8-2b95-718b90c6e940/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Самая самая</div>
-            <div class="track-artist">Egor Kreed</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/81/9c/da/819cda14-1817-8a9b-bdb3-d34c0db5d733/mzaf_13167506493719874695.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="1">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№3</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/5e/3b/fd/5e3bfdc2-34f8-4f6b-7768-e9b5eaa7faeb/contsched.ztynmvss.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Будильник</div>
-            <div class="track-artist">Egor Kreed</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/29/2c/e2/292ce227-3f96-f9d5-04b5-8492634c8d59/mzaf_2147446873305517883.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="2">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№4</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/1e/6d/1d/1e6d1db3-465e-5c26-2754-c2a580d3855b/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Дым</div>
-            <div class="track-artist">Egor Kreed & JONY</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ea/d9/07/ead90739-606e-9a9d-6b33-3f5a601dce65/mzaf_17547578603345658810.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="3">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№5</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/60/35/00603536-2994-8ac8-91a6-0a5355e59f78/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Если ты меня не любишь</div>
-            <div class="track-artist">Egor Kreed & MOLLY</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/92/29/a9/9229a997-0758-d77e-f26a-25bd3c3184f9/mzaf_4276097845916878607.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="4">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№6</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b7/58/c9/b758c9a3-7ccc-7bc9-1fd0-8b241b4cac8d/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Тысячи рук</div>
-            <div class="track-artist">SODA LUV</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a3/d8/0c/a3d80c60-e74b-e3a1-a9b5-eb9ae4bb2ec6/mzaf_9860954516344777781.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="5">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№7</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/b2/78/f9/b278f9e2-2f6c-de74-42a7-afd090d7c89e/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Прости</div>
-            <div class="track-artist">SODA LUV</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/b2/88/75/b288753f-877c-ae33-7cc2-3b11de0dc4f3/mzaf_10818791063905429650.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="6">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№8</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5a/a5/10/5aa510ee-e80b-5896-f6e8-4d835a2dca30/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">ДАЛЕКО</div>
-            <div class="track-artist">SODA LUV</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/03/ce/da/03ceda1c-309a-a108-3d10-853028036238/mzaf_720222774635572731.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="7">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№9</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/e9/23/c3/e923c3aa-6509-d5f0-4f08-dea3e4fce204/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Думал (feat. SODA LUV)</div>
-            <div class="track-artist">Klava Koka</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ca/3d/b8/ca3db810-cda9-19d9-05cb-10174fd018d4/mzaf_11657613083664861245.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="8">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№10</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/77/74/c9/7774c973-59d9-0d15-f0d2-f6fca5b9caf7/3616401438037.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Дорадура</div>
-            <div class="track-artist">Dora</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/66/89/6b668970-3e82-9cce-7b2a-78a599bb3cc2/mzaf_5635759596617363263.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="9">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№11</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e0/0e/09/e00e096e-fc3f-2ede-2e3d-4a51fa27f99e/3616408187983.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Втюрилась</div>
-            <div class="track-artist">Dora</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/da/48/c5/da48c57f-681d-40bd-35fd-457de88bcb64/mzaf_1170050165272456414.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="10">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№12</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b9/8f/37/b98f37a9-4ea5-3ab6-e315-0e5bfaa281aa/3616551039269.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Осень пьяная</div>
-            <div class="track-artist">Dora</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/df/0f/e9/df0fe9d3-9b96-e2ad-c077-ed37f706f299/mzaf_1959720023164487669.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="11">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№13</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/a2/a6/a0/a2a6a02d-a463-1dff-c011-993770809d7e/3616842498706.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Барбисайз</div>
-            <div class="track-artist">Dora & Мэйби Бэйби</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6b/86/b0/6b86b043-2467-fad2-b14c-450e645f5037/mzaf_9116340405240374655.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="12">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№14</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1a/c3/dc/1ac3dc86-3154-9b9b-f26b-d82ae4093d68/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">ЗНАК</div>
-            <div class="track-artist">Toxi$ & Dora</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/71/c0/8e71c053-2ea2-4b17-ec93-ce515b1728ae/mzaf_18307262092983093504.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="13">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№15</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/72/c1/c9/72c1c99c-e395-cba0-86b2-aed9bf4a2a25/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">ХАЙЕГОХО</div>
-            <div class="track-artist">Toxi$</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/99/20/b6/9920b6c7-da68-d9e9-66bd-a73508db09db/mzaf_15068239164996924689.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="14">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№16</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/41/b0/29/41b029fc-b52a-6d9e-a6b9-b4e8d9c5ef50/190296894299.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Gimme the Loot</div>
-            <div class="track-artist">Big Baby Tape</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/62/43/ee/6243eeb4-335e-ddbb-125e-0a67dd963cf8/mzaf_1521361186445789138.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="15">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№17</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/3d/68/c7/3d68c740-a0d2-e3ec-1598-e7796fe66085/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Supersonic</div>
-            <div class="track-artist">Big Baby Tape & Aarne</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/b3/c5/17b3c5d9-4022-38f8-0819-a689163bb152/mzaf_16672658488479472547.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="16">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№18</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f6/f6/b3/f6f6b3a1-5e69-ef78-cbaa-010a0fc51aca/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Chuchuka</div>
-            <div class="track-artist">Big Baby Tape</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ba/32/17/ba3217ab-4d48-304f-346e-5e79e98c569d/mzaf_14453353029061266817.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="17">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№19</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/6f/46/4a/6f464afe-5d6d-2335-46c1-a48004a3644e/0.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Плачут Небеса (feat. Доминик Джокер)</div>
-            <div class="track-artist">OG BUDA & Egor Kreed</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0d/9c/bf/0d9cbf2f-3971-6854-6369-6d43fa82f147/mzaf_11198061865709773642.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="18">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№20</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/7b/aa/ae/7baaae4e-eee5-959c-b313-034603db692b/0.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">толстовка</div>
-            <div class="track-artist">Mary Gu & OG BUDA</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f6/95/d0/f695d0ee-e2b7-892d-6a26-9cae97799695/mzaf_13969039394760206211.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="19">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№21</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/fa/4b/f4/fa4bf460-52b5-e3b7-acf1-a7babfdf44ff/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">ЗА ДЕНЬГИ ДА</div>
-            <div class="track-artist">INSTASAMKA</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6b/23/8e/6b238e5e-8e3c-582c-1b9a-fa3a4efd8b5c/mzaf_11531777200776049946.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="20">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№22</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/d9/3d/3b/d93d3bfe-86af-9100-69b3-03eaf8bbc91e/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">POPSTAR</div>
-            <div class="track-artist">INSTASAMKA</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9a/51/de/9a51dedf-9f96-4746-284e-5f1e6f00a667/mzaf_8869797298042631974.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="21">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№23</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/99/d9/6b/99d96b14-b330-2293-f4c5-c09296b6dc3e/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">ASPHALT 8</div>
-            <div class="track-artist">MACAN</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/a8/23/fea8230a-8cda-7297-9841-79d9bf71a3ba/mzaf_18229323036952052363.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="22">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№24</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/3a/43/9c/3a439c8e-365d-9aba-f97d-825b447239a7/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">Дай Мне Шанс</div>
-            <div class="track-artist">Scally Milano & uglystephan</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/02/1a/48021a80-2f55-1d21-9801-30b88f40f3c5/mzaf_6238499353575255000.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="23">✕</button>
-        </div>
-
-        <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№25</span>
-          <img class="track-cover-mini" src="https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/25/ed/27/25ed27b8-9244-0fa1-96db-7167ebdbf82a/cover.jpg/400x400bb.jpg" alt="" onerror="this.style.display='none'">
-          <div class="track-info" style="margin-left:8px;">
-            <div class="track-title">ДОМ (Лондон, Прага, Ницца)</div>
-            <div class="track-artist">MORGENSHTERN</div>
-          </div>
-          <button class="btn-play-preview" data-preview="https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/26/21/9b/26219bfb-3181-0869-4ac2-c54c1bede510/mzaf_15992735745405041572.plus.aac.p.m4a">▶</button>
-          <button class="btn btn-sm btn-secondary" style="padding:4px 8px; font-size:0.8rem; color:#fca5a5;" data-idx="24">✕</button>
-        </div>
-        </div>
-
-        <!-- Rules & Party Mode settings -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0 16px 0; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
-          <label>
-            Размер сетки
-            <select id="opt-size">
-              <option value="3" selected>3×3 (9 клеток на карточке)</option>
-              <option value="4">4×4 (16 клеток на карточке)</option>
-            </select>
-          </label>
-          <label>
-            Условие победы (длительность игры)
-            <select id="opt-mode">
-              <option value="full" selected>🏆 Вся карточка целиком — ~20–30 минут (для компаний от 4 чел, никто не выиграет быстро!)</option>
-              <option value="two_lines">✌️ 2 линии (крест / параллель) — ~12–16 минут</option>
-              <option value="line">⚡ 1 линия (быстрый блиц) — ~5–8 минут</option>
-            </select>
-          </label>
-          <label>
-            Формат воспроизведения
-            <select id="opt-play-format">
-              <option value="party">🔥 Вечеринка: играет без остановки (по кругу, пока танцуют)</option>
-              <option value="timer25">⏱ Быстрый квиз: фрагмент 25 сек</option>
-              <option value="once" selected>▶ Одиночный: фрагмент один раз</option>
-            </select>
-          </label>
-          <label>
-            Показ названия
-            <select id="opt-reveal">
-              <option value="manual" selected>Скрывать (открывать кнопкой «Вскрыть»)</option>
-              <option value="auto">Вскрывать автоматически</option>
-            </select>
-          </label>
-        </div>
-
-        <div style="display:flex; justify-content:flex-end; align-items:center; margin-top: 20px;">
-          <button id="btn-create-room" class="btn btn-gold" style="padding: 16px 36px; font-size: 1.15rem; min-width: 280px; justify-content: center;">
-            <span>Создать комнату для ТВ</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- SECTION 2: TV LOBBY -->
-    <section id="sec-lobby" style="display:none;">
-      <div class="card" style="text-align:center; padding: 40px 24px;">
-        <div class="badge" style="background:rgba(245,158,11,0.15); border-color:rgba(245,158,11,0.4); color:#fef08a;">
-          <span class="badge-pulse" style="background:#fbbf24; box-shadow:0 0 10px #fbbf24;"></span>
-          <span>Ожидание игроков · Сканируйте QR</span>
-        </div>
-        <h1 style="margin-bottom: 24px;">Включайте камеры телефонов и забирайте карточки</h1>
-
-        <div class="tv-lobby-grid">
-          <div class="tv-code-box">
-            <div style="font-size: 1.1rem; color: var(--text-muted); font-weight:700;">КОД ДЛЯ ВХОДА:</div>
-            <div class="code-display" id="lobby-room-code">----</div>
-            <p style="font-size: 1.1rem;">Или введите в браузере телефона:<br>
-              <b id="lobby-url-text" class="mono" style="color:#fbbf24; font-size:1.3rem;"></b>
-            </p>
-          </div>
-
-          <div style="display:flex; justify-content:center;">
-            <div id="lobby-qr-container"></div>
-          </div>
-        </div>
-
-        <div style="margin: 36px 0;">
-          <h2 style="font-size:1.5rem;">Игроки за столом (<span id="lobby-players-count">0</span>):</h2>
-          <div class="players-pill-wrap" id="lobby-players-wrap" style="justify-content:center;">
-            <div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым наведите камеру!</div>
-          </div>
-
-          <!-- Dynamic Duration & Anti-Rush Balance Calculator -->
-          <div id="lobby-estimate-card" style="margin: 18px auto 0 auto; max-width: 580px; padding: 12px 18px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box;">
-            <div style="display:flex; align-items:center; gap:12px; text-align:left;">
-              <span style="font-size:1.5rem;">⏱</span>
-              <div>
-                <div style="font-size:0.95rem; font-weight:800; color:#fbbf24;" id="lobby-estimate-time">Расчётное время: ~25 минут</div>
-                <div style="font-size:0.8rem; color:var(--text-muted);" id="lobby-estimate-desc">Математически рассчитано на 50 бочонков: никто не выиграет быстро!</div>
-              </div>
+          <section class="card setup-settings" aria-labelledby="settings-heading">
+            <h2 id="settings-heading">Настройки</h2>
+            <div class="settings-grid">
+              <label>Карточка
+                <select id="opt-size">
+                  <option value="3" selected>3×3 · 9 клеток</option>
+                  <option value="4">4×4 · 16 клеток</option>
+                </select>
+              </label>
+              <label>Победа
+                <select id="opt-mode">
+                  <option value="full" selected>Вся карточка</option>
+                  <option value="two_lines">Две линии</option>
+                  <option value="line">Одна линия</option>
+                </select>
+              </label>
+              <label>Воспроизведение
+                <select id="opt-play-format">
+                  <option value="party">Вечеринка · повтор</option>
+                  <option value="timer25">Быстрый квиз · 25 сек</option>
+                  <option value="once" selected>Одиночный · один раз</option>
+                </select>
+              </label>
+              <label>Название трека
+                <select id="opt-reveal">
+                  <option value="manual" selected>Вскрывать вручную</option>
+                  <option value="auto">Показывать сразу</option>
+                </select>
+              </label>
             </div>
-            <div class="badge" id="lobby-estimate-mode" style="margin:0; background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15); color:#fef08a; font-size:0.75rem; white-space:nowrap;">Вся карточка</div>
-          </div>
-        </div>
-
-        <div class="row" style="justify-content:center; gap: 20px;">
-          <button id="btn-start-game" class="btn btn-gold" style="padding: 18px 48px; font-size: 1.3rem;">
-            <span>Начать игру</span>
-          </button>
-          <button id="btn-back-setup" class="btn btn-secondary">
-            <span>Настройки</span>
-          </button>
+          </section>
         </div>
       </div>
     </section>
 
-    <!-- SECTION 3: AUTHENTIC MUZ LOTO STAGE -->
+    <section id="sec-lobby" style="display:none;">
+      <div class="host-heading"><h1>Лобби</h1></div>
+      <div class="tv-lobby-grid stream-lobby-grid">
+        <section class="card lobby-invite" aria-labelledby="invite-heading">
+          <div class="lobby-code-copy">
+            <h2 id="invite-heading">Вход в игру</h2>
+            <div class="code-display" id="lobby-room-code">----</div>
+            <p>Код комнаты</p>
+          </div>
+          <div id="lobby-qr-container" aria-label="QR-код входа"></div>
+          <p class="lobby-join-url" id="lobby-url-text"></p>
+        </section>
+
+        <section class="card lobby-guest-panel" aria-labelledby="guest-heading">
+          <div class="stream-section-heading">
+            <h2 id="guest-heading">Игроки <span id="lobby-players-count" class="quantity-pill">0</span></h2>
+          </div>
+          <div class="players-pill-wrap" id="lobby-players-wrap">
+            <p class="panel-empty">Пока никто не подключился</p>
+          </div>
+          <div id="lobby-estimate-card" class="lobby-estimate">
+            <span class="badge" id="lobby-estimate-mode">Вся карточка</span>
+            <span id="lobby-estimate-time">Расчётное время</span>
+            <details><summary>Подробнее</summary><p id="lobby-estimate-desc"></p></details>
+          </div>
+          <div class="lobby-actions">
+            <button id="btn-start-game" class="btn btn-gold" type="button"><span aria-hidden="true">▶</span><span>Начать игру</span></button>
+            <button id="btn-back-setup" class="btn btn-secondary" type="button">Настройки</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
     <section id="sec-game" style="display:none;">
-      <div class="card">
-        <!-- Top Status Bar -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border-subtle); padding-bottom:14px;">
-          <div class="row">
-            <span class="badge" style="margin-bottom:0; background:rgba(245,158,11,0.2); border-color:#fbbf24; color:#fef08a;" id="game-turn-badge">Ход 1</span>
-            <span class="party-badge">Эфир игры</span>
-            <span style="color:var(--text-main); font-weight:700; font-size:1.05rem;" id="game-remaining-text">В мешке: 25 бочонков</span>
+      <div class="card stage-card">
+        <div class="stage-toolbar">
+          <div class="stage-chips">
+            <span class="badge" id="game-turn-badge">Ход 1</span>
+            <span id="game-remaining-text" class="stage-remaining"></span>
           </div>
-          <div class="row">
-            <label style="flex-direction:row; align-items:center; gap:8px; cursor:pointer;">
-              <input type="checkbox" id="chk-auto-next" checked style="width:18px; height:18px; accent-color:var(--accent-gold);">
-              <span style="color:var(--text-muted); font-size:0.9rem;">Авто-переход</span>
-            </label>
-          </div>
+          <label class="stream-toggle">
+            <input type="checkbox" id="chk-auto-next" checked>
+            <span>Автопереход</span>
+          </label>
         </div>
 
-        <!-- The Central Lotto Barrel & Track Cover Stage -->
         <div class="lotto-stage">
           <div class="tv-hero-stage-row">
-            <!-- 3D Glowing Lotto Barrel showing the RANDOM KEG NUMBER with DROP ANIMATION -->
             <div class="barrel-column">
               <div class="lotto-keg-container">
                 <div class="lotto-keg-halo"></div>
                 <div class="lotto-keg-ball" id="lotto-keg-ball">
-                  <div class="lotto-keg-label">БОЧОНОК</div>
+                  <div class="lotto-keg-label">Бочонок</div>
                   <div class="lotto-keg-number" id="lotto-keg-number">?</div>
                 </div>
               </div>
             </div>
 
-            <!-- Square Album Cover Artwork with Title & Artist directly underneath -->
             <div class="cover-column">
               <div class="tv-album-cover-box" id="tv-album-cover-box">
                 <img id="tv-stage-cover" class="tv-stage-cover-img" src="" alt="Обложка трека">
                 <div class="tv-stage-cover-placeholder" id="tv-stage-cover-placeholder">
-                  <div style="font-size:0.85rem; font-weight:800; letter-spacing:0.12em; color:#f59e0b; opacity:0.8;">MUZLOTO</div>
+                  <span class="brand-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
                 </div>
               </div>
               <div class="tv-track-meta">
-                <div class="tv-track-artist" id="tv-track-artist">АРТИСТ</div>
-                <div class="tv-track-title" id="tv-track-title">Название песни</div>
+                <div class="tv-track-artist" id="tv-track-artist"></div>
+                <div class="tv-track-title" id="tv-track-title">Готовим следующий трек</div>
+                <div class="equalizer-wave" id="equalizer-wave" aria-hidden="true">
+                  <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+                  <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+                  <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+                </div>
+                <div class="stage-progress">
+                  <progress id="track-progress" max="30" value="0" aria-label="Воспроизведение трека"></progress>
+                  <div class="stage-time"><span id="track-elapsed">0:00</span><span id="track-duration">0:30</span></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Soundwave Bars -->
-          <div class="equalizer-wave" id="equalizer-wave">
-            <div class="eq-bar"></div>
-            <div class="eq-bar"></div>
-            <div class="eq-bar"></div>
-            <div class="eq-bar"></div>
-            <div class="eq-bar"></div>
-            <div class="eq-bar"></div>
-            <div class="eq-bar"></div>
+          <div class="stage-controls">
+            <button id="btn-next-keg" class="btn btn-gold" type="button"><span>Следующий бочонок</span><span aria-hidden="true">→</span></button>
+            <button id="btn-pause-keg" class="btn btn-secondary" type="button"><span>Пауза</span></button>
+            <button id="btn-replay-keg" class="btn btn-secondary" type="button"><span>Сначала</span></button>
+            <button type="button" id="btn-play-full-track" class="btn btn-secondary continue-track" disabled>Продолжить трек</button>
           </div>
-
-          <!-- Host Stage Controls (DJ Panel) -->
-          <div class="row" style="justify-content:center; gap:14px; margin-top:14px;">
-            <button id="btn-next-keg" class="btn btn-gold" style="padding:14px 34px; font-size:1.15rem;">
-              <span>Следующий бочонок →</span>
-            </button>
-            <button id="btn-pause-keg" class="btn btn-secondary">
-              <span>Пауза</span>
-            </button>
-            <button id="btn-replay-keg" class="btn btn-secondary">
-              <span>Сначала</span>
-            </button>
-            <button type="button" id="btn-play-full-track" class="btn btn-secondary" disabled>Продолжить трек</button>
-          </div>
-          <div id="track-playback-status" role="status" style="margin:10px auto 0;text-align:center;font-size:0.85rem;color:var(--text-muted);"></div>
+          <div id="track-playback-status" class="stage-playback-status" role="status"></div>
         </div>
 
-        <!-- CALL BOARD: Табло сыгравших бочонков -->
-        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <h3 style="font-size:1rem; text-transform:uppercase; letter-spacing:0.05em; color:#fbbf24;">
-              Табло выпавших бочонков (<span id="board-count">0</span>):
-            </h3>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Игроки могут сверить все номера, вышедшие из мешка</span>
+        <section class="stage-history" aria-labelledby="stage-history-title">
+          <div class="stream-section-heading">
+            <h2 id="stage-history-title">Уже выпали <span id="board-count" class="quantity-pill">0</span></h2>
           </div>
           <div class="call-board" id="call-board-container">
-            <span class="board-placeholder" style="color:var(--text-faint); font-size:0.9rem; padding:8px;">Мешок полон. Нажмите «СЛЕДУЮЩИЙ БОЧОНОК».</span>
+            <span class="board-placeholder">Здесь появятся сыгравшие бочонки</span>
           </div>
-        </div>
+        </section>
       </div>
     </section>
 
     <!-- BINGO VERIFICATION SHOWCASE MODAL -->
     <div class="win-showcase-overlay" id="win-showcase-modal">
       <div style="font-size:3.5rem; margin-bottom:8px;">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4bea83" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="8" r="7"/>
           <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
         </svg>
       </div>
-      <h1 style="color:#fbbf24; font-size:clamp(2.5rem, 6vw, 4rem); line-height:1; margin-bottom:4px;">БИНГО!</h1>
+      <h1 style="color:#4bea83; font-size:clamp(2.5rem, 6vw, 4rem); line-height:1; margin-bottom:4px;">БИНГО!</h1>
       <div style="font-size:1.8rem; font-weight:800; color:#fff;" id="showcase-winner-name">Игрок собрал линию!</div>
       <p style="color:var(--text-muted); font-size:1rem; margin-top:4px;">
-        Карточка подтверждена: все бочонки выигрышной комбинации действительно вышли из мешка!
+        Карточка подтверждена.
       </p>
 
       <div id="showcase-card-grid" class="card-showcase-grid size-3"></div>
@@ -708,7 +284,7 @@
       <div class="leaderboard-modal-card">
         <div class="leaderboard-modal-header">
           <div style="display:flex; align-items:center; gap:10px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4bea83" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
               <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
               <path d="M4 22h16"/>
@@ -716,7 +292,7 @@
               <path d="M14 14.66V17c0 .55.45 1 1 1h2"/>
               <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
             </svg>
-            <h2 style="margin:0; font-size:1.25rem;">Зал славы & Статистика побед</h2>
+            <h2 style="margin:0; font-size:1.25rem;">Зал славы</h2>
           </div>
           <button id="btn-close-leaderboard" class="btn btn-secondary btn-sm" style="padding:6px 14px;">✕</button>
         </div>
@@ -730,7 +306,7 @@
           <!-- Tab 1: Leaderboard -->
           <div id="tab-leaders" class="leaderboard-tab-pane">
             <div id="leaderboard-empty" style="display:none; text-align:center; padding:36px; color:var(--text-muted);">
-              <div style="font-size:2rem; margin-bottom:10px; color:#fbbf24;">★</div>
+              <div style="font-size:2rem; margin-bottom:10px; color:#4bea83;">★</div>
               <div style="font-size:1.05rem; font-weight:700; color:#fff; margin-bottom:4px;">Побед пока нет</div>
               <div style="font-size:0.85rem;">Сыграйте партию и закройте карточку до победного БИНГО!</div>
             </div>
@@ -2430,8 +2006,10 @@
 };
 
     let allPacks = window.BUILTIN_PACKS;
-    let activePackId = allPacks.muzloto?.id || allPacks.new_school?.id || Object.keys(allPacks)[0];
-    let selectedTracks = (window.BUILTIN_PACKS['muzloto'] || window.BUILTIN_PACKS['new_school'] || Object.values(window.BUILTIN_PACKS)[0]).tracks.map((t, i) => ({
+    const requestedPack = new URLSearchParams(location.search).get('pack');
+    let activePackId = Object.keys(allPacks).includes(requestedPack)
+      ? requestedPack : (allPacks.muzloto?.id || allPacks.new_school?.id || Object.keys(allPacks)[0]);
+    let selectedTracks = allPacks[activePackId].tracks.map((t, i) => ({
       id: t.id || 't_' + i,
       kegNum: i + 1,
       title: t.title || 'Песня',
@@ -2565,28 +2143,20 @@
       const container = $('curated-packs-list');
       if (!container) return;
 
-      const packTags = {
-        new_school: 'NEW SCHOOL',
-        rock: 'ROCK LEGENDS',
-        retro: 'RETRO 90S',
-        world: 'POP HITS',
-        charts: 'CHARTS',
-        ost: 'SOUNDTRACKS'
-      };
-
-      container.innerHTML = Object.values(allPacks).map(p => `
-        <div class="pack-card ${p.id === activePackId ? 'active' : ''}" data-id="${p.id}">
-          <div>
-            <div style="font-family:var(--font-mono); font-size:0.75rem; letter-spacing:0.08em; color:#fbbf24; margin-bottom:6px; font-weight:700;">[${packTags[p.id] || 'COLLECTION'}]</div>
-            <div class="pack-title">${escapeHtml(p.title.replace(/^[^\w\u0400-\u04FF]+\s*/, ''))}</div>
-            <div class="pack-desc">${escapeHtml(p.desc)}</div>
+      container.innerHTML = Object.values(allPacks).map(pack => {
+        const chosen = pack.id === activePackId;
+        return `
+          <div class="pack-card library-tile ${chosen ? 'active' : ''}" data-id="${escapeAttr(pack.id)}">
+            <div class="playlist-tile-copy">
+              <strong>${escapeHtml(pack.title.replace(/^[^\w\u0400-\u04FF]+\s*/, '').split(/[:(]/)[0].trim())}</strong>
+              <small>${pack.tracks.length} треков</small>
+            </div>
+            <button class="library-pick" type="button" aria-pressed="${chosen}" aria-label="Выбрать ${escapeAttr(pack.title)}">
+              <span aria-hidden="true">${chosen ? '✓' : '▶'}</span>
+            </button>
           </div>
-          <div class="row" style="justify-content:space-between; margin-top:8px;">
-            <span class="pack-count mono" style="color:#fbbf24; font-size:0.8rem;">${p.tracks.length} бочонков</span>
-            <button class="btn btn-sm btn-gold" style="padding:5px 12px; font-size:0.8rem;">Выбрать</button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       container.querySelectorAll('.pack-card').forEach(card => {
         card.onclick = () => {
@@ -2595,8 +2165,13 @@
           if (pack && pack.tracks) {
             activePackId = packId;
             setTracks(pack.tracks);
-            container.querySelectorAll('.pack-card').forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
+            container.querySelectorAll('.pack-card').forEach(tile => {
+              const chosen = tile === card;
+              tile.classList.toggle('active', chosen);
+              const button = tile.querySelector('.library-pick');
+              button.setAttribute('aria-pressed', chosen);
+              button.firstElementChild.textContent = chosen ? '✓' : '▶';
+            });
           }
         };
       });
@@ -2669,7 +2244,7 @@
         statusEl.style.color = 'var(--accent-red)';
         createBtn.disabled = true;
       } else {
-        statusEl.textContent = `Готово! В мешке будет ${selectedTracks.length} случайных бочонков`;
+        statusEl.textContent = `Готово к запуску`;
         statusEl.style.color = 'var(--accent-green)';
         createBtn.disabled = false;
       }
@@ -2685,7 +2260,7 @@
         const canPlayExcerpt = recording || (t.preview && !recordedTrackIds.has(String(t.id)));
         return `
         <div class="track-item">
-          <span class="mono" style="color:#fbbf24; width:34px; text-align:right; font-weight:900;">№${idx + 1}</span>
+          <span class="mono" style="color:#4bea83; width:34px; text-align:right; font-weight:900;">№${idx + 1}</span>
           <img class="track-cover-mini" src="${t.art || getTvCoverArt('')}" alt="" onerror="this.onerror=null;this.src=getTvCoverArt('')">
           <div class="track-info" style="margin-left:8px;">
             <div class="track-title">${escapeHtml(t.title)}</div>
@@ -3047,7 +2622,26 @@
       });
     }
 
+    function updateTrackProgress() {
+      const progress = $('track-progress');
+      const position = Number.isFinite(mainAudio.currentTime) ? mainAudio.currentTime : 0;
+      const end = roundAudio?.limit ?? (Number.isFinite(mainAudio.duration) ? mainAudio.duration : introSeconds);
+      const formatTime = seconds => {
+        const time = Math.floor(seconds);
+        return Math.floor(time / 60) + ':' + String(time % 60).padStart(2, '0');
+      };
+      progress.max = Math.max(end, 1);
+      progress.value = Math.min(position, end);
+      $('track-elapsed').textContent = formatTime(position);
+      $('track-duration').textContent = formatTime(end);
+    }
+
+    ['loadedmetadata', 'durationchange', 'timeupdate', 'emptied'].forEach(event => {
+      mainAudio.addEventListener(event, updateTrackProgress);
+    });
+
     function showRoundAudioStatus(audio) {
+      updateTrackProgress();
       $('track-playback-status').textContent = audio.continued ? 'Полная запись' :
         audio.recording ? `Первые ${audio.limit} секунд записи` : 'Превью Apple Music';
     }
@@ -3379,7 +2973,7 @@
           </div>
         `).join('');
       } else {
-        $('lobby-players-wrap').innerHTML = `<div style="color:var(--text-faint); padding:10px;">Пока никто не подключился. Первым сканируйте QR!</div>`;
+        $('lobby-players-wrap').innerHTML = `<div style="color:var(--text-faint); padding:10px;">Пока никто не подключился</div>`;
       }
 
       // Update dynamic duration & anti-rush balance estimate
@@ -3450,7 +3044,7 @@
 
     function getTvCoverArt(art) {
       if (art && typeof art === 'string' && art.length > 5) return art;
-      return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111420'/><circle cx='50' cy='50' r='45' fill='%23171b26' stroke='%232a3044' stroke-width='1.5'/><circle cx='50' cy='50' r='32' fill='none' stroke='%23222736' stroke-width='1'/><circle cx='50' cy='50' r='18' fill='%23f59e0b'/><circle cx='50' cy='50' r='5' fill='%2308090e'/><text x='50' y='53' fill='%23000' font-size='8' font-weight='900' text-anchor='middle' font-family='sans-serif'>♪</text></svg>";
+      return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23111420'/><circle cx='50' cy='50' r='45' fill='%23171b26' stroke='%232a3044' stroke-width='1.5'/><circle cx='50' cy='50' r='32' fill='none' stroke='%23222736' stroke-width='1'/><circle cx='50' cy='50' r='18' fill='%2336e979'/><circle cx='50' cy='50' r='5' fill='%2308090e'/><text x='50' y='53' fill='%23000' font-size='8' font-weight='900' text-anchor='middle' font-family='sans-serif'>♪</text></svg>";
     }
 
     function renderWinningCard(details) {
@@ -3475,10 +3069,10 @@
             <div class="showcase-content">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span class="keg-number-badge" style="font-size:0.75rem;">№ ${item.kegNum}</span>
-                ${isWinCell ? '<span style="font-size:0.8rem; font-weight:900; color:#fbbf24; text-shadow:0 0 8px #fbbf24;">✓ БИНГО</span>' : ''}
+                ${isWinCell ? '<span style="font-size:0.8rem; font-weight:900; color:#4bea83; text-shadow:0 0 8px #4bea83;">✓ БИНГО</span>' : ''}
               </div>
               <div style="display:flex; flex-direction:column; gap:2px;">
-                <div style="font-weight:800; font-size:0.68rem; text-transform:uppercase; color:#c4b5fd; text-shadow:0 1px 3px #000; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.artist)}</div>
+                <div style="font-weight:800; font-size:0.68rem; text-transform:uppercase; color:#c2e6cb; text-shadow:0 1px 3px #000; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.artist)}</div>
                 <div style="font-size:0.78rem; font-weight:700; color:#fff; text-shadow:0 1px 4px #000; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(item.title)}</div>
               </div>
             </div>
@@ -3500,7 +3094,7 @@
         y: Math.random() * canvas.height - canvas.height,
         r: Math.random() * 6 + 4,
         d: Math.random() * count,
-        color: ['#fbbf24', '#f59e0b', '#ec4899', '#8b5cf6', '#34d399'][Math.floor(Math.random() * 5)],
+        color: ['#4bea83', '#36e979', '#ec4899', '#8b5cf6', '#34d399'][Math.floor(Math.random() * 5)],
         tilt: Math.floor(Math.random() * 10) - 10,
         tiltAngleInc: Math.random() * 0.07 + 0.05,
         tiltAngle: 0
@@ -3815,7 +3409,7 @@
             <tr>
               <td><span class="rank-pill ${rankClass}">${idx + 1}</span></td>
               <td style="font-weight:700; color:#fff;">${escapeHtml(item.name)}</td>
-              <td style="text-align:center; font-weight:800; color:#fbbf24;">${item.wins}</td>
+              <td style="text-align:center; font-weight:800; color:#4bea83;">${item.wins}</td>
               <td style="text-align:center; color:var(--text-muted);">${item.games || item.wins}</td>
               <td style="text-align:right; font-size:0.82rem; color:var(--text-faint);">${item.lastWinDate || '—'}</td>
             </tr>
@@ -3837,7 +3431,7 @@
             <div>
               <div style="font-weight:800; font-size:1.05rem; color:#fff; display:flex; align-items:center; gap:8px;">
                 <span>${escapeHtml(item.winnerName)}</span>
-                <span class="badge" style="margin:0; font-size:0.7rem; padding:2px 8px; background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3);">
+                <span class="badge" style="margin:0; font-size:0.7rem; padding:2px 8px; background:rgba(54,233,121,0.15); color:#4bea83; border-color:rgba(54,233,121,0.3);">
                   ПОБЕДА
                 </span>
               </div>
