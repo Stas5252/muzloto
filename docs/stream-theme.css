@@ -285,10 +285,17 @@ input[type="text"], input[type="search"], input[type="number"], select {
 }
 .stream-text-link:hover { text-decoration: underline; }
 
+.home-collections { min-width: 0; }
 .playlist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
+  min-width: 0;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(146px, 1fr);
   gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #416b4f transparent;
 }
 .playlist-tile, .library-tile {
   --cover-x: 0%;
@@ -719,7 +726,13 @@ body.player-page { background: radial-gradient(ellipse at 50% 0%, #142c1d 0%, tr
   .music-hero::after { background: linear-gradient(180deg, #111612 29%, #111612de 44%, transparent 71%); }
   .hero-actions { gap: 6px; }
   .hero-actions .btn { min-height: 40px; padding: 7px 12px; font-size: 0.74rem; }
-  .playlist-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .playlist-grid {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    overflow-x: visible;
+  }
   .playlist-tile { padding: 10px; }
   .guide-grid { grid-template-columns: 1fr; gap: 7px; }
   .guide-grid li { min-height: 65px; }
