@@ -45,7 +45,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="stream-theme.css?v=3">
+  <link rel="stylesheet" href="stream-theme.css?v=4">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
 </head>
 <body class="host-page">
@@ -221,7 +221,8 @@
                   <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
                 </div>
                 <div class="stage-progress">
-                  <progress id="track-progress" max="30" value="0" aria-label="Воспроизведение трека"></progress>
+                  <input id="track-progress" type="range" min="0" max="30" step="any" value="0"
+                    aria-label="Позиция воспроизведения" disabled>
                   <div class="stage-time"><span id="track-elapsed">0:00</span><span id="track-duration">0:30</span></div>
                 </div>
               </div>
@@ -362,6 +363,7 @@
     const $ = id => document.getElementById(id);
     const comm = window.createComm('host');
     const mainAudio = $('main-audio');
+    const trackProgress = $('track-progress');
     const previewAudio = $('preview-audio');
 
     window.BUILTIN_PACKS ||= {
@@ -2548,6 +2550,7 @@
         locked || !roundAudio.recording || roundAudio.continued || mainAudio.ended;
       $('btn-pause-keg').disabled = locked || (roundAudio.recording && roundAudio.atLimit);
       $('btn-replay-keg').disabled = locked;
+      updateTrackProgress();
     }
 
     function saveRoundPlayback() {
@@ -2624,21 +2627,43 @@
     }
 
     function updateTrackProgress() {
-      const progress = $('track-progress');
-      const position = Number.isFinite(mainAudio.currentTime) ? mainAudio.currentTime : 0;
-      const end = roundAudio?.limit ?? (Number.isFinite(mainAudio.duration) ? mainAudio.duration : introSeconds);
+      const hasDuration = Number.isFinite(mainAudio.duration) && mainAudio.duration > 0;
+      const end = hasDuration
+        ? Math.min(mainAudio.duration, roundAudio?.limit ?? Infinity)
+        : roundAudio?.limit ?? introSeconds;
+      const position = Math.min(mainAudio.currentTime, end);
       const formatTime = seconds => {
         const time = Math.floor(seconds);
         return Math.floor(time / 60) + ':' + String(time % 60).padStart(2, '0');
       };
-      progress.max = Math.max(end, 1);
-      progress.value = Math.min(position, end);
-      $('track-elapsed').textContent = formatTime(position);
-      $('track-duration').textContent = formatTime(end);
+      const elapsed = formatTime(position);
+      const duration = formatTime(end);
+      trackProgress.disabled = !roundAudio || roundAudio.restoring || nextBarrelPending ||
+        !hasDuration || mainAudio.seekable.length === 0;
+      trackProgress.max = end;
+      trackProgress.value = position;
+      trackProgress.style.setProperty('--track-position', `${position / end * 100}%`);
+      trackProgress.setAttribute('aria-valuetext', `${elapsed} из ${duration}`);
+      $('track-elapsed').textContent = elapsed;
+      $('track-duration').textContent = duration;
     }
 
-    ['loadedmetadata', 'durationchange', 'timeupdate', 'emptied'].forEach(event => {
+    ['loadedmetadata', 'durationchange', 'progress', 'canplay', 'timeupdate', 'seeked', 'emptied'].forEach(event => {
       mainAudio.addEventListener(event, updateTrackProgress);
+    });
+
+    trackProgress.addEventListener('input', () => {
+      if (trackProgress.disabled) return;
+      const position = trackProgress.valueAsNumber;
+      const wasAtEnd = roundAudio.atLimit || mainAudio.ended;
+      mainAudio.currentTime = position;
+      if (position < Number(trackProgress.max)) {
+        clearPlaybackTimer();
+        roundAudio.atLimit = false;
+        if (wasAtEnd) showRoundAudioStatus(roundAudio);
+      }
+      saveRoundPlayback();
+      updatePlaybackControls();
     });
 
     function showRoundAudioStatus(audio) {
