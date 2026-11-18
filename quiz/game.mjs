@@ -1,4 +1,4 @@
-import { demoPack, bundledImages } from './starter.mjs?v=4';
+import { demoPack, bundledImages } from './starter.mjs?v=5';
 export { demoPack };
 
 export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена' };
@@ -78,7 +78,7 @@ export function restoreDraft(input) {
     [input.final?.topic, input.final?.prompt, input.final?.answer]];
   let fingerprint = 2166136261;
   for (const character of JSON.stringify(canonical)) fingerprint = Math.imul(fingerprint ^ character.codePointAt(0), 16777619);
-  const previousStarters = modern ? [366822770, 1223642323] : [722339280];
+  const previousStarters = modern ? [366822770, 1223642323, 1995171786] : [722339280];
   if (previousStarters.includes(fingerprint >>> 0)) return structuredClone(demoPack);
   return saved;
 }

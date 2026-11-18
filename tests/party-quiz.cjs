@@ -8,14 +8,16 @@ const path = require('node:path');
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [20, 20, 20]);
   const photos = pack.rounds.flatMap(r => r.categories.flatMap(c => c.questions.map(q => q.image))).filter(Boolean);
-  assert.equal(new Set(photos).size, 28, 'Every illustrated starter question uses its own image');
+  assert.equal(photos.length, 21);
+  assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   assert.throws(() => {
     const altered = structuredClone(demoPack);
     altered.rounds[0].categories[0].questions[0].image = 'https://example.com/not-bundled.png';
     validPack(altered);
   });
-  assert.ok(pack.rounds[1].categories.some(c => c.title.includes('Вика')));
+  assert.equal(pack.rounds[0].categories.find(c => c.title === 'Город с высоты').questions.filter(q => q.image).length, 4);
+  assert.equal(pack.rounds[1].categories.find(c => c.title.includes('Егор Крид')).questions.length, 4);
   assert.throws(() => validPack({ title: 'Пусто', categories: [] }));
 
   const game = createGame();
@@ -133,5 +135,5 @@ const path = require('node:path');
   }
   assert.equal(new Set(fullGame.used).size, 60);
   assert.equal(move('final'), true, 'A full three-round run reaches the final with no skips');
-  console.log('PASS party quiz: 60 questions, 28 bundled photos, round gates, carryover, undo, legacy packs, buzzer and sealed final');
+  console.log('PASS party quiz: 60 questions, bundled photos, round gates, carryover, undo, legacy packs, buzzer and sealed final');
 })().catch(error => { console.error(error); process.exitCode = 1; });
