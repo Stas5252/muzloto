@@ -1,9 +1,11 @@
 const assert = require('node:assert/strict');
 
 (async () => {
-  const { demoPack, validPack, createGame, command, publicState } = await import('../quiz/game.mjs');
+  const { demoPack, validPack, restoreDraft, createGame, command, publicState, remainingQuestions } = await import('../quiz/game.mjs');
   const pack = validPack(demoPack);
-  assert.ok(pack.categories.some(c => c.title.includes('Вика')));
+  assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
+  assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [9, 9, 9]);
+  assert.ok(pack.rounds[1].categories.some(c => c.title.includes('Вика')));
   assert.throws(() => validPack({ title: 'Пусто', categories: [] }));
 
   const game = createGame();
@@ -55,10 +57,33 @@ const assert = require('node:assert/strict');
   host('board');
 
   const output = JSON.stringify(publicState(game, pack));
-  assert.ok(!output.includes(pack.categories[0].questions[0].answer));
-  assert.ok(!output.includes(pack.categories[0].questions[0].prompt));
+  assert.ok(!output.includes(pack.rounds[0].categories[0].questions[0].answer));
+  assert.ok(!output.includes(pack.rounds[0].categories[0].questions[0].prompt));
 
-  host('final');
+  assert.equal(host('final', { skip: true }), false, 'The final does not open from round one');
+  assert.equal(host('next-round'), false, 'Unplayed questions require an explicit skip');
+  assert.equal(host('pick', { question: 'r1c0q0' }), false, 'Future round questions stay locked');
+  assert.equal(host('next-round', { skip: true }), true);
+  assert.equal(game.phase, 'intermission');
+  assert.equal(game.roundIndex, 1);
+  assert.equal(game.players.p2.score, 100);
+  assert.equal(host('undo'), true);
+  assert.equal(game.roundIndex, 0);
+  assert.ok(game.used.includes('c0q0'));
+  assert.equal(host('next-round', { skip: true }), true);
+  assert.equal(host('start-round'), true);
+  assert.equal(host('pick', { question: 'c0q0' }), false);
+  assert.equal(host('pick', { question: 'r1c0q0' }), true);
+  assert.equal(send('p1', 'buzz', { ticket }), false);
+  host('reveal');
+  host('board');
+  assert.equal(host('next-round', { skip: true }), true);
+  assert.equal(host('start-round'), true);
+  assert.equal(game.roundIndex, 2);
+  assert.equal(host('next-round', { skip: true }), false);
+
+  assert.equal(host('final'), false);
+  assert.equal(host('final', { skip: true }), true);
   assert.equal(send('p2', 'final-answer', { ticket: game.ticket, wager: 200, answer: 'Тайна' }), false);
   assert.equal(send('p2', 'final-answer', { ticket: game.ticket, wager: 75, answer: 'Тайна' }), true);
   assert.ok(!JSON.stringify(publicState(game, pack)).includes('Тайна'), 'Final responses stay off the public scoreboard');
@@ -66,5 +91,37 @@ const assert = require('node:assert/strict');
   host('finish', { correct: ['p2'] });
   assert.equal(game.players.p2.score, 175);
   assert.equal(host('finish', { correct: ['p2'] }), false, 'A final wager is calculated once');
-  console.log('PASS party quiz: deck, authority, buzzer order, duplicate clicks, scoring, undo and sealed final');
+
+  const legacy = validPack({ title: 'Старый набор', categories: [{ title: 'Тема', questions: [{ prompt: 'Вопрос?', answer: 'Ответ', value: 100 }] }] });
+  assert.equal(legacy.rounds.length, 1);
+  assert.equal(legacy.rounds[0].categories[0].questions[0].id, 'c0q0');
+  const oldGame = createGame();
+  delete oldGame.roundIndex;
+  assert.equal(command(oldGame, legacy, { type: 'start' }, true), true);
+  assert.equal(command(oldGame, legacy, { type: 'pick', question: 'c0q0' }, true), true);
+
+  const migratedDraft = restoreDraft({ title: 'Свой черновик', categories: [{ title: 'Фото', questions: [{ prompt: '', answer: 'Вика', value: 100 }] }] });
+  assert.equal(migratedDraft.rounds[0].categories[0].questions[0].answer, 'Вика');
+  const fullGame = createGame();
+  const move = (type, more = {}) => command(fullGame, pack, { type, ...more }, true);
+  assert.equal(move('start'), true);
+  for (const [index, round] of pack.rounds.entries()) {
+    assert.equal(remainingQuestions(pack, fullGame), 9);
+    for (const category of round.categories) {
+      for (const question of category.questions) {
+        assert.equal(move('pick', { question: question.id }), true);
+        assert.equal(move('reveal'), true);
+        assert.equal(move('board'), true);
+      }
+    }
+    assert.equal(remainingQuestions(pack, fullGame), 0);
+    if (index < pack.rounds.length - 1) {
+      assert.equal(move('next-round'), true);
+      assert.equal(move('next-round'), false, 'A double click cannot skip the intermission');
+      assert.equal(move('start-round'), true);
+    }
+  }
+  assert.equal(new Set(fullGame.used).size, 27);
+  assert.equal(move('final'), true, 'A full three-round run reaches the final with no skips');
+  console.log('PASS party quiz: 27 questions, round gates, carryover, undo, legacy packs, buzzer and sealed final');
 })().catch(error => { console.error(error); process.exitCode = 1; });

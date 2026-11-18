@@ -1,4 +1,5 @@
-import { demoPack, validPack, createGame, command, publicState, findQuestion, kinds, points, standings } from './game.mjs';
+import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
+  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=2';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 
@@ -6,6 +7,8 @@ const app = document.querySelector('#app');
 const network = document.querySelector('#network');
 const notice = document.querySelector('#notice');
 const params = new URLSearchParams(location.search);
+const numberForm = new Intl.PluralRules('ru');
+const questionLabel = count => `${count} ${{ one: 'вопрос', few: 'вопроса', many: 'вопросов', other: 'вопроса' }[numberForm.select(count)]}`;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 const action = (name, label, attrs = '', style = '') => `<button class="button ${style}" type="button" data-action="${name}" ${attrs}>${label}</button>`;
 const stored = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
@@ -14,6 +17,7 @@ const mode = params.has('play') ? 'player' : params.has('tv') ? 'tv' : 'host';
 
 let screen = 'home';
 let draft = structuredClone(demoPack);
+let editorRound = 0;
 let game, pack, room, connection, tvChannel;
 let invite = '';
 let currentNetwork = [];
@@ -90,11 +94,31 @@ function cardGrid(source, used = [], canPick = false) {
     </div></section>`).join('')}</div>`;
 }
 
+function roundRail(source, session) {
+  const current = roundIndex(session);
+  const inFinal = ['final', 'results'].includes(session.phase);
+  return `<ol class="round-rail" aria-label="Этапы игры">${source.rounds.map((round, index) => {
+    const status = inFinal || index < current ? 'done' : index === current ? 'current' : 'upcoming';
+    return `<li data-stage="${index + 1}" class="${status}" ${status === 'current' ? 'aria-current="step"' : ''}>
+      <span>Раунд ${index + 1}</span><strong>${escape(round.title)}</strong></li>`;
+  }).join('')}${source.final ? `<li data-stage="final" class="${inFinal ? 'current' : 'upcoming'}" ${inFinal ? 'aria-current="step"' : ''}>
+    <span>Ставки</span><strong>Финал</strong></li>` : ''}</ol>`;
+}
+
+function intermission(source, session, isHost) {
+  const next = activeRound(source, session);
+  return `<section class="panel intermission" data-stage="${roundIndex(session) + 1}">
+    <p class="eyebrow">Перерыв перед раундом ${roundIndex(session) + 1}</p><h1>${escape(next.title)}</h1>
+    ${next.note ? `<p class="intro">${escape(next.note)}</p>` : ''}
+    ${isHost ? action('start-round', 'Начать раунд', '', 'primary') : '<p class="muted">Ждём сигнала ведущего</p>'}
+  </section>`;
+}
+
 function questionPanel(question, session) {
   if (!question) return '';
   const reveal = session.phase === 'reveal';
   const announcing = session.answering && session.players[session.answering]?.name;
-  return `<article class="question panel">
+  return `<article class="question panel" data-stage="${roundIndex(session) + 1}">
     <p class="question-category">${escape(question.category)} <span>${points(question)} очков</span></p>
     <h1>${escape(question.prompt)}</h1>
     ${question.image ? `<img class="question-image" src="${escape(question.image)}" alt="Изображение к вопросу">` : ''}
@@ -118,17 +142,21 @@ function resultsPanel(session, source) {
 }
 
 function renderHome() {
+  const count = draft.rounds.reduce((total, round) => total + roundQuestions(round).length, 0);
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
       <p class="eyebrow">Квиз для компании</p>
       <h1>Кто жмёт,<br>тот отвечает<span>.</span></h1>
-      <p class="intro">Вопросы на ТВ, кнопка на телефоне. Добавьте свои приколы, снимки и темы, которые поймёт только ваша компания.</p>
+      <p class="intro">Вопросы на ТВ, кнопка на телефоне. В наборе ${questionLabel(count)}${draft.final ? ' и финал со ставками' : ''}.</p>
       <div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>
     </div>
-    <div class="hero-art" aria-hidden="true"><div class="art-tile one"><span>100</span></div><div class="art-tile two"><span>?</span></div><div class="art-tile three"><span>↯</span></div><div class="art-caption">ВНЕ<br>ОЧЕРЕДИ</div></div>
+    <div class="hero-art" aria-hidden="true"><div class="art-tile one"><span>100</span></div><div class="art-tile two"><span>?</span></div><div class="art-tile three"><span>↯</span></div></div>
   </section>
-  <section class="home-deck panel"><div><p class="eyebrow">Выбранный набор</p><h2>${escape(draft.title)}</h2></div><div class="tags">${draft.categories.map(c => `<span>${escape(c.title)}</span>`).join('')}</div></section>
-  <section class="how"><div><h2>1. Соберите компанию</h2><p>Создайте комнату. Игроки заходят по QR-коду.</p></div><div><h2>2. Откройте вопрос</h2><p>Ведущий читает, даёт сигнал и принимает ответы вслух.</p></div><div><h2>3. Сыграйте финал</h2><p>Игроки ставят часть очков и пишут ответ в телефоне.</p></div></section>`;
+  <section class="home-deck"><div class="deck-title"><h2>${escape(draft.title)}</h2><span>${draft.rounds.length} ${draft.rounds.length === 1 ? 'раунд' : 'раунда'}</span></div>
+    <div class="deck-rounds">${draft.rounds.map((round, index) => `<article class="deck-round" data-stage="${index + 1}">
+      <p class="eyebrow">Раунд ${index + 1}</p><h3>${escape(round.title)}</h3>
+      <ul>${round.categories.map(c => `<li>${escape(c.title)}</li>`).join('')}</ul>
+    </article>`).join('')}</div></section>`;
 }
 
 function field(label, path, value, options = {}) {
@@ -138,18 +166,28 @@ function field(label, path, value, options = {}) {
 }
 
 function renderEditor() {
+  const round = draft.rounds[editorRound];
+  const path = `rounds.${editorRound}`;
   app.innerHTML = `<section class="editor">
     <div class="section-top"><div><p class="eyebrow">Подготовка</p><h1>Редактор вопросов</h1><p class="muted">Фото и ответы сохраняются в этом браузере. Скачайте набор, чтобы перенести его на другой компьютер.</p></div>
       <div class="actions">${action('home', 'На главную')}${action('launch', 'Создать комнату', '', 'primary')}</div></div>
     <div class="panel editor-tools">
       ${field('Название набора', 'title', draft.title, { max: 80 })}
-      <div class="actions">${action('export', 'Скачать набор')}<label class="button file-button">Загрузить JSON<input data-import type="file" accept=".json,application/json"></label></div>
+      <div class="actions">${action('export', 'Скачать набор')}<label class="button file-button">Загрузить JSON<input data-import type="file" accept=".json,application/json"></label>${action('starter', 'Стартовый набор', '', 'quiet')}</div>
     </div>
-    ${draft.categories.map((c, i) => `<section class="panel category-editor">
-       <div class="category-head">${field('Тема', `categories.${i}.title`, c.title, { max: 60 })}
-        ${action('delete-topic', 'Удалить тему', `data-i="${i}" ${draft.categories.length === 1 ? 'disabled' : ''}`, 'quiet')}</div>
+    <div class="actions editor-rounds" aria-label="Редактировать раунд">${draft.rounds.map((item, index) => action('edit-round', escape(item.title || `Раунд ${index + 1}`), `data-i="${index}" aria-pressed="${index === editorRound}"`, index === editorRound ? 'primary' : '')).join('')}
+      ${draft.rounds.length < 3 ? action('add-round', '+ Раунд') : ''}</div>
+    <section class="panel category-editor round-editor" data-stage="${editorRound + 1}">
+      <div class="category-head">${field('Название раунда', path + '.title', round.title, { max: 48 })}
+        ${draft.rounds.length > 1 ? action('delete-round', 'Удалить раунд', '', 'quiet') : ''}</div>
+      ${field('Заметка для экрана ТВ', path + '.note', round.note, { max: 160 })}
+    </section>
+    ${round.categories.map((c, i) => `<section class="panel category-editor">
+       <div class="category-head">${field('Тема', `${path}.categories.${i}.title`, c.title, { max: 60 })}
+        ${action('delete-topic', 'Удалить тему', `data-i="${i}" ${round.categories.length === 1 ? 'disabled' : ''}`, 'quiet')}</div>
+       ${c.title === 'Вика в кадре?' ? '<p class="muted">Для своей версии добавьте фото и решите, что угадывать: Вику, сам образ или деталь кадра.</p>' : ''}
        ${c.questions.map((q, j) => {
-        const base = `categories.${i}.questions.${j}`;
+        const base = `${path}.categories.${i}.questions.${j}`;
         return `<details class="question-editor" ${!q.prompt ? 'open' : ''}>
           <summary><strong>${q.value || '—'}</strong><span>${escape(q.prompt || 'Новый вопрос')}</span>${q.image ? '<span aria-label="Есть фото">▧</span>' : ''}</summary>
           <div class="question-fields">
@@ -167,7 +205,7 @@ function renderEditor() {
        }).join('')}
        ${action('add-question', '+ Вопрос', `data-i="${i}" ${c.questions.length >= 8 ? 'disabled' : ''}`)}
     </section>`).join('')}
-    ${action('add-topic', '+ Добавить тему', draft.categories.length >= 8 ? 'disabled' : '', 'primary')}
+    ${action('add-topic', '+ Добавить тему', round.categories.length >= 8 ? 'disabled' : '', 'primary')}
     <section class="panel category-editor final-editor"><div class="category-head"><h2>Финал</h2>
       ${draft.final ? action('remove-final', 'Убрать финал', '', 'quiet') : action('add-final', 'Добавить финал')}</div>
       ${draft.final ? field('Тема финала', 'final.topic', draft.final.topic, { max: 60 }) +
@@ -191,13 +229,18 @@ function lobby() {
 function renderHost() {
   const phase = game.phase;
   const current = findQuestion(pack, game.current);
-  const remaining = pack.categories.reduce((sum, c) => sum + c.questions.length, 0) - game.used.length;
+  const round = activeRound(pack, game);
+  const stage = roundIndex(game) + 1;
+  const remaining = remainingQuestions(pack, game);
+  const isLastRound = stage === pack.rounds.length;
   let content;
   if (phase === 'lobby') content = lobby();
-  if (phase === 'board') content = `<section class="panel">
-    <div class="section-top"><div><p class="eyebrow">${remaining} вопросов осталось</p><h1>Выберите вопрос</h1></div>
-    ${action('final', pack.final ? 'Перейти в финал' : 'Завершить игру', '', remaining ? '' : 'primary')}</div>
-    ${cardGrid(pack, game.used, true)}</section>`;
+  if (phase === 'board') content = `<section class="panel round-board" data-stage="${stage}">
+    <div class="section-top"><div><p class="eyebrow">Раунд ${stage} · осталось ${remaining} из ${roundQuestions(round).length}</p><h1>${escape(round.title)}</h1></div>
+    ${isLastRound ? action('final', pack.final ? 'Перейти в финал' : 'Завершить игру', '', remaining ? '' : 'primary') :
+      action('next-round', `К раунду ${stage + 1}`, '', remaining ? '' : 'primary')}</div>
+    ${cardGrid(round, game.used, true)}</section>`;
+  if (phase === 'intermission') content = intermission(pack, game, true);
   if (phase === 'question' || phase === 'reveal') {
     const queue = game.queue.map(id => game.players[id].name);
     const handoff = current?.kind === 'handoff' && !game.opened && !game.answering && Object.keys(game.players).length;
@@ -214,7 +257,7 @@ function renderHost() {
         ${action('reveal', 'Открыть ответ')}`}
       </aside></div>`;
   }
-  if (phase === 'final') content = `<div class="question-layout"><article class="question panel"><p class="eyebrow">Финал · ${escape(pack.final.topic)}</p>
+  if (phase === 'final') content = `<div class="question-layout"><article class="question panel" data-stage="final"><p class="eyebrow">Финал · ${escape(pack.final.topic)}</p>
     <h1>${escape(pack.final.prompt)}</h1><p class="muted">Все отвечают на телефонах и ставят от нуля до своих очков.</p></article>
     <aside class="panel host-actions"><h2>Принятые ответы <span class="count">${Object.keys(game.finalAnswers).length}/${Object.keys(game.players).length}</span></h2>
     <details class="answer-detail"><summary>Посмотреть правильный ответ</summary><p>${escape(pack.final.answer)}</p></details>
@@ -223,7 +266,7 @@ function renderHost() {
   if (phase === 'results') content = resultsPanel(game, pack);
   app.innerHTML = `<div class="room-bar"><div><strong>${escape(pack.title)}</strong><span>${Object.keys(game.players).length} игроков</span></div>
     <div class="actions"><a class="button" href="${escape(pageLink('tv'))}" target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
-    ${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
+    ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
   if (phase === 'lobby' && window.QRCode) {
     try { new window.QRCode(document.querySelector('#join-qr'), { text: invite, width: 176, height: 176, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
   }
@@ -231,13 +274,18 @@ function renderHost() {
 
 let lastPublicSend = 0;
 function presentation(session, source) {
+  const round = activeRound(source, session);
+  const stage = roundIndex(session) + 1;
   let content;
   if (session.phase === 'lobby') content = `<section class="panel center"><p class="eyebrow">Собираем игроков</p><h1>${escape(source.title)}</h1>${scoreList(standings(session))}</section>`;
-  else if (session.phase === 'board') content = `<section class="panel"><p class="eyebrow">Выбор вопроса</p>${cardGrid(source, session.used)}</section>`;
+  else if (session.phase === 'board') content = `<section class="panel round-board" data-stage="${stage}"><div class="section-top"><div>
+    <p class="eyebrow">Раунд ${stage}</p><h1>${escape(round.title)}</h1></div><p class="muted">Осталось ${remainingQuestions(source, session)} из ${roundQuestions(round).length}</p></div>
+    ${cardGrid(round, session.used)}</section>`;
+  else if (session.phase === 'intermission') content = intermission(source, session, false);
   else if (session.phase === 'question' || session.phase === 'reveal') content = questionPanel(findQuestion(source, session.current), session);
-  else if (session.phase === 'final') content = `<article class="question panel"><p class="eyebrow">Финал · ${escape(source.final.topic)}</p><h1>${escape(source.final.prompt)}</h1><p class="muted">Ответьте на телефоне.</p></article>`;
+  else if (session.phase === 'final') content = `<article class="question panel" data-stage="final"><p class="eyebrow">Финал · ${escape(source.final.topic)}</p><h1>${escape(source.final.prompt)}</h1><p class="muted">Ответьте на телефоне.</p></article>`;
   else content = resultsPanel(session, source);
-  return `${content}${session.phase !== 'lobby' && session.phase !== 'results' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(session))}</section>` : ''}`;
+  return `${roundRail(source, session)}${content}${session.phase !== 'lobby' && session.phase !== 'results' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(session))}</section>` : ''}`;
 }
 
 function syncHost(changed = false, force = false) {
@@ -360,11 +408,34 @@ async function hostButton(button) {
     }
     if (type === 'export') return await downloadDeck();
     if (screen === 'editor') {
-      const blank = { value: 100, prompt: '', answer: '' };
-      if (type === 'add-topic' && draft.categories.length < 8) draft.categories.push({ title: 'Новая тема', questions: [blank] });
-      if (type === 'delete-topic' && draft.categories.length > 1 && confirm('Удалить тему со всеми вопросами?')) draft.categories.splice(Number(i), 1);
-      if (type === 'add-question' && draft.categories[i].questions.length < 8) draft.categories[i].questions.push({ ...blank, value: (draft.categories[i].questions.length + 1) * 100 });
-      if (type === 'delete-question' && draft.categories[i].questions.length > 1 && confirm('Удалить вопрос?')) draft.categories[i].questions.splice(Number(j), 1);
+      const categories = draft.rounds[editorRound].categories;
+      const unit = (editorRound + 1) * 100;
+      const blank = { value: unit, prompt: '', answer: '' };
+      if (type === 'edit-round') {
+        editorRound = Number(i);
+        renderEditor();
+        return;
+      }
+      if (type === 'starter') {
+        if (!confirm('Заменить текущий черновик стартовым набором на три раунда?')) return;
+        draft = structuredClone(demoPack);
+        editorRound = 0;
+      }
+      if (type === 'add-round' && draft.rounds.length < 3) {
+        editorRound = draft.rounds.length;
+        draft.rounds.push({ title: `Раунд ${editorRound + 1}`, note: '', categories: [
+          { title: 'Новая тема', questions: [{ ...blank, value: (editorRound + 1) * 100 }] }
+        ] });
+      }
+      if (type === 'delete-round' && draft.rounds.length > 1) {
+        if (!confirm('Удалить раунд со всеми темами и вопросами?')) return;
+        draft.rounds.splice(editorRound, 1);
+        editorRound = Math.min(editorRound, draft.rounds.length - 1);
+      }
+      if (type === 'add-topic' && categories.length < 8) categories.push({ title: 'Новая тема', questions: [blank] });
+      if (type === 'delete-topic' && categories.length > 1 && confirm('Удалить тему со всеми вопросами?')) categories.splice(Number(i), 1);
+      if (type === 'add-question' && categories[i].questions.length < 8) categories[i].questions.push({ ...blank, value: (categories[i].questions.length + 1) * unit });
+      if (type === 'delete-question' && categories[i].questions.length > 1 && confirm('Удалить вопрос?')) categories[i].questions.splice(Number(j), 1);
       if (type === 'remove-photo') setField(path, '');
       if (type === 'add-final') draft.final = { topic: '', prompt: '', answer: '' };
       if (type === 'remove-final') draft.final = null;
@@ -382,13 +453,13 @@ async function hostButton(button) {
       if (confirm('Закрыть эту комнату? Счёт текущей игры будет сброшен.')) leaveHost();
       return;
     }
-    if (type === 'final' && game.used.length < pack.categories.reduce((sum, c) => sum + c.questions.length, 0) &&
-        !confirm('Некоторые вопросы ещё не сыграны. Перейти дальше?')) return;
+    const skip = ['next-round', 'final'].includes(type) && remainingQuestions(pack, game) > 0;
+    if (skip && !confirm(`В этом раунде есть несыгранные вопросы (${remainingQuestions(pack, game)}). Пропустить их?`)) return;
     if (type === 'finish' && Object.keys(game.finalAnswers).length < Object.keys(game.players).length &&
         !confirm('Ответили не все игроки. Подвести итоги?')) return;
     if (type === 'final') correctFinal.clear();
     if (type === 'start' || type === 'open') unlockSound();
-    if (command(game, pack, { type, question: id, verdict, player: document.querySelector('#handoff')?.value, correct: [...correctFinal] }, true)) {
+    if (command(game, pack, { type, question: id, verdict, skip, player: document.querySelector('#handoff')?.value, correct: [...correctFinal] }, true)) {
       syncHost(true);
     }
   } catch (error) { message(error.message); }
@@ -406,6 +477,10 @@ function initHost() {
       const summary = event.target.closest('details')?.querySelector('summary');
       if (summary && field.endsWith('.prompt')) summary.querySelector('span').textContent = event.target.value || 'Новый вопрос';
       if (summary && field.endsWith('.value')) summary.querySelector('strong').textContent = event.target.value || '—';
+      if (field === `rounds.${editorRound}.title`) {
+        const current = app.querySelector('.editor-rounds button[aria-pressed="true"]');
+        if (current) current.textContent = event.target.value || `Раунд ${editorRound + 1}`;
+      }
     }
     if (correct) {
       if (event.target.checked) correctFinal.add(correct); else correctFinal.delete(correct);
@@ -424,6 +499,7 @@ function initHost() {
         const next = validPack(JSON.parse(await file.text()));
         if (!confirm('Заменить текущий черновик набором из файла?')) return;
         draft = next;
+        editorRound = 0;
       } else if (input.dataset.photo) {
         const image = await photoData(file);
         if (!input.isConnected) return;
@@ -444,7 +520,7 @@ function initHost() {
   (async () => {
     try {
       const storedDraft = await read('draft');
-      if (storedDraft?.categories?.length) draft = storedDraft;
+      draft = restoreDraft(storedDraft);
       const live = await read('live');
       if (validRoom(live?.room) && live.game) {
         const savedPack = await read('live-pack-' + live.room);
@@ -511,11 +587,13 @@ function initPlayer() {
       const copy = {
         lobby: ['Ты в игре', 'Ведущий скоро начнёт.'],
         board: ['Выбирают вопрос', 'Следи за табло.'],
+        intermission: ['Перерыв', state.roundTitle ? `Дальше — ${state.roundTitle}` : 'Ведущий скоро начнёт следующий раунд.'],
         reveal: ['Ответ на ТВ', 'Скоро следующий вопрос.'],
         results: ['Игра окончена', 'Итоговый счёт ниже.']
       };
       const [heading, sub] = copy[state.phase];
-      content = `<h1>${heading}</h1><p>${sub}</p>`;
+      content = `${state.phase !== 'lobby' && state.roundNumber && state.roundTotal ? `<p class="eyebrow">Раунд ${escape(state.roundNumber)} из ${escape(state.roundTotal)}</p>` : ''}
+        <h1>${heading}</h1><p>${escape(sub)}</p>`;
     }
     app.innerHTML = `<section class="panel player-panel"><div class="player-seat"><strong>${escape(me.name)}</strong><span>${me.score} очков</span></div>${content}</section>
       ${state.phase !== 'question' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(state.players)}</section>` : ''}`;
@@ -556,7 +634,7 @@ function initPlayer() {
     pendingPlayerTimers.add(timer);
   }
 
-  const phases = ['lobby', 'board', 'question', 'reveal', 'final', 'results'];
+  const phases = ['lobby', 'board', 'question', 'reveal', 'intermission', 'final', 'results'];
   function receive(frame) {
     const next = frame.state;
     if (frame.type !== 'state' || !next || !phases.includes(next.phase) || !Number.isSafeInteger(next.revision) ||
