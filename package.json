@@ -7,6 +7,7 @@
     "test:rules": "node tests/rules.cjs",
     "test:server": "node tests/server-lifecycle.cjs",
     "test:mesh": "node tests/mesh-delivery.cjs",
+    "test:quiz": "node tests/party-quiz.cjs",
     "test:browser": "node tests/browser-lifecycle.cjs",
     "test:cloud": "node tests/cloud-recovery.cjs"
   },

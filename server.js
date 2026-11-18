@@ -13,8 +13,25 @@ const app = express();
 const srv = http.createServer(app);
 const io = new Server(srv, { maxHttpBufferSize: 2e6, cors: { origin: '*' } });
 
+app.use('/quiz', express.static(path.join(__dirname, 'quiz')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+
+// The standalone quiz keeps its room traffic separate from MuzLoto.
+io.of('/party-quiz').on('connection', socket => {
+  socket.on('quiz:join', async (room, reply) => {
+    if (typeof room !== 'string' || !/^[a-f0-9]{24}$/.test(room)) return;
+    if (socket.data.quizRoom) await socket.leave(socket.data.quizRoom);
+    await socket.join(room);
+    socket.data.quizRoom = room;
+    if (typeof reply === 'function') reply(true);
+  });
+  socket.on('quiz:frame', frame => {
+    const room = socket.data.quizRoom;
+    if (!room || frame?.room !== room || !['player', 'state'].includes(frame.type) || JSON.stringify(frame).length > 8192) return;
+    socket.to(room).emit('quiz:frame', frame);
+  });
+});
 
 // Persistent Leaderboard & Match History Database
 const DB_PATH = path.join(__dirname, 'data', 'stats.json');
