@@ -42,6 +42,7 @@ async function main() {
     const stolen = await ack(stranger, 'host:restore', { code: room.code });
     assert.ok(stolen.error, 'Room code alone must not grant host control');
     const joined = await ack(player, 'player:join', { code: room.code, name: 'Same winner', pid: 'same_player' });
+    assert.equal(joined.nextTrack, undefined, 'Only the host receives the next track');
     const sameName = await ack(stranger, 'player:join', { code: room.code, name: 'Same winner', pid: 'other_player' });
     assert.notEqual(sameName.pid, joined.pid, 'Nicknames do not identify player seats');
     assert.equal((await ack(stranger, 'player:leave')).ok, true);
@@ -54,7 +55,13 @@ async function main() {
     for (let round = 1; round <= 2; round++) {
       if (round > 1) await ack(host, 'host:newround');
       await ack(host, 'host:start');
-      for (let i = 0; i < 9; i++) await ack(host, 'host:next');
+      let expectedTrack;
+      for (let i = 0; i < 9; i++) {
+        const draw = await ack(host, 'host:next');
+        if (i > 0) assert.equal(draw.id, expectedTrack);
+        expectedTrack = draw.nextTrack?.id;
+      }
+      assert.equal(expectedTrack, undefined, 'There is no next track at the end of a round');
       assert.equal((await ack(player, 'player:bingo', { marks: joined.card.map(t => t.id) })).ok, true);
       assert.equal((await ack(player, 'player:bingo', { marks: joined.card.map(t => t.id) })).ok, false,
         'Duplicate claim in one round must not count as another victory');

@@ -541,7 +541,8 @@ window.createComm = function(role) {
         }
         setupHostChannels(roomCode);
         broadcastState();
-        cb && cb({ ok: true, state: makePub(roomState) });
+        const nextTrack = roomState.tracks.find(track => track.id === roomState.order?.[roomState.called.length]);
+        cb && cb({ ok: true, state: makePub(roomState), nextTrack });
       } catch(e) {
         cb && cb({ error: e.message });
       }
@@ -593,7 +594,8 @@ window.createComm = function(role) {
           nickname,
           total: roomState.order.length,
           remaining: roomState.order.length - turnNumber,
-          track: roomState.currentTrack
+          track: roomState.currentTrack,
+          nextTrack: roomState.tracks.find(track => track.id === roomState.order[turnNumber])
         });
       }
     };

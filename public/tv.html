@@ -354,7 +354,7 @@
   <script src="mqtt.min.js"></script>
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
-  <script src="comm.js?v=4"></script>
+  <script src="comm.js?v=5"></script>
   <script src="packs-data.js"></script>
   <script src="cloud-audio-config.js?v=3"></script>
   <script src="cloud-audio.js?v=3"></script>
@@ -362,7 +362,10 @@
   <script>
     const $ = id => document.getElementById(id);
     const comm = window.createComm('host');
-    const mainAudio = $('main-audio');
+    let mainAudio = $('main-audio');
+    let nextAudio = new Audio();
+    nextAudio.crossOrigin = 'anonymous';
+    mainAudio.preload = nextAudio.preload = 'metadata';
     const trackProgress = $('track-progress');
     const previewAudio = $('preview-audio');
 
@@ -2027,6 +2030,8 @@
     let trackTimer = null;
     let currentRoomCode = null;
     let currentCallingTrack = null;
+    let upcomingTrack = null;
+    let canReusePreloadedAudio = true;
     const introSeconds = 30;
     const playbackStorageKey = 'muzloto_round_playback';
     let roundAudio = null;
@@ -2054,18 +2059,19 @@
     // Web Audio Synthesis for Barrel Drop Knock & Fanfare
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let audioStreamDest = null;
-    let mainAudioNode = null;
     let studioMediaRecorder = null;
     let studioAudioChunks = [];
 
     window.startStudioAudioRecording = function() {
       try {
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        if (!audioStreamDest) audioStreamDest = audioCtx.createMediaStreamDestination();
-        if (!mainAudioNode) {
-          mainAudioNode = audioCtx.createMediaElementSource(mainAudio);
-          mainAudioNode.connect(audioCtx.destination);
-          mainAudioNode.connect(audioStreamDest);
+        if (!audioStreamDest) {
+          audioStreamDest = audioCtx.createMediaStreamDestination();
+          for (const element of [mainAudio, nextAudio]) {
+            const node = audioCtx.createMediaElementSource(element);
+            node.connect(audioCtx.destination);
+            node.connect(audioStreamDest);
+          }
         }
         studioAudioChunks = [];
         const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
@@ -2595,6 +2601,31 @@
       trackTimer = null;
     }
 
+    function clearNextAudio() {
+      if (!nextAudio.hasAttribute('src')) return;
+      nextAudio.removeAttribute('src');
+      nextAudio.load();
+    }
+
+    function roundAudioSource(track, recording = fullTrackSource(track.id)) {
+      return recording || (!recordedTrackIds.has(String(track.id)) && track.preview);
+    }
+
+    function prepareNextAudio() {
+      if (!upcomingTrack || roundFinished || !canReusePreloadedAudio || navigator.connection?.saveData) return;
+      const source = roundAudioSource(upcomingTrack);
+      if (typeof source === 'string' && source && nextAudio.getAttribute('src') !== source) {
+        nextAudio.src = source;
+      }
+    }
+
+    function swapRoundAudio() {
+      nextAudio.id = mainAudio.id;
+      mainAudio.removeAttribute('id');
+      mainAudio.replaceWith(nextAudio);
+      [mainAudio, nextAudio] = [nextAudio, mainAudio];
+    }
+
     function releaseRoundAudio() {
       pendingRecordingStart = false;
       pendingPlaybackRestore = null;
@@ -2606,6 +2637,8 @@
       mainAudio.onerror = null;
       mainAudio.ontimeupdate = null;
       mainAudio.onloadedmetadata = null;
+      mainAudio.onplaying = null;
+      mainAudio.onwaiting = null;
       mainAudio.removeAttribute('src');
       mainAudio.load();
       if (isLocalFile) URL.revokeObjectURL(url);
@@ -2614,13 +2647,16 @@
     function playRoundAudio() {
       const audio = roundAudio;
       if (!audio) return;
-      mainAudio.play().then(() => {
-        if (roundAudio === audio && !mainAudio.paused) {
-          showRoundAudioStatus(audio);
-          showAudioPlaying();
-        }
-      }).catch(error => {
+      mainAudio.play().catch(error => {
         if (roundAudio !== audio || error.name === 'AbortError' || mainAudio.error) return;
+        if (error.name === 'NotAllowedError' && audio.preloaded && mainAudio.currentTime === 0) {
+          // Some browsers allow autoplay only on the element already used by the host.
+          canReusePreloadedAudio = false;
+          releaseRoundAudio();
+          swapRoundAudio();
+          prepareRoundAudio(currentCallingTrack, true);
+          return;
+        }
         showAudioPaused();
         $('track-playback-status').textContent = 'Нажмите «Воспроизвести», чтобы включить звук';
       });
@@ -2648,9 +2684,13 @@
       $('track-duration').textContent = duration;
     }
 
-    ['loadedmetadata', 'durationchange', 'progress', 'canplay', 'timeupdate', 'seeked', 'emptied'].forEach(event => {
-      mainAudio.addEventListener(event, updateTrackProgress);
-    });
+    for (const element of [mainAudio, nextAudio]) {
+      for (const event of ['loadedmetadata', 'durationchange', 'progress', 'canplay', 'timeupdate', 'seeked', 'emptied']) {
+        element.addEventListener(event, () => {
+          if (element === mainAudio) updateTrackProgress();
+        });
+      }
+    }
 
     trackProgress.addEventListener('input', () => {
       if (trackProgress.disabled) return;
@@ -2675,7 +2715,7 @@
     function prepareRoundAudio(track, autoplay, savedPlayback = null) {
       const recording = fullTrackSource(track.id);
       const expectsRecording = recordedTrackIds.has(String(track.id));
-      const source = recording || (!expectsRecording && track.preview);
+      const source = roundAudioSource(track, recording);
       if (!source) {
         pendingRecordingStart = autoplay;
         pendingPlaybackRestore = savedPlayback;
@@ -2700,10 +2740,25 @@
         limit,
         atLimit: Boolean(limit && savedPlayback?.atLimit === true),
         continued,
-        restoring: Boolean(savedPlayback)
+        restoring: Boolean(savedPlayback),
+        preloaded: false
       };
+      audio.preloaded = nextAudio.getAttribute('src') === audio.url && !nextAudio.error;
+      if (audio.preloaded) {
+        swapRoundAudio();
+      } else {
+        clearNextAudio();
+      }
       roundAudio = audio;
       mainAudio.loop = format === 'party' && !continued;
+      mainAudio.onplaying = () => {
+        showRoundAudioStatus(audio);
+        showAudioPlaying();
+        prepareNextAudio();
+      };
+      mainAudio.onwaiting = () => {
+        $('track-playback-status').textContent = 'Загрузка трека…';
+      };
       mainAudio.onended = onTrackFinished;
       mainAudio.ontimeupdate = () => {
         if (audio.restoring) return;
@@ -2726,8 +2781,7 @@
         $('track-playback-status').textContent = 'Не удалось загрузить звук. Можно вытянуть следующий бочонок.';
       };
       if (savedPlayback) {
-        mainAudio.onloadedmetadata = () => {
-          if (roundAudio !== audio) return;
+        const restorePosition = () => {
           mainAudio.onloadedmetadata = null;
           const position = audio.atLimit ? limit : savedPlayback.position;
           const duration = Number.isFinite(mainAudio.duration) ? mainAudio.duration : Infinity;
@@ -2738,9 +2792,11 @@
             ? 'Фрагмент закончился. Нажмите «Продолжить трек».'
             : 'Позиция восстановлена. Нажмите «Воспроизвести».';
         };
+        mainAudio.onloadedmetadata = restorePosition;
+        if (audio.preloaded && mainAudio.readyState >= HTMLMediaElement.HAVE_METADATA) restorePosition();
       }
-      showRoundAudioStatus(audio);
-      mainAudio.src = audio.url;
+      if (!savedPlayback || audio.restoring) showRoundAudioStatus(audio);
+      if (!audio.preloaded) mainAudio.src = audio.url;
       showAudioPaused();
       updatePlaybackControls();
       if (autoplay) playRoundAudio();
@@ -2772,6 +2828,8 @@
         releaseRoundAudio();
         clearSavedPlayback();
         if (res.end) {
+          upcomingTrack = null;
+          clearNextAudio();
           $('track-playback-status').textContent = '';
           currentCallingTrack = null;
           updatePlaybackControls();
@@ -2785,6 +2843,7 @@
         }
 
         currentCallingTrack = res.track;
+        upcomingTrack = res.nextTrack;
         updatePlaybackControls();
 
         // Save last drawn barrel locally for 100% session persistence on reload
@@ -2937,6 +2996,7 @@
         mainAudio.pause();
         saveRoundPlayback();
         showAudioPaused();
+        showRoundAudioStatus(roundAudio);
       }
     }
 
@@ -2983,6 +3043,10 @@
     comm.on('state', state => {
       if (!currentRoomCode) return;
       roundFinished = state.state === 'finished';
+      if (roundFinished || state.state === 'lobby') {
+        upcomingTrack = null;
+        clearNextAudio();
+      }
       if (state.state === 'lobby') {
         window.__lastShowcasedWinKey = null;
         clearPlaybackTimer();
@@ -3152,6 +3216,7 @@
         currentRoomCode = savedCode;
         const state = res.state;
         roundFinished = state.state === 'finished';
+        upcomingTrack = roundFinished ? null : res.nextTrack;
         selectedTracks = (res.room && res.room.tracks) ? res.room.tracks : (state.tracks || selectedTracks);
 
         $('btn-reset-session').style.display = 'inline-flex';

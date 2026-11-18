@@ -423,7 +423,7 @@ io.on('connection', s => {
     r.host = s.id;
     s.data.host = code;
     s.join(code);
-    ack({ ok: true, state: pub(r), room: {
+    ack({ ok: true, state: pub(r), nextTrack: r.tracks.find(track => track.id === r.order?.[r.called.length]), room: {
       code: r.code,
       size: r.size,
       mode: r.mode,
@@ -483,7 +483,8 @@ io.on('connection', s => {
       nickname,
       total: r.order.length,
       remaining: r.order.length - turnNumber,
-      track: r.currentTrack
+      track: r.currentTrack,
+      nextTrack: r.tracks.find(track => track.id === r.order[turnNumber])
     });
   });
 

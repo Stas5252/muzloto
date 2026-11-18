@@ -89,6 +89,9 @@ async function outages(browser) {
   const ctx = await context(browser);
   try {
     const host = await ctx.newPage();
+    await host.addInitScript(() => {
+      Object.defineProperty(navigator, 'connection', { value: { saveData: true } });
+    });
     const catalog = '**/functions/v1/muzloto-game-audio';
     await host.route(catalog, route => route.abort());
     await host.goto(root + 'tv.html', nav);
@@ -116,11 +119,38 @@ async function outages(browser) {
   } finally { await ctx.close(); }
 }
 
+async function preloadNextTrack(browser) {
+  const ctx = await context(browser);
+  try {
+    const host = await createHost(ctx);
+    // Keep the built-in order for this check so the second track is known.
+    await host.evaluate(() => { Math.random = () => 0.999999; });
+    const nextResponse = host.waitForResponse(response =>
+      new URL(response.url()).pathname.endsWith('/1737216348.mp3') && response.ok());
+    await host.locator('#btn-start-game').click();
+    await host.locator('#chk-auto-next').uncheck();
+    await nextResponse;
+    await host.waitForFunction(() => mainAudio.currentTime > 0.1 && nextAudio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA);
+    const firstAudio = await host.locator('#main-audio').elementHandle();
+    await host.locator('#btn-next-keg').click();
+    await host.waitForFunction(() => mainAudio.currentTime > 0.1);
+    assert.equal(await host.locator('#tv-track-title').innerText(), 'Потрачу');
+    assert.equal(await firstAudio.evaluate(element => element.isConnected), false, 'Use the already buffered audio element');
+    console.log('PASS audio startup: preload begins during the current song and the next draw reuses it');
+  } finally { await ctx.close(); }
+}
+
 async function main() {
   const browser = await chromium.launch({ executablePath: process.env.MUZLOTO_CHROME || (fs.existsSync(chrome) ? chrome : undefined), headless: true });
   try {
-    if (!process.argv.includes('--outages-only')) await recovery(browser);
-    if (!process.argv.includes('--recovery-only')) await outages(browser);
+    if (process.argv.includes('--preload-only')) await preloadNextTrack(browser);
+    else {
+      if (!process.argv.includes('--outages-only')) await recovery(browser);
+      if (!process.argv.includes('--recovery-only')) {
+        await outages(browser);
+        if (!process.argv.includes('--outages-only')) await preloadNextTrack(browser);
+      }
+    }
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error.stack); process.exitCode = 1; });
