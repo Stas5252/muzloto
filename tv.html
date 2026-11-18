@@ -45,7 +45,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="stream-theme.css?v=4">
+  <link rel="stylesheet" href="stream-theme.css?v=5">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
 </head>
 <body class="host-page">
@@ -225,14 +225,28 @@
                     aria-label="Позиция воспроизведения" disabled>
                   <div class="stage-time"><span id="track-elapsed">0:00</span><span id="track-duration">0:30</span></div>
                 </div>
+                <div class="stage-media-controls" role="group" aria-label="Управление треком">
+                  <button id="btn-replay-keg" class="btn stage-media-button" type="button" aria-label="Сначала" title="Сначала" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h2v16H5zM19 5v14L8 12z"/></svg>
+                  </button>
+                  <button id="btn-seek-back" class="btn stage-media-button" type="button" aria-label="На 10 секунд назад" title="На 10 секунд назад" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path class="stage-skip-arrow" d="M3 5v5h5M3.5 9.5a9 9 0 1 1 0 5.5"/></svg>
+                    <span class="stage-skip-seconds" aria-hidden="true">10</span>
+                  </button>
+                  <button id="btn-pause-keg" class="btn stage-media-button stage-media-toggle" type="button" aria-label="Воспроизвести" title="Воспроизвести" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path class="stage-play-icon" d="M8 4.5 21 12 8 19.5z"/><path class="stage-pause-icon" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                  </button>
+                  <button id="btn-seek-forward" class="btn stage-media-button" type="button" aria-label="На 10 секунд вперёд" title="На 10 секунд вперёд" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path class="stage-skip-arrow" d="M21 5v5h-5m4.5-.5a9 9 0 1 0 0 5.5"/></svg>
+                    <span class="stage-skip-seconds" aria-hidden="true">10</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="stage-controls">
             <button id="btn-next-keg" class="btn btn-gold" type="button"><span>Следующий бочонок</span><span aria-hidden="true">→</span></button>
-            <button id="btn-pause-keg" class="btn btn-secondary" type="button"><span>Пауза</span></button>
-            <button id="btn-replay-keg" class="btn btn-secondary" type="button"><span>Сначала</span></button>
             <button type="button" id="btn-play-full-track" class="btn btn-secondary continue-track" disabled>Продолжить трек</button>
           </div>
           <div id="track-playback-status" class="stage-playback-status" role="status"></div>
@@ -242,7 +256,7 @@
           <div class="stream-section-heading">
             <h2 id="stage-history-title">Уже выпали <span id="board-count" class="quantity-pill">0</span></h2>
           </div>
-          <div class="call-board" id="call-board-container">
+          <div class="call-board" id="call-board-container" tabindex="0" role="region" aria-labelledby="stage-history-title">
             <span class="board-placeholder">Здесь появятся сыгравшие бочонки</span>
           </div>
         </section>
@@ -2505,6 +2519,8 @@
     $('btn-next-keg').onclick = nextBarrel;
     $('btn-pause-keg').onclick = togglePause;
     $('btn-replay-keg').onclick = replayAudio;
+    $('btn-seek-back').onclick = () => seekTrack(mainAudio.currentTime - 10);
+    $('btn-seek-forward').onclick = () => seekTrack(mainAudio.currentTime + 10);
     $('btn-full-audio-folder').onclick = () => $('full-audio-folder').click();
     $('full-audio-folder').onchange = event => {
       const filesByName = new Map(Array.from(event.target.files, file => [file.name.normalize(), file]));
@@ -2657,7 +2673,7 @@
           prepareRoundAudio(currentCallingTrack, true);
           return;
         }
-        showAudioPaused();
+        showPlaybackState(false);
         $('track-playback-status').textContent = 'Нажмите «Воспроизвести», чтобы включить звук';
       });
     }
@@ -2676,6 +2692,8 @@
       const duration = formatTime(end);
       trackProgress.disabled = !roundAudio || roundAudio.restoring || nextBarrelPending ||
         !hasDuration || mainAudio.seekable.length === 0;
+      $('btn-seek-back').disabled = trackProgress.disabled || position <= 0;
+      $('btn-seek-forward').disabled = trackProgress.disabled || position >= end;
       trackProgress.max = end;
       trackProgress.value = position;
       trackProgress.style.setProperty('--track-position', `${position / end * 100}%`);
@@ -2692,19 +2710,22 @@
       }
     }
 
-    trackProgress.addEventListener('input', () => {
+    function seekTrack(target) {
       if (trackProgress.disabled) return;
-      const position = trackProgress.valueAsNumber;
+      const end = Number(trackProgress.max);
+      const position = Math.min(Math.max(target, 0), end);
       const wasAtEnd = roundAudio.atLimit || mainAudio.ended;
       mainAudio.currentTime = position;
-      if (position < Number(trackProgress.max)) {
+      if (position < end) {
         clearPlaybackTimer();
         roundAudio.atLimit = false;
         if (wasAtEnd) showRoundAudioStatus(roundAudio);
       }
       saveRoundPlayback();
       updatePlaybackControls();
-    });
+    }
+
+    trackProgress.addEventListener('input', () => seekTrack(trackProgress.valueAsNumber));
 
     function showRoundAudioStatus(audio) {
       updateTrackProgress();
@@ -2753,7 +2774,7 @@
       mainAudio.loop = format === 'party' && !continued;
       mainAudio.onplaying = () => {
         showRoundAudioStatus(audio);
-        showAudioPlaying();
+        showPlaybackState(true);
         prepareNextAudio();
       };
       mainAudio.onwaiting = () => {
@@ -2776,7 +2797,7 @@
       mainAudio.onerror = () => {
         clearPlaybackTimer();
         releaseRoundAudio();
-        showAudioPaused();
+        showPlaybackState(false);
         updatePlaybackControls();
         $('track-playback-status').textContent = 'Не удалось загрузить звук. Можно вытянуть следующий бочонок.';
       };
@@ -2797,7 +2818,7 @@
       }
       if (!savedPlayback || audio.restoring) showRoundAudioStatus(audio);
       if (!audio.preloaded) mainAudio.src = audio.url;
-      showAudioPaused();
+      showPlaybackState(false);
       updatePlaybackControls();
       if (autoplay) playRoundAudio();
     }
@@ -2895,7 +2916,7 @@
     function onTrackFinished() {
       clearPlaybackTimer();
       saveRoundPlayback();
-      showAudioPaused();
+      showPlaybackState(false);
       updatePlaybackControls();
       $('track-playback-status').textContent = roundAudio?.continued ? 'Полная запись закончилась' :
         roundAudio?.recording ? 'Фрагмент закончился' : 'Превью закончилось';
@@ -2905,18 +2926,15 @@
       }
     }
 
-    function showAudioPlaying() {
-      $('equalizer-wave').classList.add('active');
-      $('lotto-keg-ball').classList.add('playing');
-      $('tv-album-cover-box').classList.add('playing');
-      $('btn-pause-keg').querySelector('span').textContent = 'Пауза';
-    }
-
-    function showAudioPaused() {
-      $('equalizer-wave').classList.remove('active');
-      $('lotto-keg-ball').classList.remove('playing');
-      $('tv-album-cover-box').classList.remove('playing');
-      $('btn-pause-keg').querySelector('span').textContent = 'Воспроизвести';
+    function showPlaybackState(playing) {
+      $('equalizer-wave').classList.toggle('active', playing);
+      $('lotto-keg-ball').classList.toggle('playing', playing);
+      $('tv-album-cover-box').classList.toggle('playing', playing);
+      const button = $('btn-pause-keg');
+      const label = playing ? 'Пауза' : 'Воспроизвести';
+      button.dataset.playing = String(playing);
+      button.setAttribute('aria-label', label);
+      button.title = label;
     }
 
     function addToCallBoard(track) {
@@ -2995,7 +3013,7 @@
       } else {
         mainAudio.pause();
         saveRoundPlayback();
-        showAudioPaused();
+        showPlaybackState(false);
         showRoundAudioStatus(roundAudio);
       }
     }
@@ -3092,9 +3110,10 @@
       // Check Bingo Winner
       if (state.state === 'finished' && state.winner) {
         clearPlaybackTimer();
-        if (!roundAudio?.continued) mainAudio.pause();
-        $('equalizer-wave').classList.remove('active');
-        $('lotto-keg-ball').classList.remove('playing');
+        if (!roundAudio?.continued) {
+          mainAudio.pause();
+          showPlaybackState(false);
+        }
 
         const winKey = `${currentRoomCode || ''}_${state.winner}_${state.turn || (state.called ? state.called.length : '')}`;
         if (window.__lastShowcasedWinKey !== winKey) {
