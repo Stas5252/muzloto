@@ -1,66 +1,12 @@
-export const demoPack = {
-  title: 'Квиз для своих',
-  rounds: [
-    { title: 'Разогрев', note: 'Кино, интернет и подвохи на скорость.', categories: [
-      { title: 'Кино без названия', questions: [
-        { value: 100, prompt: 'Мальчик остаётся один дома и превращает его в полосу препятствий для двух грабителей. Как называется фильм?', answer: 'Один дома' },
-        { value: 200, prompt: 'В этом мультфильме повар прячется под колпаком другого повара. Кто он?', answer: 'Крыс Реми, «Рататуй»' },
-        { value: 300, prompt: 'Какой предмет в «Начале» герой запускает на столе, чтобы проверить реальность?', answer: 'Волчок', kind: 'handoff' }
-      ] },
-      { title: 'Вроде очевидно', questions: [
-        { value: 100, prompt: 'Сколько месяцев в году имеют хотя бы 28 дней?', answer: 'Все 12' },
-        { value: 200, prompt: 'Ты обгоняешь бегуна, который шёл вторым. Какое теперь у тебя место?', answer: 'Второе' },
-        { value: 300, prompt: 'Электронный таймер показывает 1:30. Ты добавляешь 45 секунд. Что будет на экране?', answer: '2:15' }
-      ] },
-      { title: 'Интернет помнит', questions: [
-        { value: 100, prompt: 'Как называется режим браузера, в котором не сохраняется история посещений после закрытия окна?', answer: 'Инкогнито, приватный режим' },
-        { value: 200, prompt: 'Как называется приём монтажа, когда видео на несколько секунд превращается в неподвижную картинку?', answer: 'Стоп-кадр', kind: 'double' },
-        { value: 300, prompt: 'Из какой игры взялись криперы — зелёные существа, которые шипят и взрываются?', answer: 'Minecraft' }
-      ] }
-    ] },
-    { title: 'Свои люди', note: 'Образы, чат и обычные вещи с необычной стороны.', categories: [
-      { title: 'Вика в кадре?', questions: [
-        { value: 200, prompt: 'Вика собирает образ на вечеринку: две косички, чёрное платье, белый воротничок. Какую героиню она изображает?', answer: 'Уэнсдэй Аддамс' },
-        { value: 400, prompt: 'В кадре осталось только три предмета: тыква, часы, которые почти пробили полночь, и одна туфелька. Какой персонаж остался за кадром?', answer: 'Золушка' },
-        { value: 600, prompt: 'Белые носки, одна блестящая перчатка. Вика скользит назад, хотя кажется, что шагает вперёд. Как называется движение?', answer: 'Лунная походка, moonwalk', hint: 'Движение прославил Майкл Джексон.' }
-      ] },
-      { title: 'В общем чате', questions: [
-        { value: 200, prompt: 'Три друга написали «я уже выхожу» с разницей ровно в пять минут. Первый написал в 19:07. Во сколько написал третий?', answer: 'В 19:17' },
-        { value: 400, prompt: 'В чате пятеро. Каждый ставит ровно одну реакцию на сообщение каждого из остальных. Сколько реакций?', answer: '20: у каждого по четыре реакции.' },
-        { value: 600, prompt: 'После вечеринки 6 друзей хотят сфотографироваться всеми парами. По одному снимку на пару. Сколько будет фотографий?', answer: '15: 6 × 5 ÷ 2.', kind: 'handoff' }
-      ] },
-      { title: 'На кухне', questions: [
-        { value: 200, prompt: 'Как называют итальянский десерт, в котором печенье пропитывают кофе и выкладывают слоями с кремом из маскарпоне?', answer: 'Тирамису' },
-        { value: 400, prompt: 'На пачке гречки указано: две части воды на одну часть крупы. Сколько воды нужно на полтора стакана крупы?', answer: 'Три стакана' },
-        { value: 600, prompt: 'У рассола и морской воды есть общий химический компонент, из-за которого оба солёные. Назовите бытовое название вещества.', answer: 'Поваренная соль, хлорид натрия' }
-      ] }
-    ] },
-    { title: 'На риск', note: 'Дорогие вопросы, где стоит дослушать условие.', categories: [
-      { title: 'Смотри внимательнее', questions: [
-        { value: 300, prompt: 'В слове «длинношеее» три одинаковые буквы подряд. Какие и где они стоят?', answer: 'Три «е», в самом конце.' },
-        { value: 600, prompt: 'На электронных часах 20:02. Цифры читаются одинаково в обе стороны. В какое время сегодня часы покажут следующий такой набор цифр?', answer: '21:12' },
-        { value: 900, prompt: 'На обычных часах ровно 3:15. На сколько градусов часовая стрелка ушла от отметки «3»?', answer: '7,5 градуса: за 15 минут проходит четверть от 30°.', hint: 'Между соседними цифрами 30 градусов.' }
-      ] },
-      { title: 'По одному намёку', questions: [
-        { value: 300, prompt: 'У этой европейской страны нет выхода к морю, есть Альпы, а флаг — белый крест на красном квадрате. Назовите страну.', answer: 'Швейцария' },
-        { value: 600, prompt: 'Это одновременно единица измерения электрического сопротивления и фамилия немецкого физика. Что это?', answer: 'Ом' },
-        { value: 900, prompt: 'Эта шахматная фигура по-английски называется bishop. В русском названии — крупное животное. Как называется фигура?', answer: 'Слон', hint: 'На доске ходит по диагонали.' }
-      ] },
-      { title: 'Последний расчёт', questions: [
-        { value: 300, prompt: 'В коробке 12 жетонов, и четверть из них красные. Все остальные белые. Сколько белых?', answer: 'Девять' },
-        { value: 600, prompt: 'У вас один нож и круглый пирог. Сколько максимум кусков получится за три прямых разреза сверху, если пирог не складывать и не перекладывать куски?', answer: 'Семь. Каждый новый разрез пересекает предыдущие в разных точках.' },
-        { value: 900, prompt: 'Монету подбрасывают два раза. Какова вероятность, что орёл выпадет ровно один раз, если монета честная?', answer: 'Одна вторая: орёл–решка или решка–орёл, два случая из четырёх.', kind: 'double' }
-      ] }
-    ] }
-  ],
-  final: { topic: 'Перепутанные коробки', prompt: 'Приз в одной из трёх коробок. На А написано «Приз здесь», на Б — «Приза здесь нет», на В — «Приза нет в коробке А». Только одна надпись правдива. Где приз?', answer: 'В коробке Б. Тогда правдива только надпись на В. При любом другом варианте верны две надписи.' }
-};
+import { demoPack, bundledImages } from './starter.mjs?v=3';
+export { demoPack };
 
 export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена' };
 const own = (object, key) => Object.hasOwn(object, key);
 const clean = (value, limit) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
 const image = value => {
   if (!value) return '';
+  if (bundledImages.has(value)) return value;
   if (typeof value !== 'string' || value.length > 1_250_000 ||
       !/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(value)) throw new Error('Фото в пакете имеет неподдерживаемый формат.');
   return value;
@@ -119,16 +65,20 @@ function roundList(input) {
 }
 
 export function restoreDraft(input) {
-  if (Array.isArray(input?.rounds) && input.rounds.length) return input;
-  if (!Array.isArray(input?.categories) || !input.categories.length) return structuredClone(demoPack);
-  // Upgrade the original starter deck while preserving every edited or imported legacy draft.
-  const canonical = [input.title, input.categories.map(c => [c.title, c.questions.map(q =>
-    [q.value, q.prompt, q.answer, q.hint || '', q.image || '', q.kind || 'normal'])]),
+  const rounds = roundList(input);
+  if (!rounds.length) return structuredClone(demoPack);
+  // Upgrade untouched starter decks from both prior releases. Edited decks retain their questions.
+  const modern = Array.isArray(input.rounds);
+  const saved = modern ? input : { title: input.title, rounds, final: input.final };
+  if (rounds.some(round => round.categories.some(category => category.questions.some(question => question.image)))) return saved;
+  const categories = source => source.map(c => [c.title, c.questions.map(q =>
+    [q.value, q.prompt, q.answer, q.hint || '', q.image || '', q.kind || 'normal'])]);
+  const canonical = [input.title, modern ? rounds.map(r => [r.title, r.note || '', categories(r.categories)]) : categories(input.categories),
     [input.final?.topic, input.final?.prompt, input.final?.answer]];
   let fingerprint = 2166136261;
   for (const character of JSON.stringify(canonical)) fingerprint = Math.imul(fingerprint ^ character.codePointAt(0), 16777619);
-  if ((fingerprint >>> 0) === 722339280) return structuredClone(demoPack);
-  return { title: input.title, rounds: roundList(input), final: input.final };
+  if ((fingerprint >>> 0) === (modern ? 366822770 : 722339280)) return structuredClone(demoPack);
+  return saved;
 }
 
 export function createGame() {

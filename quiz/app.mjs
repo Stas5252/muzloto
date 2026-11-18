@@ -1,5 +1,5 @@
 import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
-  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=2';
+  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=3';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 
@@ -87,9 +87,10 @@ function cardGrid(source, used = [], canPick = false) {
     <section class="topic"><h2>${escape(category.title)}</h2><div class="values">
       ${category.questions.map(q => {
         const spent = used.includes(q.id);
+        const photo = q.image ? 'has-image' : '';
         return canPick
-          ? action('pick', spent ? '✓' : String(q.value), `data-id="${q.id}" aria-label="${escape(category.title)} · ${q.value}" ${spent ? 'disabled' : ''}`, 'value')
-          : `<span class="value ${spent ? 'spent' : ''}">${spent ? '✓' : q.value}</span>`;
+          ? action('pick', spent ? '✓' : String(q.value), `data-id="${q.id}" aria-label="${escape(category.title)} · ${q.value}${q.image ? ' · фото' : ''}" ${spent ? 'disabled' : ''}`, `value ${photo}`)
+          : `<span class="value ${photo} ${spent ? 'spent' : ''}">${spent ? '✓' : q.value}</span>`;
       }).join('')}
     </div></section>`).join('')}</div>`;
 }
@@ -118,13 +119,15 @@ function questionPanel(question, session) {
   if (!question) return '';
   const reveal = session.phase === 'reveal';
   const announcing = session.answering && session.players[session.answering]?.name;
-  return `<article class="question panel" data-stage="${roundIndex(session) + 1}">
-    <p class="question-category">${escape(question.category)} <span>${points(question)} очков</span></p>
-    <h1>${escape(question.prompt)}</h1>
-    ${question.image ? `<img class="question-image" src="${escape(question.image)}" alt="Изображение к вопросу">` : ''}
-    ${session.showHint && question.hint ? `<p class="hint">${escape(question.hint)}</p>` : ''}
-    ${reveal ? `<p class="answer-label">Ответ</p><p class="revealed">${escape(question.answer)}</p>` :
-      `<p class="question-state">${announcing ? 'Отвечает ' + escape(announcing) : session.opened ? 'Кнопки открыты' : 'Ведущий читает вопрос'}</p>`}
+  return `<article class="question panel ${question.image ? 'has-photo' : ''}" data-stage="${roundIndex(session) + 1}">
+    ${question.image ? `<figure class="question-figure"><img class="question-image" src="${escape(question.image)}" alt="Фото к вопросу"></figure>` : ''}
+    <div class="question-copy">
+      <p class="question-category">${escape(question.category)} <span>${points(question)} очков</span></p>
+      <h1>${escape(question.prompt)}</h1>
+      ${session.showHint && question.hint ? `<p class="hint">${escape(question.hint)}</p>` : ''}
+      ${reveal ? `<div class="answer-reveal"><p class="answer-label">Ответ</p><p class="revealed">${escape(question.answer)}</p></div>` :
+        `<p class="question-state">${announcing ? 'Отвечает ' + escape(announcing) : session.opened ? 'Кнопки открыты' : 'Ведущий читает вопрос'}</p>`}
+    </div>
   </article>`;
 }
 
@@ -142,21 +145,25 @@ function resultsPanel(session, source) {
 }
 
 function renderHome() {
+  document.body.classList.add('home');
   const count = draft.rounds.reduce((total, round) => total + roundQuestions(round).length, 0);
+  const photos = draft.rounds.flatMap(roundQuestions).filter(question => question.image).length;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
       <p class="eyebrow">Квиз для компании</p>
-      <h1>Кто жмёт,<br>тот отвечает<span>.</span></h1>
-      <p class="intro">Вопросы на ТВ, кнопка на телефоне. В наборе ${questionLabel(count)}${draft.final ? ' и финал со ставками' : ''}.</p>
+      <h1>Вне очереди<span>.</span></h1>
+      <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
+      <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${draft.final ? '<span>Финал со ставками</span>' : ''}</div>
       <div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>
     </div>
-    <div class="hero-art" aria-hidden="true"><div class="art-tile one"><span>100</span></div><div class="art-tile two"><span>?</span></div><div class="art-tile three"><span>↯</span></div></div>
+    <figure class="hero-art"><img src="./media/auditorium.webp" alt="Зрительный зал, вид со сцены" fetchpriority="high"></figure>
   </section>
   <section class="home-deck"><div class="deck-title"><h2>${escape(draft.title)}</h2><span>${draft.rounds.length} ${draft.rounds.length === 1 ? 'раунд' : 'раунда'}</span></div>
     <div class="deck-rounds">${draft.rounds.map((round, index) => `<article class="deck-round" data-stage="${index + 1}">
       <p class="eyebrow">Раунд ${index + 1}</p><h3>${escape(round.title)}</h3>
       <ul>${round.categories.map(c => `<li>${escape(c.title)}</li>`).join('')}</ul>
-    </article>`).join('')}</div></section>`;
+    </article>`).join('')}</div></section>
+  <footer class="home-footer"><a href="./credits.html">Фото и лицензии</a></footer>`;
 }
 
 function field(label, path, value, options = {}) {
@@ -166,6 +173,7 @@ function field(label, path, value, options = {}) {
 }
 
 function renderEditor() {
+  document.body.classList.remove('home');
   const round = draft.rounds[editorRound];
   const path = `rounds.${editorRound}`;
   app.innerHTML = `<section class="editor">
@@ -302,6 +310,7 @@ function syncHost(changed = false, force = false) {
 }
 
 function startHost() {
+  document.body.classList.remove('home');
   invite = pageLink('play').href;
   screen = 'room';
   connection = connectRoom(room, frame => {
