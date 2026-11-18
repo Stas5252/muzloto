@@ -1,5 +1,5 @@
 import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
-  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=3';
+  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=4';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 
@@ -18,6 +18,7 @@ const mode = params.has('play') ? 'player' : params.has('tv') ? 'tv' : 'host';
 let screen = 'home';
 let draft = structuredClone(demoPack);
 let editorRound = 0;
+let savedRoom = null;
 let game, pack, room, connection, tvChannel;
 let invite = '';
 let currentNetwork = [];
@@ -70,9 +71,9 @@ function playSignal() {
   oscillator.stop(time + .17);
 }
 
-function pageLink(type) {
+function pageLink(type, code = room) {
   const link = new URL('./', location.href);
-  link.searchParams.set(type, room);
+  link.searchParams.set(type, code);
   return link;
 }
 
@@ -148,13 +149,17 @@ function renderHome() {
   document.body.classList.add('home');
   const count = draft.rounds.reduce((total, round) => total + roundQuestions(round).length, 0);
   const photos = draft.rounds.flatMap(roundQuestions).filter(question => question.image).length;
+  const menu = savedRoom
+    ? `<p class="saved-room">Есть сохранённая игра</p><div class="actions">
+        <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая комната')}${action('edit', 'Редактор вопросов')}</div>`
+    : `<div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>`;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
       <p class="eyebrow">Квиз для компании</p>
       <h1>Вне очереди<span>.</span></h1>
       <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
       <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${draft.final ? '<span>Финал со ставками</span>' : ''}</div>
-      <div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>
+      <nav class="home-menu" aria-label="Главное меню">${menu}</nav>
     </div>
     <figure class="hero-art"><img src="./media/auditorium.webp" alt="Зрительный зал, вид со сцены" fetchpriority="high"></figure>
   </section>
@@ -272,7 +277,7 @@ function renderHost() {
     ${Object.entries(game.finalAnswers).map(([id, entry]) => `<label class="final-entry"><input type="checkbox" data-correct="${id}" ${correctFinal.has(id) ? 'checked' : ''}><span><strong>${escape(game.players[id].name)}</strong> · ставка ${entry.wager}<br>${escape(entry.answer)}</span></label>`).join('')}
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
   if (phase === 'results') content = resultsPanel(game, pack);
-  app.innerHTML = `<div class="room-bar"><div><strong>${escape(pack.title)}</strong><span>${Object.keys(game.players).length} игроков</span></div>
+  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
     <div class="actions"><a class="button" href="${escape(pageLink('tv'))}" target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
   if (phase === 'lobby' && window.QRCode) {
@@ -343,6 +348,8 @@ function startHost() {
 
 async function launch() {
   if (screen === 'launching') return;
+  const previousRoom = savedRoom;
+  if (previousRoom && !confirm('Начать новую игру вместо сохранённой? Счёт старой комнаты будет сброшен.')) return;
   const previous = screen;
   screen = 'launching';
   try {
@@ -350,7 +357,14 @@ async function launch() {
     room = token();
     game = createGame();
     correctFinal.clear();
-    await Promise.all([write('live-pack-' + room, pack), write('live', { room, game }), storeDraftNow()]).catch(localError);
+    await storeDraftNow();
+    try {
+      await write('live-pack-' + room, pack);
+      await write('live', { room, game });
+      if (previousRoom) await write('live-pack-' + previousRoom, null);
+    } catch { localError(); }
+    savedRoom = room;
+    history.pushState(null, '', pageLink('host'));
     startHost();
   } catch (error) {
     screen = previous;
@@ -358,18 +372,19 @@ async function launch() {
   }
 }
 
-function leaveHost() {
+async function leaveHost() {
   const oldRoom = room;
   connection?.send({ type: 'state', state: { ...publicState(game, pack), revision: game.revision + 1, closed: true } });
   tvChannel?.postMessage({ closed: true });
   connection?.close();
   tvChannel?.close();
-  game = pack = room = null;
-  write('live', null).catch(localError);
+  screen = 'closing';
+  game = pack = room = savedRoom = null;
   // Release the room pack while preserving the independent editor draft.
-  write('live-pack-' + oldRoom, null).catch(localError);
+  await Promise.all([write('live', null), write('live-pack-' + oldRoom, null)]).catch(localError);
   setNetwork([]);
   network.hidden = true;
+  history.replaceState(null, '', './');
   screen = 'home';
   renderHome();
 }
@@ -459,7 +474,7 @@ async function hostButton(button) {
       return;
     }
     if (type === 'close') {
-      if (confirm('Закрыть эту комнату? Счёт текущей игры будет сброшен.')) leaveHost();
+      if (confirm('Закрыть эту комнату? Счёт текущей игры будет сброшен.')) await leaveHost();
       return;
     }
     const skip = ['next-round', 'final'].includes(type) && remainingQuestions(pack, game) > 0;
@@ -526,6 +541,8 @@ function initHost() {
     }
   });
   window.addEventListener('pagehide', () => { if (storeTimer) storeDraftNow(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
+  window.addEventListener('popstate', () => location.reload());
   (async () => {
     try {
       const storedDraft = await read('draft');
@@ -534,14 +551,18 @@ function initHost() {
       if (validRoom(live?.room) && live.game) {
         const savedPack = await read('live-pack-' + live.room);
         if (savedPack) {
-          room = live.room;
-          game = live.game;
-          pack = validPack(savedPack);
-          startHost();
-          return;
+          savedRoom = live.room;
+          if (params.get('host') === savedRoom) {
+            pack = validPack(savedPack);
+            room = savedRoom;
+            game = live.game;
+            startHost();
+            return;
+          }
         }
       }
     } catch { localError(); }
+    if (params.has('host')) history.replaceState(null, '', './');
     renderHome();
   })();
 }

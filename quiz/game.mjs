@@ -1,4 +1,4 @@
-import { demoPack, bundledImages } from './starter.mjs?v=3';
+import { demoPack, bundledImages } from './starter.mjs?v=4';
 export { demoPack };
 
 export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена' };
@@ -67,17 +67,19 @@ function roundList(input) {
 export function restoreDraft(input) {
   const rounds = roundList(input);
   if (!rounds.length) return structuredClone(demoPack);
-  // Upgrade untouched starter decks from both prior releases. Edited decks retain their questions.
+  // Upgrade untouched starter decks from prior releases. Edited decks retain their questions.
   const modern = Array.isArray(input.rounds);
   const saved = modern ? input : { title: input.title, rounds, final: input.final };
-  if (rounds.some(round => round.categories.some(category => category.questions.some(question => question.image)))) return saved;
+  if (rounds.some(round => round.categories.some(category =>
+    category.questions.some(question => question.image && !bundledImages.has(question.image))))) return saved;
   const categories = source => source.map(c => [c.title, c.questions.map(q =>
     [q.value, q.prompt, q.answer, q.hint || '', q.image || '', q.kind || 'normal'])]);
   const canonical = [input.title, modern ? rounds.map(r => [r.title, r.note || '', categories(r.categories)]) : categories(input.categories),
     [input.final?.topic, input.final?.prompt, input.final?.answer]];
   let fingerprint = 2166136261;
   for (const character of JSON.stringify(canonical)) fingerprint = Math.imul(fingerprint ^ character.codePointAt(0), 16777619);
-  if ((fingerprint >>> 0) === (modern ? 366822770 : 722339280)) return structuredClone(demoPack);
+  const previousStarters = modern ? [366822770, 1223642323] : [722339280];
+  if (previousStarters.includes(fingerprint >>> 0)) return structuredClone(demoPack);
   return saved;
 }
 

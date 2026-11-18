@@ -243,11 +243,43 @@ async function durationEstimate() {
   } finally { await g.context.close(); }
 }
 
+async function quizMenu() {
+  const context = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true });
+  context.setDefaultTimeout(timeout);
+  try {
+    const page = await context.newPage();
+    const home = new URL('quiz/', root).href;
+    const start = page.getByRole('button', { name: 'Начать игру' });
+    const resume = page.getByRole('link', { name: 'Продолжить игру' });
+    const board = page.getByRole('button', { name: 'К табло' });
+    await page.goto(home, nav);
+    await page.getByRole('button', { name: 'Создать комнату' }).click();
+    await start.click();
+    const roomUrl = page.url();
+    assert.match(new URL(roomUrl).searchParams.get('host'), /^[a-f0-9]{24}$/);
+    await page.locator('[data-id="c0q0"]').click();
+    await page.getByRole('button', { name: 'Открыть ответ' }).click();
+    await page.goto(home, nav);
+    await resume.waitFor();
+    assert.equal(await board.count(), 0, 'The main URL always opens the menu');
+    await resume.click();
+    await board.waitFor();
+    assert.equal(page.url(), roomUrl);
+    await page.reload(nav);
+    await board.waitFor();
+    await page.getByRole('link', { name: 'Главное меню', exact: true }).click();
+    await resume.waitFor();
+    assert.equal(await resume.getAttribute('href'), roomUrl);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  } finally { await context.close(); }
+}
+
 async function main() {
   let server;
   if (process.env.MUZLOTO_AUDIT_SITE) root = process.env.MUZLOTO_AUDIT_SITE;
   else {
     const app = express();
+    app.use('/quiz', express.static(path.join(__dirname, '..', 'quiz')));
     app.use(express.static(path.join(__dirname, '..', 'public')));
     server = await new Promise(resolve => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
     root = 'http://127.0.0.1:' + server.address().port + '/';
@@ -258,7 +290,9 @@ async function main() {
       executablePath: process.env.MUZLOTO_CHROME || (fs.existsSync(windowsChrome) ? windowsChrome : undefined),
       headless: true,
     });
-    if (process.argv.includes('--estimate-only')) {
+    if (process.argv.includes('--quiz-only')) {
+      await check('Quiz opens its mobile menu and resumes the exact saved question', quizMenu);
+    } else if (process.argv.includes('--estimate-only')) {
       await check('Duration estimate uses the selected pack and card size', durationEstimate);
     } else if (process.argv.includes('--name-only')) {
       await check('Special player name remains an ordinary leaderboard entry', specialName);
@@ -273,8 +307,9 @@ async function main() {
       await check('Player keeps card and marks after closing or leaving', playerRejoin);
       await check('Special player name remains an ordinary leaderboard entry', specialName);
       await check('Duration estimate uses the selected pack and card size', durationEstimate);
+      await check('Quiz opens its mobile menu and resumes the exact saved question', quizMenu);
     }
-    if (!process.argv.some(arg => ['--leave-only', '--name-only', '--estimate-only', '--rejoin-only'].includes(arg))) await check('Same winner at the same draw in consecutive rounds', repeatRound);
+    if (!process.argv.some(arg => ['--leave-only', '--name-only', '--estimate-only', '--rejoin-only', '--quiz-only'].includes(arg))) await check('Same winner at the same draw in consecutive rounds', repeatRound);
   } finally {
     if (browser) await browser.close();
     if (server) await new Promise(resolve => server.close(resolve));
