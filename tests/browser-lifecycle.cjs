@@ -199,6 +199,22 @@ async function playerRejoin() {
     await player.locator('#sec-play').waitFor({ state: 'visible' });
     assert.deepEqual(await readSeat(player), original, 'Rejoining with the same nickname must restore the seat');
     assert.equal((await g.host.locator('#lobby-players-count').innerText()).trim(), '1');
+
+    await player.evaluate(() => {
+      const postMessage = BroadcastChannel.prototype.postMessage;
+      BroadcastChannel.prototype.postMessage = function (message) {
+        if (message.type !== 'mark') postMessage.call(this, message);
+      };
+    });
+    await player.locator('.bingo-cell.marked').click();
+    await player.close();
+    const restored = await g.context.newPage();
+    await restored.goto(root + 'play.html?room=' + g.code, nav);
+    await restored.waitForFunction(n => calledTrackIds.size === n, turn);
+    assert.deepEqual(await readSeat(restored), { ...original, marks: [] });
+    await g.host.waitForFunction(code => {
+      return JSON.parse(localStorage.getItem('muzloto_mesh_room_' + code)).players[0][1].marks.length === 0;
+    }, g.code);
   } finally { await g.context.close(); }
 }
 

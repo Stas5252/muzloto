@@ -192,6 +192,7 @@ window.createComm = function(role) {
 
   function cardOut(r, p) {
     return {
+      roundId: r.roundId,
       card: p.card.map(id => {
         const tr = r.tracks.find(t => t.id === id);
         return {
@@ -211,6 +212,7 @@ window.createComm = function(role) {
     return {
       code: r.code,
       version: r.version,
+      roundId: r.roundId,
       state: r.state,
       mode: r.mode,
       size: r.size,
@@ -282,6 +284,8 @@ window.createComm = function(role) {
         pid: p.pid,
         card: p.card,
         marks: [...p.marks],
+        markSequence: p.markSequence ? [...p.markSequence] : undefined,
+        attempt: p.attempt,
         left: p.left
       }]);
       const dataToSave = {
@@ -319,6 +323,7 @@ window.createComm = function(role) {
       const { name, pid } = msg;
       const playerPid = (pid && String(pid).trim()) || ('p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36));
       let p = players.get(playerPid);
+      if (msg.attempt && p?.left && p.attempt === msg.attempt) return;
       if (!p) {
         p = { name, pid: playerPid, card: newCard(roomState), marks: new Set(), conn: senderConn };
         players.set(playerPid, p);
@@ -326,10 +331,12 @@ window.createComm = function(role) {
         p.name = name;
         if (senderConn) p.conn = senderConn;
       }
+      p.attempt = msg.attempt;
       p.left = false;
       sendToPlayer(playerPid, {
         type: 'join:ack',
         targetPid: playerPid,
+        attempt: msg.attempt,
         data: {
           pid: playerPid,
           code: roomState.code,
@@ -342,18 +349,35 @@ window.createComm = function(role) {
     } else if (msg.type === 'leave') {
       const p = players.get(msg.pid);
       if (!p || p.left) return;
+      if (msg.attempt && p.attempt && msg.attempt !== p.attempt) return;
       p.left = true;
       p.conn = null;
       broadcastState();
     } else if (msg.type === 'mark') {
       const p = players.get(msg.pid);
       if (!p || p.left || roomState.state !== 'playing') return;
+      if (msg.roundId != null && msg.roundId !== roomState.roundId) return;
       const trackId = (typeof msg.id === 'object' && msg.id !== null) ? msg.id.id : msg.id;
       if (!trackId || !p.card.includes(trackId)) return;
 
       // Server-side Anti-Cheat: cannot mark an uncalled barrel!
       const willAddMark = (typeof msg.marked === 'boolean') ? msg.marked : !p.marks.has(trackId);
       if (willAddMark && !roomState.called.includes(trackId)) return;
+      if (msg.roundId === roomState.roundId && Number.isSafeInteger(msg.sequence) && typeof msg.marked === 'boolean') {
+        p.markSequence ||= new Map();
+        if (msg.sequence > (p.markSequence.get(trackId) || 0)) {
+          const changed = p.marks.has(trackId) !== msg.marked;
+          p.markSequence.set(trackId, msg.sequence);
+          if (msg.marked) p.marks.add(trackId);
+          else p.marks.delete(trackId);
+          if (changed) broadcastState();
+          else saveMeshHostLocally();
+        }
+        sendToPlayer(p.pid, {
+          type: 'mark:ack', data: { id: trackId, roundId: roomState.roundId, sequence: msg.sequence }
+        });
+        return;
+      }
 
       if (typeof msg.marked === 'boolean') {
         if (msg.marked) p.marks.add(trackId);
@@ -363,27 +387,20 @@ window.createComm = function(role) {
       }
       broadcastState();
     } else if (msg.type === 'bingo') {
+      if (msg.roundId != null && msg.roundId !== roomState.roundId) return;
       const p = players.get(msg.pid);
+      const reply = data => sendToPlayer(msg.pid, { type: 'bingo:ack', request: msg.request, data });
       if (!p || p.left) {
-        return sendToPlayer(msg.pid, {
-          type: 'bingo:ack',
-          targetPid: msg.pid,
-          data: { ok: false, msg: 'Игрок не найден в комнате' }
-        });
+        return reply({ ok: false, msg: 'Игрок не найден в комнате' });
       }
       if (roomState.state === 'finished') {
-        return sendToPlayer(msg.pid, {
-          type: 'bingo:ack',
-          targetPid: msg.pid,
-          data: { ok: false, msg: `Игра уже завершена! Победитель: ${roomState.winner || 'Определён'}` }
-        });
+        if (msg.request && roomState.winnerRequest === msg.request && roomState.winnerPid === p.pid) {
+          return reply({ ok: true, winner: roomState.winner, pid: p.pid });
+        }
+        return reply({ ok: false, msg: `Игра уже завершена! Победитель: ${roomState.winner || 'Определён'}` });
       }
       if (roomState.state !== 'playing') {
-        return sendToPlayer(msg.pid, {
-          type: 'bingo:ack',
-          targetPid: msg.pid,
-          data: { ok: false, msg: 'Игра сейчас не идёт' }
-        });
+        return reply({ ok: false, msg: 'Игра сейчас не идёт' });
       }
       // Reconcile client-reported marks safely with called barrels
       if (msg.marks && Array.isArray(msg.marks)) {
@@ -398,6 +415,7 @@ window.createComm = function(role) {
         roomState.state = 'finished';
         roomState.winner = p.name;
         roomState.winnerPid = p.pid;
+        roomState.winnerRequest = msg.request;
         roomState.winnerDetails = {
           name: p.name,
           pid: p.pid,
@@ -422,18 +440,10 @@ window.createComm = function(role) {
             playerCount: [...players.values()].filter(player => !player.left).length
           });
         } catch(e) {}
-        sendToPlayer(p.pid, {
-          type: 'bingo:ack',
-          targetPid: p.pid,
-          data: { ok: true, winner: p.name, pid: p.pid }
-        });
         broadcastState();
+        reply({ ok: true, winner: p.name, pid: p.pid });
       } else {
-        sendToPlayer(p.pid, {
-          type: 'bingo:ack',
-          targetPid: p.pid,
-          data: { ok: false, msg: 'Пока не бинго: отмечены не все выпавшие бочонки!' }
-        });
+        reply({ ok: false, msg: 'Пока не бинго: отмечены не все выпавшие бочонки!' });
       }
     }
   }
@@ -458,6 +468,7 @@ window.createComm = function(role) {
 
       roomState = {
         code,
+        roundId: Date.now(),
         tracks,
         size: data.size || 3,
         mode: data.mode || 'full',
@@ -529,13 +540,15 @@ window.createComm = function(role) {
       try {
         const data = JSON.parse(savedStr);
         roomState = data.roomState;
+        roomState.roundId ??= Date.now();
         roomCode = roomState.code;
         players.clear();
         if (Array.isArray(data.players)) {
           for (const [pid, p] of data.players) {
             players.set(pid, {
               ...p,
-              marks: new Set(p.marks || [])
+              marks: new Set(p.marks || []),
+              markSequence: new Map(p.markSequence || [])
             });
           }
         }
@@ -556,6 +569,7 @@ window.createComm = function(role) {
       roomState.currentTrack = null;
       roomState.winner = null;
       roomState.winnerPid = null;
+      roomState.winnerRequest = null;
       roomState.winnerDetails = null;
       broadcastState();
       if (cb) cb();
@@ -601,15 +615,18 @@ window.createComm = function(role) {
     };
 
     adapter.hostNewRound = cb => {
+      roomState.roundId = Math.max(Date.now(), roomState.roundId + 1);
       roomState.state = 'lobby';
       roomState.called = [];
       roomState.currentTrack = null;
       roomState.winner = null;
       roomState.winnerPid = null;
+      roomState.winnerRequest = null;
       roomState.winnerDetails = null;
       for (const p of players.values()) {
         p.card = newCard(roomState);
         p.marks = new Set();
+        p.markSequence?.clear();
         if (p.left) continue;
         sendToPlayer(p.pid, {
           type: 'card',
@@ -626,6 +643,7 @@ window.createComm = function(role) {
       roomState.state = 'playing';
       roomState.winner = null;
       roomState.winnerPid = null;
+      roomState.winnerRequest = null;
       roomState.winnerDetails = null;
       broadcastState();
       if (cb) cb();
@@ -640,12 +658,24 @@ window.createComm = function(role) {
     let latestRoomState = null;
     let pendingJoinCb = null;
     let pendingBingoCb = null;
+    let pendingBingoRequest = null;
     let playerConn = null;
     let joinTimer = null;
+    let retryTimer = null;
+    let joinPayload = null;
+    let mqttSubscribed = false;
+    let needsSync = false;
+    let cardRound = null;
+    let markSequence = 0;
+    const pendingMarks = new Map();
 
     function closePlayerChannels() {
       clearTimeout(joinTimer);
+      clearTimeout(retryTimer);
       joinTimer = null;
+      retryTimer = null;
+      mqttSubscribed = false;
+      needsSync = false;
       if (broadcastChan) { try { broadcastChan.close(); } catch(e) {} }
       if (mqttClient) { try { mqttClient.end(); } catch(e) {} }
       if (peerInstance) { try { peerInstance.destroy(); } catch(e) {} }
@@ -680,13 +710,56 @@ window.createComm = function(role) {
         try { broadcastChan.postMessage(msg); } catch(e) {}
       }
       // 2. MQTT
-      if (mqttClient && mqttClient.connected && joinedRoomCode) {
+      if (mqttClient?.connected && mqttSubscribed && joinedRoomCode) {
         try { mqttClient.publish(`muzloto/${joinedRoomCode}/client_to_host`, payload); } catch(e) {}
       }
       // 3. PeerJS
       if (playerConn && playerConn.open) {
         try { playerConn.send(msg); } catch(e) {}
       }
+    }
+
+    function outboxKey() {
+      return `muzloto_pending_marks_${joinedRoomCode}:${playerPid}`;
+    }
+
+    function savePendingMarks() {
+      try {
+        if (pendingMarks.size) localStorage.setItem(outboxKey(), JSON.stringify([...pendingMarks.values()]));
+        else localStorage.removeItem(outboxKey());
+      } catch(e) {}
+    }
+
+    function transmitPendingMarks() {
+      if (pendingJoinCb || latestRoomState?.roundId !== cardRound || latestRoomState?.state !== 'playing') return;
+      for (const mark of pendingMarks.values()) sendToHost(mark);
+    }
+
+    function scheduleRetry() {
+      const canRetryMarks = pendingMarks.size > 0 && latestRoomState?.state === 'playing';
+      if (retryTimer || (!pendingJoinCb && !needsSync && !canRetryMarks && pendingBingoRequest?.roundId == null)) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        if (pendingJoinCb || needsSync) sendToHost(joinPayload);
+        else {
+          transmitPendingMarks();
+          if (pendingBingoRequest?.roundId != null) sendToHost(pendingBingoRequest);
+        }
+        scheduleRetry();
+      }, 1000);
+    }
+
+    function acceptCard(card) {
+      cardRound = card.roundId ?? null;
+      const marks = new Set(card.marks);
+      const ids = new Set(card.card.map(track => track.id));
+      for (const [id, mark] of pendingMarks) {
+        if (mark.roundId !== cardRound || !ids.has(id)) pendingMarks.delete(id);
+        else if (mark.marked) marks.add(id);
+        else marks.delete(id);
+      }
+      savePendingMarks();
+      return { ...card, marks: [...marks] };
     }
 
     function handleIncomingPlayerMessage(msg) {
@@ -699,7 +772,17 @@ window.createComm = function(role) {
         if (Number.isSafeInteger(latestRoomState?.version) &&
             (!Number.isSafeInteger(state.version) || state.version <= latestRoomState.version)) return;
         latestRoomState = state;
+        if (cardRound != null && state.roundId > cardRound) {
+          pendingMarks.clear();
+          savePendingMarks();
+          needsSync = true;
+        }
+        if (pendingBingoRequest?.roundId != null && state.roundId > pendingBingoRequest.roundId) {
+          pendingBingoRequest = null;
+          pendingBingoCb = null;
+        }
         if (!pendingJoinCb) emitLocal('state', state);
+        scheduleRetry();
         return;
       }
 
@@ -710,7 +793,15 @@ window.createComm = function(role) {
       }
 
       if (msg.type === 'join:ack') {
-        if (!pendingJoinCb || msg.data?.code !== joinedRoomCode) return;
+        if (msg.data?.code !== joinedRoomCode || (msg.attempt && msg.attempt !== joinPayload?.attempt)) return;
+        if (msg.data.roundId != null && msg.data.roundId < latestRoomState?.roundId) return;
+        needsSync = false;
+        if (!pendingJoinCb) {
+          // A player can miss the new card while offline.
+          if (cardRound != null && msg.data.roundId > cardRound) emitLocal('card', acceptCard(msg.data));
+          transmitPendingMarks();
+          return;
+        }
         if (msg.data && msg.data.pid) {
           playerPid = msg.data.pid;
           try {
@@ -720,14 +811,28 @@ window.createComm = function(role) {
         }
         const callback = pendingJoinCb;
         pendingJoinCb = null;
-        callback(msg.data);
+        clearTimeout(joinTimer);
+        joinTimer = null;
+        callback(acceptCard(msg.data));
         if (latestRoomState) emitLocal('state', latestRoomState);
+        transmitPendingMarks();
+        scheduleRetry();
       } else if (msg.type === 'card') {
-        emitLocal('card', msg.data);
+        if (pendingJoinCb || (cardRound != null && msg.data.roundId <= cardRound)) return;
+        emitLocal('card', acceptCard(msg.data));
+      } else if (msg.type === 'mark:ack') {
+        const { id, roundId, sequence } = msg.data;
+        const mark = pendingMarks.get(id);
+        if (mark?.roundId === roundId && mark.sequence === sequence) {
+          pendingMarks.delete(id);
+          savePendingMarks();
+        }
       } else if (msg.type === 'bingo:ack') {
-        if (pendingBingoCb) {
-          pendingBingoCb(msg.data);
+        if (pendingBingoRequest && (!msg.request || msg.request === pendingBingoRequest.request)) {
+          const callback = pendingBingoCb;
+          pendingBingoRequest = null;
           pendingBingoCb = null;
+          callback?.(msg.data);
         }
       }
     }
@@ -735,25 +840,35 @@ window.createComm = function(role) {
     adapter.playerJoin = (data, cb) => {
       closePlayerChannels();
       const code = String(data.code).trim();
-      if (joinedRoomCode !== code) latestRoomState = null;
+      latestRoomState = null;
       joinedRoomCode = code;
       pendingJoinCb = cb;
+      pendingBingoRequest = null;
+      pendingBingoCb = null;
+      cardRound = null;
+      pendingMarks.clear();
 
       const myPid = (data && data.pid) || getPlayerPid();
       playerPid = myPid;
       try {
         sessionStorage.setItem('muzloto_session_pid', myPid);
         sessionStorage.setItem('muzloto_session_pid_' + code, myPid);
+        for (const mark of JSON.parse(localStorage.getItem(outboxKey()) || '[]')) {
+          if (!mark || !Number.isSafeInteger(mark.sequence) || !Number.isSafeInteger(mark.roundId) || typeof mark.marked !== 'boolean') continue;
+          pendingMarks.set(mark.id, mark);
+          markSequence = Math.max(markSequence, mark.sequence);
+        }
       } catch(e) {}
 
-      const joinPayload = { type: 'join', name: data.name, pid: myPid };
+      const request = { type: 'join', name: data.name, pid: myPid, attempt: Math.random().toString(36).slice(2) };
+      joinPayload = request;
 
       // 1. BroadcastChannel (Instant on same machine/browser tabs)
       try {
         if (typeof BroadcastChannel !== 'undefined') {
           broadcastChan = new BroadcastChannel('muzloto_' + code);
           broadcastChan.onmessage = ev => handleIncomingPlayerMessage(ev.data);
-          broadcastChan.postMessage(joinPayload);
+          broadcastChan.postMessage(request);
         }
       } catch(e) {}
 
@@ -761,13 +876,20 @@ window.createComm = function(role) {
       try {
         if (typeof mqtt !== 'undefined') {
           const clientId = 'p_' + myPid.slice(-8) + '_' + Math.random().toString(16).slice(2, 6);
-          mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000 });
-          mqttClient.on('connect', () => {
-            mqttClient.subscribe(`muzloto/${code}/host_to_client`);
-            mqttClient.subscribe(`muzloto/${code}/to_player/${myPid}`);
-            mqttClient.publish(`muzloto/${code}/client_to_host`, JSON.stringify(joinPayload));
+          const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000, resubscribe: false });
+          mqttClient = client;
+          client.on('connect', () => {
+            client.subscribe([`muzloto/${code}/host_to_client`, `muzloto/${code}/to_player/${myPid}`], (err, grants) => {
+              if (mqttClient !== client || !client.connected || err || grants?.some(grant => grant.qos > 2)) return;
+              mqttSubscribed = true;
+              needsSync = true;
+              client.publish(`muzloto/${code}/client_to_host`, JSON.stringify(request));
+              scheduleRetry();
+            });
           });
-          mqttClient.on('message', (topic, message) => {
+          client.on('close', () => { if (mqttClient === client) mqttSubscribed = false; });
+          client.on('message', (topic, message) => {
+            if (mqttClient !== client) return;
             try {
               const msg = JSON.parse(message.toString());
               handleIncomingPlayerMessage(msg);
@@ -779,13 +901,14 @@ window.createComm = function(role) {
       // 3. PeerJS (WebRTC P2P fallback)
       try {
         if (typeof Peer !== 'undefined') {
-          peerInstance = new Peer();
-          peerInstance.on('open', () => {
-            playerConn = peerInstance.connect('muzloto_' + code);
-            playerConn.on('open', () => {
-              playerConn.send(joinPayload);
-            });
-            playerConn.on('data', msg => handleIncomingPlayerMessage(msg));
+          const peer = new Peer();
+          peerInstance = peer;
+          peer.on('open', () => {
+            if (peerInstance !== peer) return;
+            const connection = peer.connect('muzloto_' + code);
+            playerConn = connection;
+            connection.on('open', () => { if (playerConn === connection) connection.send(request); });
+            connection.on('data', msg => { if (playerConn === connection) handleIncomingPlayerMessage(msg); });
           });
         }
       } catch(e) {}
@@ -795,17 +918,23 @@ window.createComm = function(role) {
         if (pendingJoinCb) {
           pendingJoinCb({ error: 'Не удалось найти комнату #' + code + '. Проверьте 4 цифры на экране ТВ.' });
           pendingJoinCb = null;
+          closePlayerChannels();
+          pendingMarks.clear();
         }
       }, 7000);
+      scheduleRetry();
     };
 
     adapter.playerLeave = () => {
-      sendToHost({ type: 'leave' });
+      sendToHost({ type: 'leave', attempt: joinPayload?.attempt });
       closePlayerChannels();
       joinedRoomCode = null;
       latestRoomState = null;
       pendingJoinCb = null;
       pendingBingoCb = null;
+      pendingBingoRequest = null;
+      pendingMarks.clear();
+      cardRound = null;
     };
 
     adapter.playerMark = arg => {
@@ -816,7 +945,16 @@ window.createComm = function(role) {
       } else {
         id = arg;
       }
-      sendToHost({ type: 'mark', id, marked });
+      if (cardRound == null || typeof marked !== 'boolean') {
+        sendToHost({ type: 'mark', id, marked });
+        return;
+      }
+      markSequence = Math.max(Date.now(), markSequence + 1);
+      const mark = { type: 'mark', id, marked, roundId: cardRound, sequence: markSequence };
+      pendingMarks.set(id, mark);
+      savePendingMarks();
+      sendToHost(mark);
+      scheduleRetry();
     };
 
     adapter.playerBingo = (arg, cb) => {
@@ -828,7 +966,10 @@ window.createComm = function(role) {
         marks = arg.marks;
       }
       pendingBingoCb = callback;
-      sendToHost({ type: 'bingo', marks });
+      pendingBingoRequest = { type: 'bingo', marks, roundId: cardRound, request: Math.random().toString(36).slice(2) };
+      transmitPendingMarks();
+      sendToHost(pendingBingoRequest);
+      scheduleRetry();
     };
   }
 
