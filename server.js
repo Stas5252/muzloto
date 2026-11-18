@@ -350,7 +350,7 @@ const pub = r => ({
   winnerPid: r.winnerPid || null,
   winnerDetails: r.winnerDetails || null,
   currentTrack: r.currentTrack || null,
-  players: [...r.players.values()].map(p => ({
+  players: [...r.players.values()].filter(p => !p.left).map(p => ({
     name: p.name,
     online: !!p.sid,
     marksCount: p.marks.size
@@ -543,6 +543,7 @@ io.on('connection', s => {
     }
     p.name = name;
     p.sid = s.id;
+    p.left = false;
     s.data.room = r.code;
     s.data.pid = pid;
     s.join(r.code);
@@ -562,7 +563,8 @@ io.on('connection', s => {
     const r = rooms[s.data.room];
     const p = r && r.players.get(s.data.pid);
     if (p && p.sid === s.id) {
-      r.players.delete(s.data.pid);
+      p.left = true;
+      p.sid = null;
       s.leave(r.code);
       push(r);
     }
@@ -658,7 +660,7 @@ io.on('connection', s => {
           turn: r.called.length,
           totalBarrels: r.tracks.length,
           winningTracks: winTracks,
-          playerCount: r.players.size
+          playerCount: [...r.players.values()].filter(player => !player.left).length
         });
       } catch(e) {
         console.warn('Failed to record win:', e.message);

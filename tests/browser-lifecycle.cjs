@@ -167,6 +167,41 @@ async function leaveRoom() {
   } finally { await g.context.close(); }
 }
 
+async function playerRejoin() {
+  const g = await game();
+  try {
+    let turn = 1;
+    for (; turn <= 43; turn++) {
+      await g.player.waitForFunction(n => calledTrackIds.size === n, turn);
+      await markCalled(g.player);
+      if (await g.player.locator('.bingo-cell.marked').count()) break;
+      await g.host.locator('#btn-next-keg').evaluate(button => button.click());
+    }
+    await g.host.waitForFunction(() => {
+      const code = document.getElementById('lobby-room-code').textContent.trim();
+      return JSON.parse(localStorage.getItem('muzloto_mesh_room_' + code)).players[0][1].marks.length === 1;
+    });
+    const readSeat = page => page.evaluate(() => ({ pid: myPlayerPid, card: myCard.map(track => track.id), marks: [...myMarks] }));
+    const original = await readSeat(g.player);
+    await g.player.close();
+
+    const player = await g.context.newPage();
+    await player.goto(root + 'play.html?room=' + g.code, nav);
+    await player.waitForFunction(n => calledTrackIds.size === n, turn);
+    assert.deepEqual(await readSeat(player), original, 'Reopening the page must preserve player ID, card and marks');
+
+    player.once('dialog', dialog => dialog.accept());
+    await player.locator('#btn-leave-room').click();
+    await g.host.waitForFunction(() => document.getElementById('lobby-players-count').textContent.trim() === '0');
+    await player.reload(nav);
+    assert.equal(await player.locator('#sec-join').isVisible(), true, 'Explicit leave must stop auto-join');
+    await player.locator('#btn-join').click();
+    await player.locator('#sec-play').waitFor({ state: 'visible' });
+    assert.deepEqual(await readSeat(player), original, 'Rejoining with the same nickname must restore the seat');
+    assert.equal((await g.host.locator('#lobby-players-count').innerText()).trim(), '1');
+  } finally { await g.context.close(); }
+}
+
 async function specialName() {
   const g = await game(3, 'full', 9, '__proto__');
   try {
@@ -213,14 +248,17 @@ async function main() {
       await check('Special player name remains an ordinary leaderboard entry', specialName);
     } else if (process.argv.includes('--leave-only')) {
       await check('Explicit leave removes the participant; rejoin creates one seat', leaveRoom);
+    } else if (process.argv.includes('--rejoin-only')) {
+      await check('Player keeps card and marks after closing or leaving', playerRejoin);
     } else if (!process.argv.includes('--repeat-only')) {
       await matrix();
       await check('Host refresh preserves room, draw order, card and marks', hostReload);
       await check('Explicit leave removes the participant; rejoin creates one seat', leaveRoom);
+      await check('Player keeps card and marks after closing or leaving', playerRejoin);
       await check('Special player name remains an ordinary leaderboard entry', specialName);
       await check('Duration estimate uses the selected pack and card size', durationEstimate);
     }
-    if (!process.argv.some(arg => ['--leave-only', '--name-only', '--estimate-only'].includes(arg))) await check('Same winner at the same draw in consecutive rounds', repeatRound);
+    if (!process.argv.some(arg => ['--leave-only', '--name-only', '--estimate-only', '--rejoin-only'].includes(arg))) await check('Same winner at the same draw in consecutive rounds', repeatRound);
   } finally {
     if (browser) await browser.close();
     if (server) await new Promise(resolve => server.close(resolve));

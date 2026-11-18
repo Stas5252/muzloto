@@ -43,7 +43,7 @@ async function recovery(browser) {
   try {
     const host = await createHost(hostCtx);
     const code = (await host.locator('#lobby-room-code').textContent()).trim();
-    const player = await playerCtx.newPage();
+    let player = await playerCtx.newPage();
     await player.goto(root + 'play.html?room=' + code, nav);
     await player.locator('#btn-join').click();
     assert.match(await player.locator('#toast').innerText(), /имя/);
@@ -69,11 +69,19 @@ async function recovery(browser) {
     await host.locator('#btn-next-keg').click();
     await player.waitForFunction(n => calledTrackIds.size === n + 3, turn, { timeout });
     assert.equal(await player.locator('.bingo-cell.marked').count(), 1);
+    const pid = await player.evaluate(() => myPlayerPid);
+    await player.close();
+    player = await playerCtx.newPage();
+    await player.goto(root + 'play.html?room=' + code, nav);
+    await player.waitForFunction(n => calledTrackIds.size === n + 3, turn, { timeout });
+    assert.equal(await player.evaluate(() => myPlayerPid), pid);
+    assert.equal(await player.locator('.bingo-cell.marked').count(), 1);
+    assert.deepEqual(await player.locator('.bingo-cell').evaluateAll(cells => cells.map(c => c.dataset.id)), card);
     player.once('dialog', dialog => dialog.accept());
     await player.locator('#btn-leave-room').click();
     await player.locator('#sec-join').waitFor({ state: 'visible' });
     await host.waitForFunction(() => document.getElementById('lobby-players-count').textContent.trim() === '0', null, { timeout });
-    console.log('PASS MQTT: isolated devices, temporary offline player, host refresh, preserved card and marks, explicit exit');
+    console.log('PASS MQTT: isolated devices, temporary offline player, host refresh, browser tab reopened with same card and marks, explicit exit');
   } finally { await hostCtx.close(); await playerCtx.close(); }
 }
 

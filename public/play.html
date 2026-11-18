@@ -166,7 +166,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="mqtt.min.js"></script>
   <script src="peerjs.min.js"></script>
-  <script src="comm.js?v=3"></script>
+  <script src="comm.js?v=4"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -182,6 +182,7 @@
     let currentGameState = 'lobby';
     let currentMode = 'full';
     let gridSize = 3;
+    const activePlayerKey = 'muzloto_active_player';
 
     $('input-room').value = urlParams.get('room') || '';
     $('input-name').value = localStorage.getItem('muzloto_player_name') || '';
@@ -264,29 +265,31 @@
       if (!code) return toast('Пожалуйста, введите код с экрана ТВ');
       if (!name) return toast('Пожалуйста, введите ваше имя');
 
-      // Use tab-isolated sessionStorage so multiple players/tabs never collide
+      joinRoom(code, name);
+    }
+
+    function joinRoom(code, name) {
+      const playerKey = `muzloto_player_pid_${code}:${name}`;
       const sessionKey = 'muzloto_session_pid_' + code;
-      let sessionPid = sessionStorage.getItem(sessionKey);
-      if (!sessionPid) {
-        sessionPid = 'p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
-        sessionStorage.setItem(sessionKey, sessionPid);
-      }
+      const sameSavedPlayer = localStorage.getItem('muzloto_joined_room') === code &&
+        localStorage.getItem('muzloto_player_name') === name;
+      const pid = localStorage.getItem(playerKey) || (sameSavedPlayer && sessionStorage.getItem(sessionKey)) ||
+        'p_' + Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16).padStart(8, '0')).join('');
 
       const joinBtn = $('btn-join');
       joinBtn.disabled = true;
       joinBtn.querySelector('span').textContent = 'Подключение…';
 
-      comm.playerJoin({ code, name, pid: sessionPid }, res => {
+      comm.playerJoin({ code, name, pid }, res => {
         joinBtn.disabled = false;
         joinBtn.querySelector('span').textContent = 'Войти в игру';
 
         if (res.error) return toast(res.error);
 
-        sessionStorage.setItem(sessionKey, res.pid);
-        sessionStorage.setItem('muzloto_session_pid', res.pid);
-        sessionStorage.setItem('muzloto_player_card_' + code, JSON.stringify(res));
+        localStorage.setItem(playerKey, res.pid);
         localStorage.setItem('muzloto_player_name', name);
         localStorage.setItem('muzloto_joined_room', code);
+        sessionStorage.setItem(activePlayerKey, JSON.stringify({ code, name }));
         joinedCode = code;
         myPlayerName = name;
         myPlayerPid = res.pid;
@@ -362,15 +365,6 @@
           } else {
             cell.classList.remove('marked');
             myMarks.delete(id);
-          }
-
-          // Persist marks in sessionStorage so refresh retains them immediately
-          if (joinedCode) {
-            try {
-              const cached = JSON.parse(sessionStorage.getItem('muzloto_player_card_' + joinedCode) || '{}');
-              cached.marks = [...myMarks];
-              sessionStorage.setItem('muzloto_player_card_' + joinedCode, JSON.stringify(cached));
-            } catch(e) {}
           }
 
           comm.playerMark({ id, marked: willMark });
@@ -487,74 +481,25 @@
 
     function checkPlayerAutoRestore() {
       const urlRoom = urlParams.get('room');
-      const savedCode = urlRoom || localStorage.getItem('muzloto_joined_room');
-      const savedName = localStorage.getItem('muzloto_player_name');
-      if (!savedCode || !savedName) return;
-
-      const cachedCardJson = sessionStorage.getItem('muzloto_player_card_' + savedCode);
-      if (cachedCardJson) {
-        try {
-          const cached = JSON.parse(cachedCardJson);
-          joinedCode = savedCode;
-          myPlayerName = savedName;
-          myPlayerPid = cached.pid || sessionStorage.getItem('muzloto_session_pid_' + savedCode);
-          currentMode = cached.mode || 'full';
-
-          $('player-display-name').textContent = savedName;
-          $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
-          $('room-code-badge').textContent = `Комната #${savedCode}`;
-
-          $('sec-join').style.display = 'none';
-          $('sec-play').style.display = 'flex';
-          $('btn-leave-room').style.display = 'inline-flex';
-
-          renderCard(cached);
-        } catch(e) {}
-      }
-
-      const sessionKey = 'muzloto_session_pid_' + savedCode;
-      let sessionPid = sessionStorage.getItem(sessionKey) || sessionStorage.getItem('muzloto_session_pid');
-      if (!sessionPid) {
-        sessionPid = 'p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
-        sessionStorage.setItem(sessionKey, sessionPid);
-      }
-
-      comm.playerJoin({ code: savedCode, name: savedName, pid: sessionPid }, res => {
-        if (res.error) {
-          localStorage.removeItem('muzloto_joined_room');
-          $('sec-join').style.display = 'block';
-          $('sec-play').style.display = 'none';
-          $('btn-leave-room').style.display = 'none';
-          return;
-        }
-
-        sessionStorage.setItem(sessionKey, res.pid);
-        sessionStorage.setItem('muzloto_session_pid', res.pid);
-        sessionStorage.setItem('muzloto_player_card_' + savedCode, JSON.stringify(res));
-        localStorage.setItem('muzloto_joined_room', savedCode);
-
-        joinedCode = savedCode;
-        myPlayerName = savedName;
-        myPlayerPid = res.pid;
-        currentMode = res.mode || 'full';
-
-        $('player-display-name').textContent = savedName;
-        $('player-avatar-initial').textContent = (savedName.charAt(0) || 'И').toUpperCase();
-        $('room-code-badge').textContent = `Комната #${savedCode}`;
-
-        $('sec-join').style.display = 'none';
-        $('sec-play').style.display = 'flex';
-        $('btn-leave-room').style.display = 'inline-flex';
-
-        renderCard(res);
-      });
+      const savedInTab = sessionStorage.getItem(activePlayerKey);
+      const saved = savedInTab ? JSON.parse(savedInTab) : {
+        code: localStorage.getItem('muzloto_joined_room'),
+        name: localStorage.getItem('muzloto_player_name')
+      };
+      if (!saved?.code || !saved.name || (urlRoom && urlRoom !== saved.code)) return;
+      $('input-room').value = saved.code;
+      $('input-name').value = saved.name;
+      joinRoom(saved.code, saved.name);
     }
 
     function leaveRoom() {
       if (!confirm('Выйти из текущей комнаты?')) return;
       comm.playerLeave();
-      localStorage.removeItem('muzloto_joined_room');
-      if (joinedCode) sessionStorage.removeItem('muzloto_player_card_' + joinedCode);
+      sessionStorage.setItem(activePlayerKey, 'null');
+      if (localStorage.getItem('muzloto_joined_room') === joinedCode &&
+          localStorage.getItem('muzloto_player_name') === myPlayerName) {
+        localStorage.removeItem('muzloto_joined_room');
+      }
       joinedCode = null;
       $('sec-join').style.display = 'block';
       $('sec-play').style.display = 'none';

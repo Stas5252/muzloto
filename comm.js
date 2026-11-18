@@ -235,7 +235,7 @@ window.createComm = function(role) {
       winnerPid: r.winnerPid || null,
       winnerDetails: r.winnerDetails || null,
       currentTrack: r.currentTrack || null,
-      players: [...players.values()].map(p => ({
+      players: [...players.values()].filter(p => !p.left).map(p => ({
         name: p.name,
         online: true,
         marksCount: p.marks.size
@@ -281,7 +281,8 @@ window.createComm = function(role) {
         name: p.name,
         pid: p.pid,
         card: p.card,
-        marks: [...p.marks]
+        marks: [...p.marks],
+        left: p.left
       }]);
       const dataToSave = {
         roomState,
@@ -325,6 +326,7 @@ window.createComm = function(role) {
         p.name = name;
         if (senderConn) p.conn = senderConn;
       }
+      p.left = false;
       sendToPlayer(playerPid, {
         type: 'join:ack',
         targetPid: playerPid,
@@ -338,10 +340,14 @@ window.createComm = function(role) {
       });
       broadcastState();
     } else if (msg.type === 'leave') {
-      if (players.delete(msg.pid)) broadcastState();
+      const p = players.get(msg.pid);
+      if (!p || p.left) return;
+      p.left = true;
+      p.conn = null;
+      broadcastState();
     } else if (msg.type === 'mark') {
       const p = players.get(msg.pid);
-      if (!p || roomState.state !== 'playing') return;
+      if (!p || p.left || roomState.state !== 'playing') return;
       const trackId = (typeof msg.id === 'object' && msg.id !== null) ? msg.id.id : msg.id;
       if (!trackId || !p.card.includes(trackId)) return;
 
@@ -358,7 +364,7 @@ window.createComm = function(role) {
       broadcastState();
     } else if (msg.type === 'bingo') {
       const p = players.get(msg.pid);
-      if (!p) {
+      if (!p || p.left) {
         return sendToPlayer(msg.pid, {
           type: 'bingo:ack',
           targetPid: msg.pid,
@@ -413,7 +419,7 @@ window.createComm = function(role) {
             turn: roomState.called.length,
             totalBarrels: roomState.tracks.length,
             winningTracks: winTracks,
-            playerCount: players.size
+            playerCount: [...players.values()].filter(player => !player.left).length
           });
         } catch(e) {}
         sendToPlayer(p.pid, {
@@ -602,6 +608,7 @@ window.createComm = function(role) {
       for (const p of players.values()) {
         p.card = newCard(roomState);
         p.marks = new Set();
+        if (p.left) continue;
         sendToPlayer(p.pid, {
           type: 'card',
           targetPid: p.pid,

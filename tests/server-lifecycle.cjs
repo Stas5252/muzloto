@@ -42,6 +42,12 @@ async function main() {
     const stolen = await ack(stranger, 'host:restore', { code: room.code });
     assert.ok(stolen.error, 'Room code alone must not grant host control');
     const joined = await ack(player, 'player:join', { code: room.code, name: 'Same winner', pid: 'same_player' });
+    const sameName = await ack(stranger, 'player:join', { code: room.code, name: 'Same winner', pid: 'other_player' });
+    assert.notEqual(sameName.pid, joined.pid, 'Nicknames do not identify player seats');
+    assert.equal((await ack(stranger, 'player:leave')).ok, true);
+    assert.equal((await ack(player, 'player:leave')).ok, true);
+    const returned = await ack(player, 'player:join', { code: room.code, name: 'Same winner', pid: joined.pid });
+    assert.deepEqual(returned, joined, 'Returning to the same seat restores its card');
     await ack(stranger, 'player:join', { code: room.code, name: 'Leaving', pid: 'leaving_player' });
     assert.equal((await ack(stranger, 'player:leave')).ok, true);
     assert.equal((await ack(host, 'host:restore', { code: room.code })).state.players.length, 1);
