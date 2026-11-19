@@ -182,7 +182,15 @@ assert.equal(JSON.parse(hostStorage.getItem('muzloto_db_stats')).history.length,
 drop = () => false;
 const mqttHost = open('host', makeStorage(), 'mqtt');
 const mqttPlayer = open('player', makeStorage(), 'mqtt');
-mqttHost.comm.hostCreate({ tracks }, res => { room = res.code; });
+const illustratedTracks = tracks.map(track => ({
+  ...track, title: 'Название песни', artist: 'Исполнитель',
+  art: 'https://covers.example/' + 'illustrated-album-cover/'.repeat(14) + track.id + '.jpg'
+}));
+let tvState;
+let phoneState;
+mqttHost.comm.on('state', value => { tvState = value; });
+mqttPlayer.comm.on('state', value => { phoneState = value; });
+mqttHost.comm.hostCreate({ tracks: illustratedTracks }, res => { room = res.code; });
 let mqttCard;
 mqttPlayer.comm.playerJoin({ ...seat, code: room }, res => { mqttCard = res; });
 advance(2800);
@@ -194,6 +202,17 @@ mqttPlayer.comm.on('card', res => { refreshedCard = res; });
 mqttHost.comm.hostNewRound();
 advance(2000);
 assert.ok(refreshedCard?.roundId > mqttCard.roundId, 'Recover a new card if the original card event was lost');
+
+drop = msg => msg.type === 'state' && Buffer.byteLength(JSON.stringify(msg)) > 4096;
+mqttHost.comm.hostStart();
+for (const track of illustratedTracks) mqttHost.comm.hostNext();
+advance();
+mqttPlayer.comm.playerBingo({ marks: illustratedTracks.map(track => track.id) }, () => {});
+advance();
+assert.equal(tvState.winnerDetails.card.card.length, 9, 'The TV still receives the winning card');
+assert.equal(phoneState.state, 'finished', 'The winner reaches phones over a size-limited relay');
+assert.equal(phoneState.winnerPid, seat.pid);
+assert.equal(phoneState.called.length, illustratedTracks.length);
 
 let retry;
 drop = msg => {

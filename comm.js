@@ -254,22 +254,24 @@ window.createComm = function(role) {
     const pubData = makePub(roomState);
     emitLocal('state', pubData);
 
-    const payload = JSON.stringify({ type: 'state', data: pubData });
+    // The TV renders the full draw history and winning card locally.
+    const { calledHistory, currentTrack, winnerDetails, ...playerState } = pubData;
+    const message = { type: 'state', data: playerState };
 
     // 1. BroadcastChannel
     if (broadcastChan) {
-      try { broadcastChan.postMessage({ type: 'state', data: pubData }); } catch(e) {}
+      try { broadcastChan.postMessage(message); } catch(e) {}
     }
 
     // 2. MQTT
     if (mqttClient && mqttClient.connected) {
-      try { mqttClient.publish(`muzloto/${roomCode}/host_to_client`, payload); } catch(e) {}
+      try { mqttClient.publish(`muzloto/${roomCode}/host_to_client`, JSON.stringify(message)); } catch(e) {}
     }
 
     // 3. PeerJS connections
     for (const p of players.values()) {
       if (p.conn && p.conn.open) {
-        try { p.conn.send({ type: 'state', data: pubData }); } catch(e) {}
+        try { p.conn.send(message); } catch(e) {}
       }
     }
 
