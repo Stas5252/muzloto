@@ -8,7 +8,7 @@ const path = require('node:path');
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
   const photos = pack.rounds.flatMap(r => r.categories.flatMap(c => c.questions.map(q => q.image))).filter(Boolean);
-  assert.equal(photos.length, 42);
+  assert.equal(photos.length, 45);
   assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   const categories = pack.rounds.flatMap(round => round.categories);
