@@ -246,7 +246,7 @@ window.createComm = function(role) {
   }
 
   let broadcastChan = null;
-  let mqttClient = null;
+  let roomMqtt = null;
   let peerInstance = null;
 
   function broadcastState() {
@@ -264,9 +264,7 @@ window.createComm = function(role) {
     }
 
     // 2. MQTT
-    if (mqttClient && mqttClient.connected) {
-      try { mqttClient.publish(`muzloto/${roomCode}/host_to_client`, JSON.stringify(message)); } catch(e) {}
-    }
+    roomMqtt?.publish(`muzloto/${roomCode}/host_to_client`, message);
 
     // 3. PeerJS connections
     for (const p of players.values()) {
@@ -306,10 +304,7 @@ window.createComm = function(role) {
       try { broadcastChan.postMessage(message); } catch(e) {}
     }
     // 2. MQTT (Direct to player's private topic only!)
-    if (mqttClient && mqttClient.connected) {
-      const payload = JSON.stringify(message);
-      try { mqttClient.publish(`muzloto/${roomCode}/to_player/${targetPid}`, payload); } catch(e) {}
-    }
+    roomMqtt?.publish(`muzloto/${roomCode}/to_player/${targetPid}`, message);
     // 3. PeerJS
     const p = players.get(targetPid);
     if (p && p.conn && p.conn.open) {
@@ -500,24 +495,9 @@ window.createComm = function(role) {
         }
       } catch(e) { console.warn('BroadcastChannel error:', e); }
 
-      // 2. MQTT WebSockets setup (bypasses all NATs, cellular networks, firewalls)
-      try {
-        if (typeof mqtt !== 'undefined') {
-          if (mqttClient) try { mqttClient.end(); } catch(e) {}
-          const clientId = 'host_' + Math.random().toString(16).slice(2, 10);
-          mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000 });
-          mqttClient.on('connect', () => {
-            mqttClient.subscribe(`muzloto/${code}/client_to_host`);
-            broadcastState();
-          });
-          mqttClient.on('message', (topic, message) => {
-            try {
-              const msg = JSON.parse(message.toString());
-              handleHostMessage(msg);
-            } catch(e) {}
-          });
-        }
-      } catch(e) { console.warn('MQTT setup error:', e); }
+      // 2. MQTT connections
+      roomMqtt?.close();
+      roomMqtt = window.connectRoomMqtt?.([`muzloto/${code}/client_to_host`], handleHostMessage, broadcastState);
 
       // 3. PeerJS WebRTC channel setup
       try {
@@ -665,7 +645,6 @@ window.createComm = function(role) {
     let joinTimer = null;
     let retryTimer = null;
     let joinPayload = null;
-    let mqttSubscribed = false;
     let needsSync = false;
     let cardRound = null;
     let markSequence = 0;
@@ -676,13 +655,12 @@ window.createComm = function(role) {
       clearTimeout(retryTimer);
       joinTimer = null;
       retryTimer = null;
-      mqttSubscribed = false;
       needsSync = false;
       if (broadcastChan) { try { broadcastChan.close(); } catch(e) {} }
-      if (mqttClient) { try { mqttClient.end(); } catch(e) {} }
+      roomMqtt?.close();
       if (peerInstance) { try { peerInstance.destroy(); } catch(e) {} }
       broadcastChan = null;
-      mqttClient = null;
+      roomMqtt = null;
       peerInstance = null;
       playerConn = null;
     }
@@ -705,16 +683,13 @@ window.createComm = function(role) {
     function sendToHost(msg) {
       const myPid = getPlayerPid();
       msg.pid = myPid;
-      const payload = JSON.stringify(msg);
 
       // 1. BroadcastChannel
       if (broadcastChan) {
         try { broadcastChan.postMessage(msg); } catch(e) {}
       }
       // 2. MQTT
-      if (mqttClient?.connected && mqttSubscribed && joinedRoomCode) {
-        try { mqttClient.publish(`muzloto/${joinedRoomCode}/client_to_host`, payload); } catch(e) {}
-      }
+      if (joinedRoomCode) roomMqtt?.publish(`muzloto/${joinedRoomCode}/client_to_host`, msg);
       // 3. PeerJS
       if (playerConn && playerConn.open) {
         try { playerConn.send(msg); } catch(e) {}
@@ -875,30 +850,16 @@ window.createComm = function(role) {
       } catch(e) {}
 
       // 2. MQTT WebSockets (Public mobile mesh)
-      try {
-        if (typeof mqtt !== 'undefined') {
-          const clientId = 'p_' + myPid.slice(-8) + '_' + Math.random().toString(16).slice(2, 6);
-          const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId, clean: true, reconnectPeriod: 3000, resubscribe: false });
-          mqttClient = client;
-          client.on('connect', () => {
-            client.subscribe([`muzloto/${code}/host_to_client`, `muzloto/${code}/to_player/${myPid}`], (err, grants) => {
-              if (mqttClient !== client || !client.connected || err || grants?.some(grant => grant.qos > 2)) return;
-              mqttSubscribed = true;
-              needsSync = true;
-              client.publish(`muzloto/${code}/client_to_host`, JSON.stringify(request));
-              scheduleRetry();
-            });
-          });
-          client.on('close', () => { if (mqttClient === client) mqttSubscribed = false; });
-          client.on('message', (topic, message) => {
-            if (mqttClient !== client) return;
-            try {
-              const msg = JSON.parse(message.toString());
-              handleIncomingPlayerMessage(msg);
-            } catch(e) {}
-          });
+      const hostTopic = `muzloto/${code}/client_to_host`;
+      roomMqtt = window.connectRoomMqtt?.(
+        [`muzloto/${code}/host_to_client`, `muzloto/${code}/to_player/${myPid}`],
+        handleIncomingPlayerMessage,
+        publish => {
+          needsSync = true;
+          publish(hostTopic, request);
+          scheduleRetry();
         }
-      } catch(e) {}
+      );
 
       // 3. PeerJS (WebRTC P2P fallback)
       try {
@@ -918,7 +879,10 @@ window.createComm = function(role) {
       // Safety timeout in case room code does not exist
       joinTimer = setTimeout(() => {
         if (pendingJoinCb) {
-          pendingJoinCb({ error: 'Не удалось найти комнату #' + code + '. Проверьте 4 цифры на экране ТВ.' });
+          const error = roomMqtt?.connected || playerConn?.open
+            ? 'Ведущий не ответил для комнаты #' + code + '. Проверьте код и держите вкладку ведущего открытой.'
+            : 'Нет связи со службой комнат. Обновите страницу на ПК ведущего и на телефоне, затем повторите вход.';
+          pendingJoinCb({ error });
           pendingJoinCb = null;
           closePlayerChannels();
           pendingMarks.clear();

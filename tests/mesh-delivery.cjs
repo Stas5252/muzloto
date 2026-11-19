@@ -4,6 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const script = fs.readFileSync(path.join(__dirname, '../comm.js'), 'utf8');
+const mqttScript = fs.readFileSync(path.join(__dirname, '../room-mqtt.js'), 'utf8');
 const channels = new Set();
 const clients = new Set();
 const tasks = new Map();
@@ -71,7 +72,7 @@ function open(role, localStorage = makeStorage(), transport = 'broadcast') {
   };
   if (transport === 'mqtt') {
     context.mqtt = {
-      connect() {
+      connect(url) {
         const events = {};
         const topics = new Set();
         const client = {
@@ -80,7 +81,7 @@ function open(role, localStorage = makeStorage(), transport = 'broadcast') {
             const message = JSON.parse(payload);
             if (drop(message)) return;
             for (const peer of clients) {
-              if (peer.topics.has(topic)) schedule(() => peer.events.message(topic, payload));
+              if (peer.url === url && peer.topics.has(topic)) schedule(() => peer.events.message(topic, payload));
             }
           },
           subscribe(names, done) {
@@ -93,15 +94,18 @@ function open(role, localStorage = makeStorage(), transport = 'broadcast') {
           on(type, fn) { events[type] = fn; },
           end() { client.connected = false; clients.delete(client); },
           events,
-          topics
+          topics, url
         };
         clients.add(client);
-        schedule(() => { client.connected = true; events.connect(); }, role === 'host' ? 1450 : 0);
+        // Simulate a network that blocks the original MQTT port.
+        if (new URL(url).port !== '8084') {
+          schedule(() => { client.connected = true; events.connect(); }, role === 'host' ? 1450 : 0);
+        }
         return client;
       }
     };
   }
-  vm.runInNewContext(script, context);
+  vm.runInNewContext(mqttScript + '\n' + script, context);
   return {
     comm: context.window.createComm(role),
     close() {

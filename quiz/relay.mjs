@@ -107,22 +107,11 @@ export function connectRoom(room, receive, changed) {
   }
 
   function attachMqtt() {
-    if (!window.mqtt) return;
     const topic = 'muzloto/party-quiz/' + room;
-    const client = window.mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
-      clientId: 'vq_' + token().slice(0, 18), connectTimeout: 6500, reconnectPeriod: 3500, resubscribe: false
-    });
-    client.on('error', () => status('mqtt', false));
-    client.on('close', () => status('mqtt', false));
-    client.on('connect', () => client.subscribe(topic, (error, grants) => {
-      status('mqtt', !error && client.connected && grants?.[0]?.qos === 0);
-    }));
-    client.on('message', (name, data) => {
-      if (name !== topic) return;
-      try { arrive(JSON.parse(data.toString())); } catch {}
-    });
-    senders.set('mqtt', message => client.publish(topic, JSON.stringify(message)));
-    stops.push(() => client.end(true));
+    const connection = window.connectRoomMqtt?.([topic], arrive, null, connected => status('mqtt', connected));
+    if (!connection) return;
+    senders.set('mqtt', message => connection.publish(topic, message));
+    stops.push(() => connection.close());
   }
 
   if (location.hostname.endsWith('.github.io')) {
