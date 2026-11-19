@@ -44,7 +44,7 @@ async function run() {
     await button(host, 'Начать игру').click();
     await tv.locator('.round-board').waitFor();
     assert.equal(await tv.locator('.round-board .value').count(), 24);
-    await tv.getByRole('heading', { name: 'Мем в эмодзи' }).waitFor();
+    await tv.getByRole('heading', { name: 'Откуда этот мем?' }).waitFor();
     const scores = tv.locator('.score-panel');
     const boardNames = await scores.locator('.scores li span').allTextContents();
     assert.deepEqual([...boardNames].sort(), [...names].sort());
@@ -80,17 +80,20 @@ async function run() {
     console.log('11 presses, queue, scoring and player reconnect verified');
 
     await button(host, 'К табло').click();
-    for (const [title, next, memes] of [['К раунду 2', 'Свои в ленте', 'Мемы 2023-го'], ['К раунду 3', 'Ещё один раунд', 'Вирусный поворот']]) {
+    for (const [title, next, category] of [['К раунду 2', 'Кино и музыка', 'Фильм по фото'], ['К раунду 3', 'Последний раунд', 'Популярные игры']]) {
       host.once('dialog', dialog => dialog.accept());
       await button(host, title).click();
       await button(host, 'Начать раунд').click();
       await tv.getByRole('heading', { name: next, exact: true }).waitFor();
-      await tv.getByRole('heading', { name: memes, exact: true }).waitFor();
-      if (memes === 'Мемы 2023-го') {
-        await host.locator('[data-id=r1c5q1]').click();
-        await tv.waitForFunction(() => document.querySelector('.question-image[src="media/pop22.webp"]')?.naturalWidth > 0);
+      await tv.getByRole('heading', { name: category, exact: true }).waitFor();
+      if (category === 'Фильм по фото') {
+        await host.locator('[data-id=r1c1q0]').click();
+        await tv.waitForFunction(() => document.querySelector('.question-image[src="media/frame11.webp"]')?.naturalWidth > 0);
+        assert.equal(await tv.getByText('«Один дома».', { exact: true }).count(), 0);
+        await host.getByRole('button', { name: 'Дать подсказку', exact: true }).click();
+        await tv.getByText('В нём оставили Кевина на Рождество.', { exact: true }).waitFor();
         await button(host, 'Открыть ответ').click();
-        await tv.getByText('Сырники', { exact: true }).waitFor();
+        await tv.getByText('«Один дома».', { exact: true }).waitFor();
         await button(host, 'К табло').click();
       }
     }
@@ -112,14 +115,14 @@ async function run() {
       await phone.getByRole('heading', { name: 'Ответ принят' }).waitFor();
     }
 
-    await submit(winner, 'Pokémon GO', 50);
+    await submit(winner, 'Конфетти', 50);
     await writer.waitForFunction(() => document.querySelector('.scores') !== window.previousQuizScores);
     assert.equal(await writerInput.evaluate(input => input === window.savedQuizInput && input === document.activeElement &&
       input.selectionStart === 4 && input.value === 'Пишу ответ'), true, 'Another player submitting must not replace a focused answer field');
-    assert.equal(await tv.getByText('Pokémon GO', { exact: true }).count(), 0);
+    assert.equal(await tv.getByText('Конфетти', { exact: true }).count(), 0);
     await Promise.all(players.filter(phone => phone !== winner).map((phone, index) => submit(phone, `Ответ ${index + 1}`)));
     await host.getByText('11/11', { exact: true }).waitFor();
-    await host.getByRole('checkbox', { name: /Pokémon GO/ }).check();
+    await host.getByRole('checkbox', { name: /Конфетти/ }).check();
     await button(host, 'Подвести итоги').click();
     await tv.getByText('150 очков', { exact: true }).waitFor();
     assert.equal(await tv.locator('.scores li').count(), names.length);

@@ -1,5 +1,5 @@
 import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
-  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=6';
+  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=7';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 
@@ -186,7 +186,7 @@ function renderEditor() {
       <div class="actions">${action('home', 'На главную')}${action('launch', 'Создать комнату', '', 'primary')}</div></div>
     <div class="panel editor-tools">
       ${field('Название набора', 'title', draft.title, { max: 80 })}
-      <div class="actions">${action('export', 'Скачать набор')}<label class="button file-button">Загрузить JSON<input data-import type="file" accept=".json,application/json"></label>${action('starter', 'Стартовый набор', '', 'quiet')}</div>
+      <div class="actions">${action('export', 'Скачать набор')}<label class="button file-button">Загрузить набор<input data-import type="file" accept=".json,application/json"></label>${action('starter', 'Стартовый набор', '', 'quiet')}</div>
     </div>
     <div class="actions editor-rounds" aria-label="Редактировать раунд">${draft.rounds.map((item, index) => action('edit-round', escape(item.title || `Раунд ${index + 1}`), `data-i="${index}" aria-pressed="${index === editorRound}"`, index === editorRound ? 'primary' : '')).join('')}
       ${draft.rounds.length < 3 ? action('add-round', '+ Раунд') : ''}</div>
@@ -536,7 +536,7 @@ function initHost() {
         if (details) details.open = true;
       }
     } catch (error) {
-      message(error instanceof SyntaxError ? 'Этот файл не является набором JSON.' : error.message || 'Фото не открылось.');
+      message(error instanceof SyntaxError ? 'Этот файл не удалось прочитать. Выберите файл набора вопросов.' : error.message || 'Фото не открылось.');
       input.value = '';
     }
   });
