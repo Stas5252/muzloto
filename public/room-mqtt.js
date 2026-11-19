@@ -44,7 +44,7 @@
       close() {
         closed = true;
         active.clear();
-        for (const client of clients) client.end(true);
+        for (const client of clients) client.end();
       }
     };
   };

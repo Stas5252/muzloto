@@ -75,13 +75,16 @@ function open(role, localStorage = makeStorage(), transport = 'broadcast') {
       connect(url) {
         const events = {};
         const topics = new Set();
+        let forcedClose = false;
         const client = {
           connected: false,
           publish(topic, payload) {
             const message = JSON.parse(payload);
             if (drop(message)) return;
             for (const peer of clients) {
-              if (peer.url === url && peer.topics.has(topic)) schedule(() => peer.events.message(topic, payload));
+              if (peer.url === url && peer.topics.has(topic)) {
+                schedule(() => { if (!forcedClose) peer.events.message(topic, payload); });
+              }
             }
           },
           subscribe(names, done) {
@@ -92,7 +95,7 @@ function open(role, localStorage = makeStorage(), transport = 'broadcast') {
             }, 40);
           },
           on(type, fn) { events[type] = fn; },
-          end() { client.connected = false; clients.delete(client); },
+          end(force) { forcedClose = Boolean(force); client.connected = false; clients.delete(client); },
           events,
           topics, url
         };
@@ -217,6 +220,9 @@ assert.equal(tvState.winnerDetails.card.card.length, 9, 'The TV still receives t
 assert.equal(phoneState.state, 'finished', 'The winner reaches phones over a size-limited relay');
 assert.equal(phoneState.winnerPid, seat.pid);
 assert.equal(phoneState.called.length, illustratedTracks.length);
+mqttPlayer.comm.playerLeave();
+advance();
+assert.equal(tvState.players.length, 0, 'Leaving flushes the last message to the host before disconnecting');
 
 let retry;
 drop = msg => {
