@@ -1,5 +1,5 @@
-import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
-  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=12';
+import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
+  standings, activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=13';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 
@@ -127,7 +127,7 @@ function questionPanel(question, session) {
       <h1>${escape(question.prompt)}</h1>
       ${session.showHint && question.hint ? `<p class="hint">${escape(question.hint)}</p>` : ''}
       ${reveal ? `<div class="answer-reveal"><p class="answer-label">Ответ</p><p class="revealed">${escape(question.answer)}</p></div>` :
-        `<p class="question-state">${announcing ? 'Отвечает ' + escape(announcing) : session.opened ? 'Кнопки открыты' : 'Ведущий читает вопрос'}</p>`}
+        `<p class="question-state">${announcing ? 'Отвечает ' + escape(announcing) : session.opened ? 'Можно отвечать' : 'Ведущий выбирает игрока'}</p>`}
     </div>
   </article>`;
 }
@@ -261,8 +261,7 @@ function renderHost() {
       <aside class="panel host-actions"><h2>Пульт ведущего</h2>
         ${phase === 'reveal' ? action('board', 'К табло', '', 'primary') : `
         <details class="answer-detail"><summary>Посмотреть ответ</summary><p>${escape(current?.answer)}</p></details>
-        ${handoff ? `<label><span>Передать вопрос</span><select id="handoff">${standings(game).map(p => `<option value="${p.id}">${escape(p.name)}</option>`).join('')}</select></label>${action('assign', 'Передать право ответа')}` : ''}
-        ${!game.answering && !game.opened ? action('open', 'Открыть кнопки', '', 'primary') : ''}
+        ${handoff ? `<label><span>Передать вопрос</span><select id="handoff">${standings(game).map(p => `<option value="${p.id}">${escape(p.name)}</option>`).join('')}</select></label>${action('assign', 'Передать право ответа')}${action('open', 'Дать ответить всем')}` : ''}
         ${game.answering ? `<p class="answering">${escape(game.players[game.answering].name)}</p>
           <div class="decisions">${action('judge', '+' + points(current) + ' · Верно', 'data-verdict="correct"', 'primary')}${action('judge', '−' + points(current) + ' · Неверно', 'data-verdict="wrong"')}${action('judge', '0 · Без штрафа', 'data-verdict="neutral"')}</div>` : ''}
         ${queue.length ? `<p class="muted">Следом: ${escape(queue.join(', '))}</p>` : ''}
@@ -482,7 +481,7 @@ async function hostButton(button) {
     if (type === 'finish' && Object.keys(game.finalAnswers).length < Object.keys(game.players).length &&
         !confirm('Ответили не все игроки. Подвести итоги?')) return;
     if (type === 'final') correctFinal.clear();
-    if (type === 'start' || type === 'open') unlockSound();
+    if (type === 'start' || type === 'pick' || type === 'open') unlockSound();
     if (command(game, pack, { type, question: id, verdict, skip, player: document.querySelector('#handoff')?.value, correct: [...correctFinal] }, true)) {
       syncHost(true);
     }
@@ -555,7 +554,8 @@ function initHost() {
           if (params.get('host') === savedRoom) {
             pack = validPack(savedPack);
             room = savedRoom;
-            game = live.game;
+            game = restoreGame(live.game, pack);
+            if (game !== live.game) await write('live', { room, game }).catch(localError);
             startHost();
             return;
           }
@@ -603,7 +603,7 @@ function initPlayer() {
       const sent = state.buzzed.includes(me.id);
       const locked = !state.opened || sent || pending?.type === 'buzz';
       const label = state.answering === me.id ? 'Отвечай вслух' : sent ? (state.queue.includes(me.id) ? 'Ты в очереди' : 'Ход прошёл') :
-        pending?.type === 'buzz' ? 'Отправляем…' : state.opened ? 'Ответить' : 'Жди сигнала';
+        pending?.type === 'buzz' ? 'Отправляем…' : state.opened ? 'Ответить' : state.answering ? 'Отвечает другой игрок' : 'Ведущий выбирает игрока';
       if (sameStep) {
         // Another player's buzz can arrive while a finger is still pressing this button.
         const buzzer = previousPanel.querySelector('.buzzer');

@@ -114,6 +114,14 @@ export const standings = game => Object.entries(game.players)
   .sort((a, b) => b.score - a.score);
 const getPlayer = (game, id) => own(game.players, id) ? game.players[id] : null;
 const nextTicket = game => String(game.revision + 1);
+const offersHandoff = (game, question) => question.kind === 'handoff' && Object.keys(game.players).length > 0;
+
+export function restoreGame(game, pack) {
+  if (game.phase !== 'question' || game.opened || game.answering) return game;
+  const question = findQuestion(pack, game.current);
+  if (!question || offersHandoff(game, question)) return game;
+  return { ...game, opened: true, revision: game.revision + 1 };
+}
 
 function resolveQuestion(game) {
   game.phase = 'reveal';
@@ -130,14 +138,16 @@ function applyHost(game, pack, action) {
       if (phase !== 'lobby') return false;
       game.phase = 'board';
       return true;
-    case 'pick':
-      if (phase !== 'board' || game.used.includes(action.question) ||
-          !roundQuestions(activeRound(pack, game)).some(q => q.id === action.question)) return false;
+    case 'pick': {
+      if (phase !== 'board' || game.used.includes(action.question)) return false;
+      const question = roundQuestions(activeRound(pack, game)).find(q => q.id === action.question);
+      if (!question) return false;
       Object.assign(game, {
-        current: action.question, ticket: nextTicket(game), phase: 'question',
-        answering: null, queue: [], buzzed: [], opened: false, showHint: false, askedBy: null
+        current: question.id, ticket: nextTicket(game), phase: 'question',
+        answering: null, queue: [], buzzed: [], opened: !offersHandoff(game, question), showHint: false, askedBy: null
       });
       return true;
+    }
     case 'open':
       if (phase !== 'question' || game.opened || game.answering) return false;
       game.opened = true;
@@ -246,7 +256,7 @@ export function command(game, pack, action, host = false) {
     if (!game.previous) return false;
     const revision = game.revision;
     const players = game.players;
-    Object.assign(game, game.previous, { revision: revision + 1, previous: null });
+    Object.assign(game, restoreGame(game.previous, pack), { revision: revision + 1, previous: null });
     if (['question', 'final'].includes(game.phase)) game.ticket = nextTicket(game);
     for (const [id, player] of Object.entries(players)) {
       if (!getPlayer(game, id)) game.players[id] = player;

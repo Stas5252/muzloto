@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 (async () => {
-  const { demoPack, validPack, restoreDraft, createGame, command, publicState, remainingQuestions } = await import('../quiz/game.mjs');
+  const { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, remainingQuestions } = await import('../quiz/game.mjs');
   const pack = validPack(demoPack);
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
@@ -52,8 +52,7 @@ const path = require('node:path');
 
   host('pick', { question: 'c0q0' });
   const ticket = game.ticket;
-  assert.equal(send('p1', 'buzz', { ticket }), false, 'Buzz stays locked while the host reads');
-  host('open');
+  assert.equal(publicState(game, pack).opened, true, 'Choosing an ordinary question opens the buzzers');
   assert.equal(send('p2', 'buzz', { ticket: 'old' }), false);
   assert.equal(send('p1', 'buzz', { ticket }), true);
   assert.equal(send('p2', 'buzz', { ticket }), true);
@@ -72,6 +71,10 @@ const path = require('node:path');
   host('board');
 
   host('pick', { question: 'c0q3' });
+  assert.equal(send('p2', 'buzz', { ticket: game.ticket }), false, 'A handoff waits for a host choice');
+  assert.equal(host('open'), true, 'The host can offer a handoff question to everyone');
+  assert.equal(publicState(game, pack).opened, true);
+  assert.equal(host('undo'), true);
   assert.equal(host('assign', { player: 'p1' }), true);
   assert.equal(game.answering, 'p1');
   host('judge', { verdict: 'neutral' });
@@ -81,8 +84,7 @@ const path = require('node:path');
   host('board');
 
   host('pick', { question: 'c2q1' });
-  host('open');
-  send('p1', 'buzz', { ticket: game.ticket });
+  assert.equal(send('p1', 'buzz', { ticket: game.ticket }), true, 'Double-price questions open immediately');
   host('judge', { verdict: 'correct' });
   assert.equal(game.players.p1.score, 300, 'Double-price questions apply the bonus once');
   host('board');
@@ -130,6 +132,15 @@ const path = require('node:path');
   delete oldGame.roundIndex;
   assert.equal(command(oldGame, legacy, { type: 'start' }, true), true);
   assert.equal(command(oldGame, legacy, { type: 'pick', question: 'c0q0' }, true), true);
+  oldGame.opened = false;
+  const resumed = restoreGame(oldGame, legacy);
+  assert.equal(resumed.opened, true, 'A saved question waiting for manual opening can resume');
+  assert.equal(resumed.revision, oldGame.revision + 1);
+  assert.equal(resumed.ticket, oldGame.ticket);
+  assert.equal(restoreGame(resumed, legacy), resumed);
+  resumed.previous = { ...oldGame, previous: null };
+  assert.equal(command(resumed, legacy, { type: 'undo' }, true), true);
+  assert.equal(resumed.opened, true, 'Undo cannot restore a disabled ordinary question');
 
   const migratedDraft = restoreDraft({ title: 'Свой черновик', categories: [{ title: 'Фото', questions: [{ prompt: '', answer: 'Вика', value: 100 }] }] });
   assert.equal(migratedDraft.rounds[0].categories[0].questions[0].answer, 'Вика');

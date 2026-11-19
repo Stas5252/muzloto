@@ -51,8 +51,8 @@ async function run() {
     const scoreBottom = await scores.evaluate(element => element.getBoundingClientRect().bottom);
     if (process.env.QUIZ_SCREENSHOT) await tv.screenshot({ path: process.env.QUIZ_SCREENSHOT });
     await host.locator('[data-id=c0q0]').click();
-    await button(host, 'Открыть кнопки').click();
     await Promise.all(players.map(phone => button(phone, 'Ответить').waitFor()));
+    assert.equal(await button(host, 'Открыть кнопки').count(), 0);
     const held = button(players[0], 'Ответить');
     await held.evaluate(element => { window.heldBuzzer = element; });
     const rect = await held.boundingBox();
@@ -79,6 +79,14 @@ async function run() {
     assert.equal(await host.locator('.score-panel .scores li').count(), names.length);
     console.log('11 presses, queue, scoring and player reconnect verified');
 
+    await button(host, 'К табло').click();
+    await host.locator('[data-id=c0q3]').click();
+    const waitingForHandoff = button(players[0], 'Ведущий выбирает игрока');
+    await waitingForHandoff.waitFor();
+    assert.equal(await waitingForHandoff.isDisabled(), true);
+    await button(host, 'Дать ответить всем').click();
+    await Promise.all(players.map(phone => button(phone, 'Ответить').waitFor()));
+    await button(host, 'Открыть ответ').click();
     await button(host, 'К табло').click();
     for (const [title, next, category] of [['К раунду 2', 'Кино и музыка', 'Фильм по фото'], ['К раунду 3', 'Последний раунд', 'Популярные игры']]) {
       host.once('dialog', dialog => dialog.accept());
