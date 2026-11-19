@@ -1,5 +1,5 @@
 import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
-  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=11';
+  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=12';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 

@@ -12,7 +12,7 @@ const path = require('node:path');
   assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   const categories = pack.rounds.flatMap(round => round.categories);
-  for (const title of ['Кто на фото?', 'Город с высоты', 'Фильм по фото', 'Русские исполнители']) {
+  for (const title of ['Кто на фото?', 'Город с высоты', 'Фильм по фото', 'Хиты по картинкам']) {
     assert.equal(categories.find(category => category.title === title).questions.filter(question => question.image).length, 4);
   }
   const zodiac = categories.find(category => category.title === 'Карты и знаки').questions;
