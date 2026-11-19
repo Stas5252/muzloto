@@ -97,6 +97,17 @@ async function run() {
       if (category === 'Фильм по фото') {
         await host.locator('[data-id=r1c1q0]').click();
         await tv.waitForFunction(() => document.querySelector('.question-image[src="media/frame11.webp"]')?.naturalWidth > 0);
+        const image = await tv.locator('.question-image').elementHandle();
+        await tv.evaluate(async () => {
+          const room = new URLSearchParams(location.search).get('tv');
+          const probe = new BroadcastChannel('vne-ocheredi-screen-' + room);
+          const response = new Promise(resolve => { probe.onmessage = event => { if (event.data?.html) resolve(); }; });
+          probe.postMessage('screen-ready');
+          await response;
+          probe.close();
+          await new Promise(requestAnimationFrame);
+        });
+        assert.equal(await image.evaluate(element => element.isConnected), true, 'An unchanged TV refresh keeps the image in place');
         assert.equal(await tv.getByText('«Один дома».', { exact: true }).count(), 0);
         await host.getByRole('button', { name: 'Дать подсказку', exact: true }).click();
         await tv.getByText('В нём оставили Кевина на Рождество.', { exact: true }).waitFor();

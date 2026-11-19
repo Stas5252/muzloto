@@ -754,6 +754,7 @@ function initTv() {
   waiting('Ждём вкладку ведущего в этом браузере…');
   const channel = new BroadcastChannel('vne-ocheredi-screen-' + room);
   const poll = setInterval(() => channel.postMessage('screen-ready'), 2400);
+  let lastHtml = null;
   channel.onmessage = ({ data }) => {
     if (data === 'screen-ready') return;
     if (data?.closed) {
@@ -761,7 +762,10 @@ function initTv() {
       waiting('Комната закрыта.');
       return;
     }
-    if (typeof data?.html === 'string') app.innerHTML = data.html;
+    if (typeof data?.html === 'string' && data.html !== lastHtml) {
+      lastHtml = data.html;
+      app.innerHTML = data.html;
+    }
   };
   channel.postMessage('screen-ready');
 }
