@@ -36,7 +36,7 @@ const path = require('node:path');
     altered.rounds[0].categories[0].questions[0].image = 'https://example.com/not-bundled.png';
     validPack(altered);
   });
-  assert.equal(pack.rounds[1].categories.find(c => c.title.includes('Егор Крид')).questions.length, 4);
+  assert.equal(pack.rounds[1].categories.find(c => c.title === 'Для Вики').questions.length, 4);
   assert.throws(() => validPack({ title: 'Пусто', categories: [] }));
 
   const game = createGame();
