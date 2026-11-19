@@ -4,6 +4,14 @@ const photo = (image, value, prompt, answer, extra = {}) => q(value, prompt, ans
 });
 const topic = (title, questions) => ({ title, questions });
 
+export const zodiacPrompt = 'Какой знак зодиака обозначают этим символом?';
+const leo = photo('zodiac-leo', 100, zodiacPrompt, 'Лев', { hint: 'Его называют царём зверей.' });
+const gemini = photo('zodiac-gemini', 300, zodiacPrompt, 'Близнецы', { hint: 'Так называют двух детей, которых мама вынашивала одновременно.' });
+export const legacyZodiacImages = new Map([
+  [`♌\n${zodiacPrompt}`, leo.image],
+  [`♊\n${zodiacPrompt}`, gemini.image]
+]);
+
 export const demoPack = {
   title: 'Квиз для своих',
   rounds: [
@@ -33,9 +41,9 @@ export const demoPack = {
         photo('cake-pair-4', 400, 'Где блинный торт с кремом, а где просто стопка блинов?', 'А. Слева блинный торт с кремом, справа обычные блины.')
       ]),
       topic('Карты и знаки', [
-        q(100, '♌\nКакой знак зодиака обозначают этим символом?', 'Лев', { hint: 'Его называют царём зверей.' }),
+        leo,
         photo('frame09', 200, 'Как называется эта карта Таро?', 'Солнце'),
-        q(300, '♊\nКакой знак зодиака обозначают этим символом?', 'Близнецы', { hint: 'Так называют двух детей, которых мама вынашивала одновременно.' }),
+        gemini,
         photo('frame10', 400, 'Как называется эта карта Таро?', 'Луна')
       ]),
       topic('Откуда этот мем?', [

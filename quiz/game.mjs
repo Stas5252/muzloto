@@ -1,4 +1,4 @@
-import { demoPack, bundledImages } from './starter.mjs?v=8';
+import { demoPack, bundledImages, legacyZodiacImages, zodiacPrompt } from './starter.mjs?v=9';
 export { demoPack };
 
 export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена' };
@@ -35,11 +35,12 @@ export function validPack(input) {
         if (!prompt || !answer || !Number.isInteger(value) || value < 1 || value > 9999) {
           throw new Error(`«${title}», вопрос ${j + 1}. Нужны вопрос, ответ и цена от 1 до 9999.`);
         }
-        const photo = image(question.image);
+        const legacyZodiac = question.image ? '' : legacyZodiacImages.get(prompt);
+        const photo = image(question.image || legacyZodiac);
         photoSize += photo.length;
         if (photoSize > 25_000_000) throw new Error('Фото в наборе занимают больше 25 МБ. Уменьшите снимки или разделите набор.');
         return {
-          id: `${r === 0 ? '' : 'r' + r}c${i}q${j}`, prompt, answer, value,
+          id: `${r === 0 ? '' : 'r' + r}c${i}q${j}`, prompt: legacyZodiac ? zodiacPrompt : prompt, answer, value,
           hint: clean(question.hint, 380),
           image: photo,
           kind: own(kinds, question.kind) ? question.kind : 'normal'
@@ -78,7 +79,7 @@ export function restoreDraft(input) {
     [input.final?.topic, input.final?.prompt, input.final?.answer]];
   let fingerprint = 2166136261;
   for (const character of JSON.stringify(canonical)) fingerprint = Math.imul(fingerprint ^ character.codePointAt(0), 16777619);
-  const previousStarters = modern ? [366822770, 1223642323, 1995171786, 2307851871, 3101850007, 3520321658] : [722339280];
+  const previousStarters = modern ? [366822770, 1223642323, 1424932977, 1995171786, 2307851871, 3101850007, 3520321658] : [722339280];
   if (previousStarters.includes(fingerprint >>> 0)) return structuredClone(demoPack);
   return saved;
 }

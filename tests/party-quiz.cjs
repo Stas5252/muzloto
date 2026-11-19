@@ -8,13 +8,24 @@ const path = require('node:path');
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
   const photos = pack.rounds.flatMap(r => r.categories.flatMap(c => c.questions.map(q => q.image))).filter(Boolean);
-  assert.equal(photos.length, 40);
+  assert.equal(photos.length, 42);
   assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   const categories = pack.rounds.flatMap(round => round.categories);
   for (const title of ['Кто на фото?', 'Город с высоты', 'Фильм по фото', 'Русские исполнители']) {
     assert.equal(categories.find(category => category.title === title).questions.filter(question => question.image).length, 4);
   }
+  const zodiac = categories.find(category => category.title === 'Карты и знаки').questions;
+  const oldDeck = structuredClone(demoPack);
+  for (const [index, symbol, asset] of [[0, '♌', 'zodiac-leo'], [2, '♊', 'zodiac-gemini']]) {
+    const question = zodiac[index];
+    assert.equal(question.image, `media/${asset}.webp`);
+    assert.equal(question.prompt, 'Какой знак зодиака обозначают этим символом?');
+    const savedQuestion = oldDeck.rounds[0].categories[4].questions[index];
+    savedQuestion.prompt = `${symbol}\n${question.prompt}`;
+    delete savedQuestion.image;
+  }
+  assert.deepEqual(validPack(oldDeck).rounds[0].categories[4].questions, zodiac);
   for (const category of categories) {
     assert.doesNotMatch(category.title, /[A-Za-z]/u);
     for (const { prompt, answer, hint } of category.questions) assert.doesNotMatch(`${prompt} ${answer} ${hint}`, /[A-Za-z]/u);
