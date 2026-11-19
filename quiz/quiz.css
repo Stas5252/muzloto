@@ -294,10 +294,21 @@ textarea { resize: vertical; }
 .tv .question-image { max-height: 57vh; }
 .tv .score-panel { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
 .tv .score-panel .scores li { background: var(--raised); padding: 7px 12px; font-size: clamp(1rem, 1.65vw, 1.4rem); }
+.tv .scores-crowd {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 100%;
+}
+.tv .scores.scores-crowd li { justify-content: space-between; padding: 5px 8px; font-size: clamp(.82rem, 1.18vw, 1.06rem); }
+.tv .scores-crowd li span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .credits ul { display: grid; gap: 8px; padding-left: 22px; }
 .credits li span { display: block; color: var(--muted); }
 #notice:not(:empty) { position: fixed; z-index: 4; bottom: 18px; right: 18px; max-width: min(430px, calc(100% - 36px)); padding: 12px 16px; border: 1px solid #64728c; border-radius: 10px; background: #293448; box-shadow: 0 6px 20px #10131c; }
 html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
+
+@media (max-width: 1050px) {
+  .tv .scores-crowd { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 
 @media (max-width: 750px) {
   main, .site-header { width: calc(100% - 26px); }
@@ -316,12 +327,17 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
   .value { min-height: 43px; }
   .question.has-photo { grid-template-columns: 1fr; }
   .tv .question-image { max-height: 44vh; }
+  .tv .scores-crowd { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 751px) and (max-height: 850px) {
   .tv .site-header { min-height: 57px; }
   .tv main { margin-top: 14px; }
-  .tv .round-board, .tv .score-panel { padding: 16px 22px; }
-  .tv .round-board .section-top { margin-bottom: 10px; }
-  .tv .value { min-height: clamp(40px, 6.4vh, 60px); }
+  .tv .round-board, .tv .score-panel { padding: 13px 20px; }
+  .tv .round-board .section-top { margin-bottom: 8px; }
+  .tv .round-board .section-top h1 { font-size: clamp(1.85rem, 3vw, 2.45rem); }
+  .tv .board { gap: 4px; }
+  .tv .values { padding-block: 2px; }
+  .tv .value { min-height: clamp(38px, 5.9vh, 54px); }
+  .tv .score-panel { gap: 7px; }
 }

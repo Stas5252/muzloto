@@ -6,9 +6,9 @@ const path = require('node:path');
   const { demoPack, validPack, restoreDraft, createGame, command, publicState, remainingQuestions } = await import('../quiz/game.mjs');
   const pack = validPack(demoPack);
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
-  assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [20, 20, 20]);
+  assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
   const photos = pack.rounds.flatMap(r => r.categories.flatMap(c => c.questions.map(q => q.image))).filter(Boolean);
-  assert.equal(photos.length, 21);
+  assert.equal(photos.length, 24);
   assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   assert.throws(() => {
@@ -118,7 +118,7 @@ const path = require('node:path');
   const move = (type, more = {}) => command(fullGame, pack, { type, ...more }, true);
   assert.equal(move('start'), true);
   for (const [index, round] of pack.rounds.entries()) {
-    assert.equal(remainingQuestions(pack, fullGame), 20);
+    assert.equal(remainingQuestions(pack, fullGame), 24);
     for (const category of round.categories) {
       for (const question of category.questions) {
         assert.equal(move('pick', { question: question.id }), true);
@@ -133,7 +133,7 @@ const path = require('node:path');
       assert.equal(move('start-round'), true);
     }
   }
-  assert.equal(new Set(fullGame.used).size, 60);
+  assert.equal(new Set(fullGame.used).size, 72);
   assert.equal(move('final'), true, 'A full three-round run reaches the final with no skips');
-  console.log('PASS party quiz: 60 questions, bundled photos, round gates, carryover, undo, legacy packs, buzzer and sealed final');
+  console.log('PASS party quiz: 72 questions, bundled photos, round gates, carryover, undo, legacy packs, buzzer and sealed final');
 })().catch(error => { console.error(error); process.exitCode = 1; });

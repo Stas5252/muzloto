@@ -1,5 +1,5 @@
 import { demoPack, validPack, restoreDraft, createGame, command, publicState, findQuestion, kinds, points, standings,
-  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=5';
+  activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=6';
 import { connectRoom, token, validRoom } from './relay.mjs';
 import { read, write, photoData } from './storage.mjs';
 
@@ -79,7 +79,7 @@ function pageLink(type, code = room) {
 
 function scoreList(players) {
   return players.length
-    ? `<ul class="scores">${players.map(p => `<li><span>${escape(p.name)}</span><strong>${p.score}</strong></li>`).join('')}</ul>`
+    ? `<ul class="scores${players.length > 6 ? ' scores-crowd' : ''}">${players.map(p => `<li><span title="${escape(p.name)}">${escape(p.name)}</span><strong>${p.score}</strong></li>`).join('')}</ul>`
     : `<p class="muted">Игроки ещё не подключились</p>`;
 }
 
@@ -596,22 +596,43 @@ function initPlayer() {
       app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">Подключение</p><h1>Привет, ${escape(player.name)}</h1><p>Ждём комнату ведущего.</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
       return;
     }
+    const previousPanel = app.querySelector('.player-panel');
+    const sameStep = previousPanel?.dataset.phase === state.phase && previousPanel.dataset.ticket === state.ticket;
     let content;
     if (state.phase === 'question') {
       const sent = state.buzzed.includes(me.id);
       const locked = !state.opened || sent || pending?.type === 'buzz';
       const label = state.answering === me.id ? 'Отвечай вслух' : sent ? (state.queue.includes(me.id) ? 'Ты в очереди' : 'Ход прошёл') :
         pending?.type === 'buzz' ? 'Отправляем…' : state.opened ? 'Ответить' : 'Жди сигнала';
+      if (sameStep) {
+        // Another player's buzz can arrive while a finger is still pressing this button.
+        const buzzer = previousPanel.querySelector('.buzzer');
+        buzzer.disabled = locked;
+        buzzer.querySelector('.buzzer-caption').textContent = label;
+        previousPanel.querySelector('.player-seat span').textContent = `${me.score} очков`;
+        return;
+      }
       content = `<p class="eyebrow">${escape(state.category)} · ${escape(state.value)} очков</p>
-        <button type="button" data-action="buzz" class="buzzer" ${locked ? 'disabled' : ''}><span aria-hidden="true">↯</span>${label}</button>
+        <button type="button" data-action="buzz" class="buzzer" ${locked ? 'disabled' : ''}><span aria-hidden="true">↯</span><strong class="buzzer-caption">${label}</strong></button>
         <p class="muted">Вопрос и фото на экране ведущего.</p>`;
     } else if (state.phase === 'final') {
-      content = state.submitted.includes(me.id)
+      const submitted = state.submitted.includes(me.id);
+      const sending = pending?.type === 'final-answer';
+      const submitLabel = sending ? 'Отправляем…' : 'Зафиксировать ответ';
+      const form = sameStep && !submitted && previousPanel.querySelector('#final-form');
+      if (form) {
+        const submit = form.querySelector('button[type="submit"]');
+        submit.disabled = sending;
+        submit.textContent = submitLabel;
+        app.querySelector('.score-panel').innerHTML = `<h2>Счёт</h2>${scoreList(state.players)}`;
+        return;
+      }
+      content = submitted
         ? '<h1>Ответ принят</h1><p>Ждём, пока ведущий откроет финал.</p>'
         : `<form id="final-form"><p class="eyebrow">Финал</p><h1>${escape(state.finalTopic)}</h1>
           <label><span>Твой ответ</span><input name="answer" required maxlength="180" value="${escape(finalDraft.answer)}"></label>
           <label><span>Ставка (до ${Math.max(0, me.score)} очков)</span><input name="wager" type="number" min="0" max="${Math.max(0, me.score)}" step="1" required value="${escape(finalDraft.wager)}"></label>
-          <button class="button primary" type="submit" ${pending?.type === 'final-answer' ? 'disabled' : ''}>${pending?.type === 'final-answer' ? 'Отправляем…' : 'Зафиксировать ответ'}</button>
+          <button class="button primary" type="submit" ${sending ? 'disabled' : ''}>${submitLabel}</button>
         </form>`;
     } else {
       const copy = {
@@ -625,7 +646,7 @@ function initPlayer() {
       content = `${state.phase !== 'lobby' && state.roundNumber && state.roundTotal ? `<p class="eyebrow">Раунд ${escape(state.roundNumber)} из ${escape(state.roundTotal)}</p>` : ''}
         <h1>${heading}</h1><p>${escape(sub)}</p>`;
     }
-    app.innerHTML = `<section class="panel player-panel"><div class="player-seat"><strong>${escape(me.name)}</strong><span>${me.score} очков</span></div>${content}</section>
+    app.innerHTML = `<section class="panel player-panel" data-phase="${state.phase}" data-ticket="${escape(state.ticket)}"><div class="player-seat"><strong>${escape(me.name)}</strong><span>${me.score} очков</span></div>${content}</section>
       ${state.phase !== 'question' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(state.players)}</section>` : ''}`;
   }
 
