@@ -10,6 +10,7 @@
     "test:quiz": "node tests/party-quiz.cjs",
     "test:quiz:browser": "node tests/party-quiz-browser.cjs",
     "test:browser": "node tests/browser-lifecycle.cjs",
+    "test:music-screen": "node tests/music-screen-browser.cjs",
     "test:cloud": "node tests/cloud-recovery.cjs"
   },
   "dependencies": {

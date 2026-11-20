@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>МузЛото — Экран ведущего (ТВ)</title>
+  <title>МузЛото — Пульт ведущего</title>
   <link rel="stylesheet" href="style.css?v=3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎱</text></svg>">
   <style>
@@ -74,6 +74,9 @@
           </svg>
           <span>Зал славы</span>
         </button>
+        <button id="btn-copy-tv-screen" class="btn btn-secondary btn-sm" type="button" hidden>Скопировать ссылку ТВ</button>
+        <a id="open-tv-screen" class="btn btn-secondary btn-sm" target="_blank" rel="noopener" hidden>Экран ТВ ↗</a>
+        <span id="tv-output-status" role="status"></span>
         <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display:none;" title="Завершить текущую игру и выйти в меню">
           <span>Выйти в меню</span>
         </button>
@@ -84,7 +87,7 @@
     <section id="sec-setup">
       <div class="host-heading">
         <h1>Создание игры</h1>
-        <button id="btn-create-room" class="btn btn-gold" type="button"><span>Создать комнату для ТВ</span><span aria-hidden="true">→</span></button>
+        <button id="btn-create-room" class="btn btn-gold" type="button"><span>Создать комнату</span><span aria-hidden="true">→</span></button>
       </div>
 
       <div class="setup-layout">
@@ -2044,6 +2047,10 @@
     let autoNext = $('chk-auto-next').checked;
     let trackTimer = null;
     let currentRoomCode = null;
+    let tvDisplay;
+    let tvRoomState;
+    let tvScreenLink;
+    let tvScreenCode;
     let currentCallingTrack = null;
     let upcomingTrack = null;
     let canReusePreloadedAudio = true;
@@ -2443,6 +2450,81 @@
 
     previewAudio.onended = stopSetupAudio;
 
+    function connectTvScreen(code, joinLink, restored = false) {
+      const storageKey = 'muzloto_tv_screen_' + code;
+      try { tvScreenCode = restored ? localStorage.getItem(storageKey) : null; } catch {}
+      if (!/^[a-f0-9]{24}$/.test(tvScreenCode || '')) {
+        tvScreenCode = Array.from(crypto.getRandomValues(new Uint8Array(12)), n => n.toString(16).padStart(2, '0')).join('');
+        try { localStorage.setItem(storageKey, tvScreenCode); } catch {}
+      }
+      const displayCode = tvScreenCode;
+      const link = new URL('music-screen.html', joinLink);
+      link.searchParams.set('screen', displayCode);
+      tvScreenLink = link.href;
+      $('open-tv-screen').href = tvScreenLink;
+      $('open-tv-screen').hidden = $('btn-copy-tv-screen').hidden = false;
+      tvDisplay?.close();
+
+      import('./music-screen.mjs?v=1').then(({ openMusicScreen, assetUrl }) => {
+        if (tvScreenCode !== displayCode) return;
+        const projectTrack = track => {
+          const art = assetUrl(track.art, joinLink);
+          return {
+            keg: Number(track.kegNum), title: String(track.title || '').slice(0, 120),
+            artist: String(track.artist || '').slice(0, 100), art: art.length <= 640 ? art : ''
+          };
+        };
+        let previousOutput;
+        tvDisplay = openMusicScreen(displayCode, () => {
+          const state = String(tvRoomState?.code) === String(code) ? tvRoomState : {};
+          const phase = state.state === 'finished' ? (state.winner ? 'winner' : 'ended') :
+            state.state === 'playing' ? 'playing' : 'lobby';
+          const track = state.currentTrack || currentCallingTrack;
+          const card = state.winnerDetails?.card?.card || [];
+          const wins = new Set(state.winnerDetails?.winIndices || []);
+          const history = [];
+          const layout = {
+            phase, code, invite: joinLink, players: (state.players || []).map(player => player.name).slice(0, 200),
+            turn: state.turn ?? track?.turn ?? 0, remaining: state.remainingCount ?? 0,
+            track: phase === 'playing' || phase === 'winner' ? track && projectTrack(track) : null,
+            history, winner: state.winner || '',
+            cards: card.map((item, index) => ({ ...projectTrack(item), winning: wins.has(index) }))
+          };
+          // Leave room in the relay frame for the playhead and signed media URL.
+          let remaining = 23_000 - JSON.stringify(layout).length;
+          const called = state.calledHistory || [];
+          for (let index = called.length - 1; index >= 0; index--) {
+            const item = projectTrack(called[index]);
+            remaining -= JSON.stringify(item).length + 1;
+            if (remaining < 0) break;
+            history.push(item);
+          }
+          const url = assetUrl(roundAudio?.url, joinLink);
+          const playback = {
+            key: url ? [state.roundId, currentCallingTrack?.turn, currentCallingTrack?.id].join(':').slice(0, 120) : '',
+            url, local: Boolean(roundAudio?.isLocalFile),
+            playing: Boolean(roundAudio && !mainAudio.paused && !mainAudio.ended),
+            position: mainAudio.currentTime, duration: Number(trackProgress.max)
+          };
+          return { layout, playback };
+        }, (muted, attached) => {
+          if (mainAudio.muted !== muted) mainAudio.muted = muted;
+          const output = muted ? 'Звук на ТВ' : attached ? 'ТВ подключён' : '';
+          if (previousOutput !== output) $('tv-output-status').textContent = previousOutput = output;
+        });
+      }).catch(() => {
+        if (tvScreenCode === displayCode) $('tv-output-status').textContent = 'Не удалось подключить экран ТВ';
+      });
+    }
+
+    $('btn-copy-tv-screen').onclick = async () => {
+      if (!tvScreenLink) return;
+      try {
+        await navigator.clipboard.writeText(tvScreenLink);
+        $('tv-output-status').textContent = 'Ссылка ТВ скопирована';
+      } catch { window.prompt('Ссылка для экрана ТВ', tvScreenLink); }
+    };
+
     // CREATE ROOM
     $('btn-create-room').onclick = async () => {
       stopSetupAudio();
@@ -2464,6 +2546,7 @@
           } catch(e) {}
         }
         const joinLink = `${base}/play.html?room=${r.code}`;
+        connectTvScreen(r.code, joinLink);
 
         $('lobby-room-code').textContent = r.code;
         $('lobby-url-text').textContent = joinLink.replace(/^https?:\/\//, '');
@@ -2493,6 +2576,8 @@
 
     $('btn-reset-session').onclick = () => {
       if (confirm('Завершить текущую игру и выйти в меню выбора треков?')) {
+        tvDisplay?.close();
+        tvScreenCode = null;
         localStorage.removeItem('muzloto_active_host_code');
         localStorage.removeItem('muzloto_last_keg');
         clearSavedPlayback();
@@ -2503,8 +2588,16 @@
       }
     };
 
+    function unlockHostAudio() {
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+      if (roundAudio || mainAudio.hasAttribute('src')) return;
+      mainAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA';
+      mainAudio.play().catch(() => {});
+    }
+
     // START GAME
     $('btn-start-game').onclick = () => {
+      unlockHostAudio();
       comm.hostStart();
       $('sec-lobby').style.display = 'none';
       $('sec-game').style.display = 'block';
@@ -2517,7 +2610,10 @@
       saveRoundPlayback();
     };
 
-    $('btn-next-keg').onclick = nextBarrel;
+    $('btn-next-keg').onclick = () => {
+      unlockHostAudio();
+      nextBarrel();
+    };
     $('btn-pause-keg').onclick = togglePause;
     $('btn-replay-keg').onclick = replayAudio;
     $('btn-seek-back').onclick = () => seekTrack(mainAudio.currentTime - 10);
@@ -2772,6 +2868,7 @@
         clearNextAudio();
       }
       roundAudio = audio;
+      mainAudio.muted = false;
       mainAudio.loop = format === 'party' && !continued;
       mainAudio.onplaying = () => {
         showRoundAudioStatus(audio);
@@ -3060,6 +3157,7 @@
 
     // State events
     comm.on('state', state => {
+      tvRoomState = state;
       if (!currentRoomCode) return;
       roundFinished = state.state === 'finished';
       if (roundFinished || state.state === 'lobby') {
@@ -3235,6 +3333,7 @@
 
         currentRoomCode = savedCode;
         const state = res.state;
+        tvRoomState = state;
         roundFinished = state.state === 'finished';
         upcomingTrack = roundFinished ? null : res.nextTrack;
         selectedTracks = (res.room && res.room.tracks) ? res.room.tracks : (state.tracks || selectedTracks);
@@ -3249,6 +3348,7 @@
           } catch(e) {}
         }
         const joinLink = `${base}/play.html?room=${savedCode}`;
+        connectTvScreen(savedCode, joinLink, true);
 
         $('lobby-room-code').textContent = savedCode;
         $('lobby-url-text').textContent = joinLink.replace(/^https?:\/\//, '');
