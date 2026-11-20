@@ -44,7 +44,7 @@ async function run() {
     await button(host, 'Начать игру').click();
     await tv.locator('.round-board').waitFor();
     assert.equal(await tv.locator('.round-board .value').count(), 24);
-    await tv.getByRole('heading', { name: 'Фраза из интернета' }).waitFor();
+    await tv.getByRole('heading', { name: 'Договори фразу' }).waitFor();
     const scores = tv.locator('.score-panel');
     const boardNames = await scores.locator('.scores li span').allTextContents();
     assert.deepEqual([...boardNames].sort(), [...names].sort());
@@ -89,15 +89,15 @@ async function run() {
     await Promise.all(players.map(phone => button(phone, 'Ответить').waitFor()));
     await button(host, 'Открыть ответ').click();
     await button(host, 'К табло').click();
-    for (const [title, next, category] of [['К раунду 2', 'С пульта и экрана', 'Техника из шкафа'], ['К раунду 3', 'На спор', 'Подвох в условии']]) {
+    for (const [title, next, category] of [['К раунду 2', 'Знакомые лица и звуки', 'Угадай инструмент'], ['К раунду 3', 'Всё знакомое', 'Пословица по картинке']]) {
       host.once('dialog', dialog => dialog.accept());
       await button(host, title).click();
       await button(host, 'Начать раунд').click();
       await tv.getByRole('heading', { name: next, exact: true }).waitFor();
       await tv.getByRole('heading', { name: category, exact: true }).waitFor();
-      if (category === 'Техника из шкафа') {
+      if (category === 'Угадай инструмент') {
         await host.locator('[data-id=r1c5q3]').click();
-        await tv.waitForFunction(() => document.querySelector('.question-image[src="media/q28.webp"]')?.naturalWidth > 0);
+        await tv.waitForFunction(() => document.querySelector('.question-image[src="media/family-sax.webp"]')?.naturalWidth > 0);
         const image = await tv.locator('.question-image').elementHandle();
         await tv.evaluate(async () => {
           const room = new URLSearchParams(location.search).get('tv');
@@ -109,17 +109,17 @@ async function run() {
           await new Promise(requestAnimationFrame);
         });
         assert.equal(await image.evaluate(element => element.isConnected), true, 'An unchanged TV refresh keeps the image in place');
-        assert.equal(await tv.getByText('Затмения. Механизм также рассчитывал положения небесных тел.', { exact: true }).count(), 0);
+        assert.equal(await tv.getByText('Саксофон.', { exact: true }).count(), 0);
         await host.getByRole('button', { name: 'Дать подсказку', exact: true }).click();
-        await tv.getByText('Подумайте о Солнце и Луне.', { exact: true }).waitFor();
+        await tv.getByText('Знаменитое соло в песне «Кэрлесс виспер» сыграно на этом инструменте.', { exact: true }).waitFor();
         await button(host, 'Открыть ответ').click();
-        await tv.getByText('Затмения. Механизм также рассчитывал положения небесных тел.', { exact: true }).waitFor();
+        await tv.getByText('Саксофон.', { exact: true }).waitFor();
         await button(host, 'К табло').click();
       }
     }
     host.once('dialog', dialog => dialog.accept());
     await button(host, 'Перейти в финал').click();
-    await tv.getByText('Финал · Первое апреля', { exact: true }).waitFor();
+    await tv.getByText('Финал · Игрушка из детства', { exact: true }).waitFor();
     const writer = players.find(phone => phone !== winner);
     const writerInput = writer.getByRole('textbox', { name: 'Твой ответ' });
     await writerInput.fill('Пишу ответ');
@@ -136,14 +136,14 @@ async function run() {
       await phone.getByRole('heading', { name: 'Ответ принят' }).waitFor();
     }
 
-    await submit(winner, 'Джимейл', 50);
+    await submit(winner, 'Кубик Рубика', 50);
     await writer.waitForFunction(() => document.querySelector('.scores') !== window.previousQuizScores);
     assert.equal(await writerInput.evaluate(input => input === window.savedQuizInput && input === document.activeElement &&
       input.selectionStart === 4 && input.value === 'Пишу ответ'), true, 'Another player submitting must not replace a focused answer field');
-    assert.equal(await tv.getByText('Джимейл', { exact: true }).count(), 0);
+    assert.equal(await tv.getByText('Кубик Рубика', { exact: true }).count(), 0);
     await Promise.all(players.filter(phone => phone !== winner).map((phone, index) => submit(phone, `Ответ ${index + 1}`)));
     await host.getByText('11/11', { exact: true }).waitFor();
-    await host.getByRole('checkbox', { name: /Джимейл/ }).check();
+    await host.getByRole('checkbox', { name: /Кубик Рубика/ }).check();
     await button(host, 'Подвести итоги').click();
     await tv.getByText('150 очков', { exact: true }).waitFor();
     assert.equal(await tv.locator('.scores li').count(), names.length);

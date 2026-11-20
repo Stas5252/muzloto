@@ -8,14 +8,20 @@ const path = require('node:path');
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
   const photos = pack.rounds.flatMap(r => r.categories.flatMap(c => c.questions.map(q => q.image))).filter(Boolean);
-  assert.equal(photos.length, 32);
+  assert.equal(photos.length, 52);
   assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   const categories = pack.rounds.flatMap(round => round.categories);
   assert.deepEqual(pack.rounds.map(round => round.categories.length), [6, 6, 6]);
-  for (const title of ['Чей это рюкзак?', 'Зум на вещь', 'Куда приехали?', 'Этикетка против тебя',
-    'Меню с подвохом', 'Техника из шкафа', 'Кадр до развязки', 'Космос на ладони']) {
+  for (const title of ['Чей это рюкзак?', 'Цветы по фото', 'Зум на вещь', 'Куда приехали?', 'Что за блюдо?',
+    'Игры на столе', 'Кого выдали детали?', 'Угадай инструмент', 'Праздник на фото', 'Пословица по картинке',
+    'Где это в России?', 'Сказка по картинке', 'Как сюда доехали?']) {
     assert.equal(categories.find(category => category.title === title).questions.filter(question => question.image).length, 4);
+  }
+  for (const legacyAsset of ['media/new-care-iron.webp', 'media/new-experiment-egg.webp', 'media/new-macro-velcro.webp']) {
+    const olderPack = structuredClone(demoPack);
+    olderPack.rounds[0].categories[0].questions[0].image = legacyAsset;
+    assert.equal(validPack(olderPack).rounds[0].categories[0].questions[0].image, legacyAsset);
   }
   const zodiacPrompt = 'Какой знак зодиака обозначают этим символом?';
   const zodiac = validPack({
