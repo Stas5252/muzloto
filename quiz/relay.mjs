@@ -1,14 +1,18 @@
 export const validRoom = room => /^[a-f0-9]{24}$/.test(room || '');
 export const token = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), n => n.toString(16).padStart(2, '0')).join('');
 
+let loadingSocket;
 function loadSocket() {
   if (window.io) return Promise.resolve(window.io);
-  return new Promise((resolve, reject) => {
+  return loadingSocket ||= new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = '/socket.io/socket.io.js';
     script.onload = () => window.io ? resolve(window.io) : reject();
     script.onerror = reject;
     document.head.append(script);
+  }).catch(error => {
+    loadingSocket = null;
+    throw error;
   });
 }
 
@@ -19,7 +23,7 @@ export function connectRoom(room, receive, changed) {
   let ended = false;
   const key = 'vne-ocheredi-' + room;
   const arrive = message => {
-    if (!ended && message?.room === room && ['player', 'state'].includes(message.type)) receive(message);
+    if (!ended && message?.room === room && ['player', 'state', 'screen'].includes(message.type)) receive(message);
   };
   function status(name, connected) {
     if (ended || active.has(name) === connected) return;

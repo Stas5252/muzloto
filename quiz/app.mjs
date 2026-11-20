@@ -1,6 +1,7 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
   standings, activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=17';
-import { connectRoom, token, validRoom } from './relay.mjs?v=2';
+import { connectRoom, token, validRoom } from './relay.mjs?v=3';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=1';
 import { read, write, photoData } from './storage.mjs';
 
 const app = document.querySelector('#app');
@@ -16,10 +17,10 @@ const remember = (key, value) => { try { localStorage.setItem(key, JSON.stringif
 const mode = params.has('play') ? 'player' : params.has('tv') ? 'tv' : 'host';
 
 let screen = 'home';
-let draft = structuredClone(demoPack);
+let draft = mode === 'host' ? structuredClone(demoPack) : null;
 let editorRound = 0;
 let savedRoom = null;
-let game, pack, room, connection, tvChannel;
+let game, pack, room, connection, tvRoom, screenConnection;
 let invite = '';
 let currentNetwork = [];
 let noticeTimer;
@@ -74,6 +75,12 @@ function playSignal() {
 function pageLink(type, code = room) {
   const link = new URL('./', location.href);
   link.searchParams.set(type, code);
+  return link;
+}
+
+function tvLink() {
+  const link = pageLink('tv', tvRoom);
+  if (invite) link.hostname = new URL(invite).hostname;
   return link;
 }
 
@@ -277,7 +284,7 @@ function renderHost() {
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
   if (phase === 'results') content = resultsPanel(game, pack);
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
-    <div class="actions"><a class="button" href="${escape(pageLink('tv'))}" target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
+    <div class="actions"><a class="button" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy-tv', 'Скопировать ссылку ТВ')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
   if (phase === 'lobby' && window.QRCode) {
     try { new window.QRCode(document.querySelector('#join-qr'), { text: invite, width: 176, height: 176, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
@@ -285,7 +292,7 @@ function renderHost() {
 }
 
 let lastPublicSend = 0;
-function presentation(session, source) {
+function presentation(session, source, question) {
   const round = activeRound(source, session);
   const stage = roundIndex(session) + 1;
   let content;
@@ -294,10 +301,14 @@ function presentation(session, source) {
     <p class="eyebrow">Раунд ${stage}</p><h1>${escape(round.title)}</h1></div><p class="muted">Осталось ${remainingQuestions(source, session)} из ${roundQuestions(round).length}</p></div>
     ${cardGrid(round, session.used)}</section>`;
   else if (session.phase === 'intermission') content = intermission(source, session, false);
-  else if (session.phase === 'question' || session.phase === 'reveal') content = questionPanel(findQuestion(source, session.current), session);
+  else if (session.phase === 'question' || session.phase === 'reveal') content = questionPanel(question, session);
   else if (session.phase === 'final') content = `<article class="question panel" data-stage="final"><p class="eyebrow">Финал · ${escape(source.final.topic)}</p><h1>${escape(source.final.prompt)}</h1><p class="muted">Ответьте на телефоне.</p></article>`;
   else content = resultsPanel(session, source);
   return `${roundRail(source, session)}${content}${session.phase !== 'lobby' && session.phase !== 'results' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(session))}</section>` : ''}`;
+}
+
+function sendScreen() {
+  screenConnection?.send({ type: 'screen', event: 'state', view: screenState(game, pack) });
 }
 
 function syncHost(changed = false, force = false) {
@@ -307,8 +318,8 @@ function syncHost(changed = false, force = false) {
     lastPublicSend = Date.now();
   }
   if (changed) {
-    tvChannel?.postMessage({ html: presentation(game, pack) });
-    write('live', { room, game }).catch(localError);
+    sendScreen();
+    write('live', { room, game, tvRoom }).catch(localError);
     renderHost();
   }
 }
@@ -327,10 +338,26 @@ function startHost() {
     setNetwork(links);
     syncHost(false, true);
   });
-  if ('BroadcastChannel' in window) {
-    tvChannel = new BroadcastChannel('vne-ocheredi-screen-' + room);
-    tvChannel.onmessage = ({ data }) => { if (data === 'screen-ready') tvChannel.postMessage({ html: presentation(game, pack) }); };
-  }
+  const activeTvRoom = tvRoom;
+  let lastScreenReply = 0;
+  let lastPhotoReply = 0;
+  screenConnection = connectRoom(activeTvRoom, frame => {
+    if (!game || tvRoom !== activeTvRoom || frame.type !== 'screen') return;
+    if (frame.event === 'request' && Date.now() - lastScreenReply > 120) {
+      lastScreenReply = Date.now();
+      sendScreen();
+    } else if (frame.event === 'photo-request' && frame.id === game.current &&
+        ['question', 'reveal'].includes(game.phase) && Array.isArray(frame.indexes) &&
+        frame.indexes.length <= photoBatchSize && Date.now() - lastPhotoReply > 120) {
+      lastPhotoReply = Date.now();
+      const photo = findQuestion(pack, game.current)?.image;
+      if (!photo?.startsWith('data:')) return;
+      for (const index of new Set(frame.indexes)) {
+        const chunk = screenPhotoChunk(photo, index);
+        if (chunk) screenConnection.send({ type: 'screen', event: 'photo', id: frame.id, index, chunk });
+      }
+    }
+  }, () => { if (tvRoom === activeTvRoom) sendScreen(); });
   setNetwork(currentNetwork);
   renderHost();
   if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
@@ -341,6 +368,7 @@ function startHost() {
       link.hostname = info.lan;
       invite = link.href;
       if (game.phase === 'lobby') renderHost();
+      else app.querySelector('[data-tv]')?.setAttribute('href', tvLink().href);
     }).catch(() => {});
   }
 }
@@ -354,12 +382,13 @@ async function launch() {
   try {
     pack = validPack(draft);
     room = token();
+    tvRoom = token();
     game = createGame();
     correctFinal.clear();
     await storeDraftNow();
     try {
       await write('live-pack-' + room, pack);
-      await write('live', { room, game });
+      await write('live', { room, game, tvRoom });
       if (previousRoom) await write('live-pack-' + previousRoom, null);
     } catch { localError(); }
     savedRoom = room;
@@ -374,11 +403,13 @@ async function launch() {
 async function leaveHost() {
   const oldRoom = room;
   connection?.send({ type: 'state', state: { ...publicState(game, pack), revision: game.revision + 1, closed: true } });
-  tvChannel?.postMessage({ closed: true });
+  const closingScreen = screenConnection;
+  closingScreen?.send({ type: 'screen', event: 'closed' });
   connection?.close();
-  tvChannel?.close();
+  screenConnection = null;
+  setTimeout(() => closingScreen?.close(), 300);
   screen = 'closing';
-  game = pack = room = savedRoom = null;
+  game = pack = room = tvRoom = savedRoom = null;
   // Release the room pack while preserving the independent editor draft.
   await Promise.all([write('live', null), write('live-pack-' + oldRoom, null)]).catch(localError);
   setNetwork([]);
@@ -467,9 +498,10 @@ async function hostButton(button) {
       return;
     }
     if (screen !== 'room') return;
-    if (type === 'copy') {
-      try { await navigator.clipboard.writeText(invite); message('Ссылка скопирована.'); }
-      catch { window.prompt('Ссылка для игроков', invite); }
+    if (type === 'copy' || type === 'copy-tv') {
+      const link = type === 'copy-tv' ? tvLink().href : invite;
+      try { await navigator.clipboard.writeText(link); message('Ссылка скопирована.'); }
+      catch { window.prompt(type === 'copy-tv' ? 'Ссылка для экрана ТВ' : 'Ссылка для игроков', link); }
       return;
     }
     if (type === 'close') {
@@ -554,8 +586,9 @@ function initHost() {
           if (params.get('host') === savedRoom) {
             pack = validPack(savedPack);
             room = savedRoom;
+            tvRoom = validRoom(live.tvRoom) ? live.tvRoom : room;
             game = restoreGame(live.game, pack);
-            if (game !== live.game) await write('live', { room, game }).catch(localError);
+            if (game !== live.game) await write('live', { room, game, tvRoom }).catch(localError);
             startHost();
             return;
           }
@@ -745,29 +778,90 @@ function initPlayer() {
 
 function initTv() {
   document.body.classList.add('tv');
-  room = params.get('tv');
+  const code = params.get('tv');
   const waiting = text => { app.innerHTML = `<section class="panel center"><h1>Экран ТВ</h1><p>${text}</p></section>`; };
-  if (!validRoom(room) || !('BroadcastChannel' in window)) {
-    waiting('Откройте экран ТВ из комнаты на устройстве ведущего.');
+  if (!validRoom(code)) {
+    waiting('Откройте ссылку «Экран ТВ» из комнаты ведущего.');
     return;
   }
-  waiting('Ждём вкладку ведущего в этом браузере…');
-  const channel = new BroadcastChannel('vne-ocheredi-screen-' + room);
-  const poll = setInterval(() => channel.postMessage('screen-ready'), 2400);
-  let lastHtml = null;
-  channel.onmessage = ({ data }) => {
-    if (data === 'screen-ready') return;
-    if (data?.closed) {
+  waiting('Ждём ведущего. Оставьте пульт открытым на устройстве ведущего.');
+  let snapshot, photo, lastHtml;
+  let lastSeen = 0;
+  let lastRequest = 0;
+  let ended = false;
+  let tv;
+  tv = connectRoom(code, receive, request);
+
+  function render() {
+    const question = snapshot.question;
+    const shown = photo?.url && question ? { ...question, image: photo.url } : question;
+    const html = presentation(snapshot.session, snapshot.source, shown);
+    if (html !== lastHtml) {
+      lastHtml = html;
+      app.innerHTML = html;
+    }
+  }
+
+  function receive(frame) {
+    if (ended || frame.type !== 'screen') return;
+    if (frame.event === 'closed') {
+      ended = true;
       clearInterval(poll);
+      tv.close();
+      network.hidden = true;
       waiting('Комната закрыта.');
-      return;
+    } else if (frame.event === 'state' && validScreenState(frame.view)) {
+      lastSeen = Date.now();
+      network.hidden = false;
+      network.classList.add('online');
+      network.textContent = 'Связь с ведущим';
+      if (snapshot && frame.view.revision <= snapshot.revision) return;
+      snapshot = frame.view;
+      const id = snapshot.question?.id;
+      const length = snapshot.photoLength;
+      if (!length) photo = null;
+      else if (photo?.id !== id || photo.length !== length) {
+        photo = { id, length, chunks: Array(Math.ceil(length / photoChunkSize)).fill(''), received: 0, url: '' };
+      }
+      render();
+    } else if (frame.event === 'photo' && photo && frame.id === photo.id && !photo.url) {
+      const { index, chunk } = frame;
+      if (!Number.isInteger(index) || index < 0 || index >= photo.chunks.length || photo.chunks[index] ||
+          typeof chunk !== 'string' || chunk.length !== Math.min(photoChunkSize, photo.length - index * photoChunkSize)) return;
+      photo.chunks[index] = chunk;
+      if (++photo.received !== photo.chunks.length) return;
+      const url = photo.chunks.join('');
+      if (validScreenPhoto(url)) {
+        photo.url = url;
+        render();
+      } else {
+        photo.chunks.fill('');
+        photo.received = 0;
+      }
     }
-    if (typeof data?.html === 'string' && data.html !== lastHtml) {
-      lastHtml = data.html;
-      app.innerHTML = data.html;
+  }
+
+  function request() {
+    tv?.send({ type: 'screen', event: 'request' });
+    lastRequest = Date.now();
+  }
+
+  const poll = setInterval(() => {
+    const now = Date.now();
+    if (now - lastRequest >= 2400) request();
+    if (lastSeen && now - lastSeen > 9000) {
+      network.classList.remove('online');
+      network.textContent = 'Ждём ведущего';
     }
-  };
-  channel.postMessage('screen-ready');
+    if (photo && !photo.url) {
+      const indexes = [];
+      for (let index = 0; index < photo.chunks.length && indexes.length < photoBatchSize; index++) {
+        if (!photo.chunks[index]) indexes.push(index);
+      }
+      if (indexes.length) tv.send({ type: 'screen', event: 'photo-request', id: photo.id, indexes });
+    }
+  }, 350);
+  request();
 }
 
 if (mode === 'player') initPlayer();

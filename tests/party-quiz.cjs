@@ -4,6 +4,7 @@ const path = require('node:path');
 
 (async () => {
   const { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, remainingQuestions } = await import('../quiz/game.mjs');
+  const { screenState, validScreenState, screenPhotoChunk, photoChunkSize, validScreenPhoto } = await import('../quiz/screen.mjs');
   const pack = validPack(demoPack);
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
@@ -48,6 +49,27 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
     validPack(altered);
   });
   assert.throws(() => validPack({ title: 'Пусто', categories: [] }));
+
+  const screenGame = createGame();
+  assert.ok(command(screenGame, pack, { type: 'start' }, true));
+  const board = screenState(screenGame, pack);
+  assert.ok(validScreenState(board));
+  assert.ok(!JSON.stringify(board).includes(pack.rounds[0].categories[0].questions[0].prompt));
+  assert.ok(command(screenGame, pack, { type: 'pick', question: 'c0q0' }, true));
+  const question = screenState(screenGame, pack);
+  assert.ok(validScreenState(question));
+  assert.equal(question.question.answer, '');
+  assert.equal(question.question.hint, '');
+  assert.equal(question.source.final.answer, '');
+  assert.ok(!validScreenState({ ...question, question: { ...question.question, image: 'https://example.com/photo.jpg' } }));
+  assert.ok(command(screenGame, pack, { type: 'hint' }, true));
+  assert.equal(screenState(screenGame, pack).question.hint, pack.rounds[0].categories[0].questions[0].hint);
+  assert.ok(command(screenGame, pack, { type: 'reveal' }, true));
+  assert.equal(screenState(screenGame, pack).question.answer, pack.rounds[0].categories[0].questions[0].answer);
+  const photo = 'data:image/png;base64,' + 'a'.repeat(photoChunkSize);
+  assert.equal(screenPhotoChunk(photo, 0) + screenPhotoChunk(photo, 1), photo);
+  assert.equal(screenPhotoChunk(photo, 2), '');
+  assert.ok(validScreenPhoto(photo));
 
   const game = createGame();
   const player = (id, name) => ({ id, name });

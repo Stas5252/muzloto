@@ -18,13 +18,26 @@ async function run() {
     return page;
   }
   try {
-    const desktop = await browser.newContext({ viewport: { width: 1280, height: 720 } });
-    const host = await open(desktop, site);
+    const phoneHost = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const bigScreen = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    await bigScreen.addInitScript(() => { delete window.BroadcastChannel; });
+    const host = await open(phoneHost, site);
+    await host.evaluate(async image => {
+      const { demoPack } = await import('./game.mjs?v=17');
+      const { write } = await import('./storage.mjs');
+      const draft = structuredClone(demoPack);
+      draft.rounds[0].categories[0].questions[3].image = image;
+      await write('draft', draft);
+    }, 'data:image/webp;base64,' + fs.readFileSync(require('node:path').join(__dirname, '../quiz/media/new-bag-amber.webp')).toString('base64'));
+    await host.reload({ waitUntil: 'domcontentloaded' });
     await button(host, 'Создать комнату').click();
     await host.locator('#join-qr canvas').waitFor({ state: 'attached' });
     const joinUrl = await host.getByRole('link', { name: /Открыть игрока/ }).getAttribute('href');
     const tvUrl = await host.getByRole('link', { name: /Экран ТВ/ }).getAttribute('href');
-    const tv = await open(desktop, tvUrl);
+    assert.notEqual(new URL(joinUrl).searchParams.get('play'), new URL(tvUrl).searchParams.get('tv'));
+    const tv = await open(bigScreen, tvUrl);
+    await tv.getByText('Собираем игроков', { exact: true }).waitFor();
+    assert.equal(await tv.getByRole('button', { name: 'Начать игру', exact: true }).count(), 0);
     const players = [];
 
     for (let index = 0; index < names.length; index += 4) {
@@ -82,6 +95,9 @@ async function run() {
 
     await button(host, 'К табло').click();
     await host.locator('[data-id=c0q3]').click();
+    await tv.waitForFunction(() => document.querySelector('.question-image[src^="data:image/webp;base64,"]')?.naturalWidth > 0);
+    await tv.reload({ waitUntil: 'domcontentloaded' });
+    await tv.waitForFunction(() => document.querySelector('.question-image[src^="data:image/webp;base64,"]')?.naturalWidth > 0);
     const waitingForHandoff = button(players[0], 'Ведущий выбирает игрока');
     await waitingForHandoff.waitFor();
     assert.equal(await waitingForHandoff.isDisabled(), true);
@@ -99,15 +115,12 @@ async function run() {
         await host.locator('[data-id=r1c5q3]').click();
         await tv.waitForFunction(() => document.querySelector('.question-image[src="media/family-sax.webp"]')?.naturalWidth > 0);
         const image = await tv.locator('.question-image').elementHandle();
-        await tv.evaluate(async () => {
-          const room = new URLSearchParams(location.search).get('tv');
-          const probe = new BroadcastChannel('vne-ocheredi-screen-' + room);
-          const response = new Promise(resolve => { probe.onmessage = event => { if (event.data?.html) resolve(); }; });
-          probe.postMessage('screen-ready');
-          await response;
-          probe.close();
-          await new Promise(requestAnimationFrame);
-        });
+        await host.reload({ waitUntil: 'domcontentloaded' });
+        await button(host, 'Открыть ответ').waitFor();
+        await host.waitForFunction(link => document.querySelector('[data-tv]')?.href === link, tvUrl);
+        const sameBrowserTv = await open(phoneHost, tvUrl);
+        await sameBrowserTv.waitForFunction(() => document.querySelector('.question-image[src="media/family-sax.webp"]')?.naturalWidth > 0);
+        await sameBrowserTv.close();
         assert.equal(await image.evaluate(element => element.isConnected), true, 'An unchanged TV refresh keeps the image in place');
         assert.equal(await tv.getByText('Саксофон.', { exact: true }).count(), 0);
         await host.getByRole('button', { name: 'Дать подсказку', exact: true }).click();
@@ -149,8 +162,11 @@ async function run() {
     assert.equal(await tv.locator('.scores li').count(), names.length);
     assert.equal(await tv.locator('.verdicts li').count(), names.length);
     assert.ok(scoreBottom <= 720, `TV scores should all fit at 1280×720, found bottom at ${scoreBottom}px`);
+    host.once('dialog', dialog => dialog.accept());
+    await button(host, 'Закрыть комнату').click();
+    await tv.getByText('Комната закрыта.', { exact: true }).waitFor();
     assert.deepEqual(errors, []);
-    console.log('PASS 11-player party quiz, complete TV scores, private final answers and preserved typing focus');
+    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players and private final answers');
   } finally {
     await browser.close();
   }

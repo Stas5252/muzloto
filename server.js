@@ -28,7 +28,9 @@ io.of('/party-quiz').on('connection', socket => {
   });
   socket.on('quiz:frame', frame => {
     const room = socket.data.quizRoom;
-    if (!room || frame?.room !== room || !['player', 'state'].includes(frame.type) || JSON.stringify(frame).length > 8192) return;
+    if (!room || frame?.room !== room || !['player', 'state', 'screen'].includes(frame.type)) return;
+    const limit = frame.type === 'screen' ? 32_768 : 8192;
+    if (JSON.stringify(frame).length > limit) return;
     socket.to(room).emit('quiz:frame', frame);
   });
 });
