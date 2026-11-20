@@ -8,24 +8,29 @@ const path = require('node:path');
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
   assert.deepEqual(pack.rounds.map(r => r.categories.reduce((n, c) => n + c.questions.length, 0)), [24, 24, 24]);
   const photos = pack.rounds.flatMap(r => r.categories.flatMap(c => c.questions.map(q => q.image))).filter(Boolean);
-  assert.equal(photos.length, 45);
+  assert.equal(photos.length, 32);
   assert.equal(new Set(photos).size, photos.length, 'Every illustrated starter question uses its own image');
   for (const asset of photos) assert.ok(fs.statSync(path.join(__dirname, '../quiz', asset)).size > 1000);
   const categories = pack.rounds.flatMap(round => round.categories);
-  for (const title of ['Кто на фото?', 'Город с высоты', 'Фильм по фото', 'Хиты по картинкам']) {
+  assert.deepEqual(pack.rounds.map(round => round.categories.length), [6, 6, 6]);
+  for (const title of ['Чей это рюкзак?', 'Зум на вещь', 'Куда приехали?', 'Этикетка против тебя',
+    'Меню с подвохом', 'Техника из шкафа', 'Кадр до развязки', 'Космос на ладони']) {
     assert.equal(categories.find(category => category.title === title).questions.filter(question => question.image).length, 4);
   }
-  const zodiac = categories.find(category => category.title === 'Карты и знаки').questions;
-  const oldDeck = structuredClone(demoPack);
-  for (const [index, symbol, asset] of [[0, '♌', 'zodiac-leo'], [2, '♊', 'zodiac-gemini']]) {
-    const question = zodiac[index];
-    assert.equal(question.image, `media/${asset}.webp`);
-    assert.equal(question.prompt, 'Какой знак зодиака обозначают этим символом?');
-    const savedQuestion = oldDeck.rounds[0].categories[4].questions[index];
-    savedQuestion.prompt = `${symbol}\n${question.prompt}`;
-    delete savedQuestion.image;
-  }
-  assert.deepEqual(validPack(oldDeck).rounds[0].categories[4].questions, zodiac);
+  const zodiacPrompt = 'Какой знак зодиака обозначают этим символом?';
+  const zodiac = validPack({
+    title: 'Старый набор',
+    categories: [{ title: 'Карты и знаки', questions: [
+      { value: 100, prompt: `♌
+${zodiacPrompt}`, answer: 'Лев' },
+      { value: 300, prompt: `♊
+${zodiacPrompt}`, answer: 'Близнецы' }
+    ] }]
+  }).rounds[0].categories[0].questions;
+  assert.deepEqual(zodiac.map(({ prompt, image }) => [prompt, image]), [
+    [zodiacPrompt, 'media/zodiac-leo.webp'],
+    [zodiacPrompt, 'media/zodiac-gemini.webp']
+  ]);
   for (const category of categories) {
     assert.doesNotMatch(category.title, /[A-Za-z]/u);
     for (const { prompt, answer, hint } of category.questions) assert.doesNotMatch(`${prompt} ${answer} ${hint}`, /[A-Za-z]/u);
@@ -36,7 +41,6 @@ const path = require('node:path');
     altered.rounds[0].categories[0].questions[0].image = 'https://example.com/not-bundled.png';
     validPack(altered);
   });
-  assert.equal(pack.rounds[1].categories.find(c => c.title === 'Для Вики').questions.length, 4);
   assert.throws(() => validPack({ title: 'Пусто', categories: [] }));
 
   const game = createGame();
