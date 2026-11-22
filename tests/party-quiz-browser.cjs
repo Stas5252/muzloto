@@ -220,8 +220,53 @@ async function run() {
     host.once('dialog', dialog => dialog.accept());
     await button(host, 'Закрыть комнату').click();
     await packTv.getByText('Комната закрыта.', { exact: true }).waitFor();
+
+    // The editor launches its own draft even though a bundled pack is still chosen on the home screen.
+    const tune = require('../quiz/packs/dota.json').rounds[1].categories[1].questions[0].audio;
+    const finalTopic = topic => ({ topic, prompt: 'Вопрос финала', answer: 'Ответ финала' });
+    await button(host, 'Редактор вопросов').click();
+    host.once('dialog', dialog => dialog.accept());
+    await host.locator('input[data-import]').setInputFiles({ name: 'deck.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({
+      title: 'Проверка редактора', finals: [finalTopic('Первая тема'), finalTopic('Вторая тема')],
+      rounds: [{ title: 'Раунд со звуком', categories: [{ title: 'Мелодии', questions: [{ prompt: 'Что звучит?', answer: 'Мелодия', value: 100, audio: tune }] }] }]
+    })) });
+    await host.getByRole('heading', { name: 'Финал · тема 1 из 2' }).waitFor();
+    await button(host, 'Убрать тему').click();
+    assert.equal(await host.getByRole('textbox', { name: 'Тема финала' }).inputValue(), 'Вторая тема');
+    await button(host, 'Убрать финал').click();
+    await button(host, 'Добавить финал').waitFor();
+    await button(host, 'Создать комнату').click();
+    await host.locator('#join-qr canvas').waitFor({ state: 'attached' });
+    assert.equal(await host.locator('.lobby-copy h1').textContent(), 'Проверка редактора', 'The room uses the deck shown in the editor');
+    assert.equal(await host.evaluate(async () => {
+      const { validPack } = await import('./game.mjs?v=18');
+      const { read } = await import('./storage.mjs?v=2');
+      return validPack(await read('draft')).finals.length;
+    }), 0, 'A final removed in the editor stays removed');
+    const listener = await open(await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }),
+      await host.getByRole('link', { name: /Открыть игрока/ }).getAttribute('href'));
+    await listener.getByRole('textbox', { name: 'Имя на табло' }).fill('Аня');
+    await button(listener, 'Войти').click();
+    await host.getByText('1/12', { exact: true }).waitFor();
+    await host.getByRole('button', { name: 'По очереди', exact: true, pressed: true }).waitFor();
+    await button(host, 'Кто быстрее').click();
+    await button(host, 'Начать игру').click();
+    await host.locator('[data-id=c0q0]').click();
+    await host.locator('.host-sound audio').evaluate(async audio => {
+      window.heardTrack = audio;
+      await audio.play();
+    });
+    await host.waitForFunction(() => window.heardTrack.currentTime > 0);
+    await button(host, 'Принимать ответы').click();
+    await button(listener, 'Ответить').waitFor();
+    await listener.locator('.buzzer').click();
+    await host.locator('.answering', { hasText: 'Аня' }).waitFor();
+    assert.equal(await host.evaluate(() => window.heardTrack.isConnected && !window.heardTrack.paused &&
+      document.querySelectorAll('.host-sound audio').length === 1), true, 'Opening the buttons and a buzz keep the host preview playing');
+    host.once('dialog', dialog => dialog.accept());
+    await button(host, 'Закрыть комнату').click();
     assert.deepEqual(errors, []);
-    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players, false start, converted pack in turns mode and private final answers');
+    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players, false start, converted pack in turns mode, editor launch, host audio preview and private final answers');
   } finally {
     await browser.close();
   }
