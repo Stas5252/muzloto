@@ -1,7 +1,7 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
-  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=19';
+  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=20';
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
-import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=4';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=5';
 import { read, write, photoData } from './storage.mjs?v=2';
 import { listenForHost, pairHost, askPin, validPin, waitingUrl } from '../tv-pair.mjs?v=1';
 
@@ -120,10 +120,39 @@ function tvLink() {
   return link;
 }
 
-function scoreList(players) {
+function scoreList(players, editable = false) {
   return players.length
-    ? `<ul class="scores${players.length > 6 ? ' scores-crowd' : ''}">${players.map(p => `<li><span title="${escape(p.name)}">${escape(p.name)}</span><strong>${p.score}</strong></li>`).join('')}</ul>`
+    ? `<ul class="scores${players.length > 6 ? ' scores-crowd' : ''}">${players.map(p => `<li><span title="${escape(p.name)}">${escape(p.name)}</span><strong>${p.score}</strong>${
+      editable ? `<button class="score-edit" type="button" data-action="score" data-player="${escape(p.id)}" aria-label="Изменить счёт: ${escape(p.name)}">✎</button>` : ''}</li>`).join('')}</ul>`
     : `<p class="muted">Игроки ещё не подключились</p>`;
+}
+
+// Modifier cards («забери 1000 баллов», «плюс на минус») and disputes are settled by hand.
+function askScore(name, score) {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'score-dialog';
+  dialog.innerHTML = `<form method="dialog"><h2></h2>
+    <label><span>Новый счёт</span><input name="score" type="number" step="1" required></label>
+    <div class="score-steps">${[-1000, -500, -100, 100, 500, 1000].map(step =>
+      `<button type="button" data-step="${step}">${step > 0 ? '+' : '−'}${Math.abs(step)}</button>`).join('')}
+      <button type="button" data-times="-1">Плюс на минус</button><button type="button" data-times="0.5">× 0.5</button></div>
+    <div class="actions"><button class="button primary" value="ok">Сохранить</button><button class="button quiet" value="cancel" formnovalidate>Отмена</button></div></form>`;
+  dialog.querySelector('h2').textContent = 'Счёт: ' + name;
+  const input = dialog.querySelector('input');
+  input.value = score;
+  dialog.addEventListener('click', event => {
+    const { step, times } = event.target.dataset || {};
+    if (step || times) input.value = Math.round(step ? (Number(input.value) || 0) + Number(step) : (Number(input.value) || 0) * Number(times));
+  });
+  document.body.append(dialog);
+  return new Promise(resolve => {
+    dialog.addEventListener('close', () => {
+      const value = Math.round(Number(input.value));
+      dialog.remove();
+      resolve(dialog.returnValue === 'ok' && input.value !== '' && Number.isSafeInteger(value) ? value : null);
+    });
+    dialog.showModal();
+  });
 }
 
 function cardGrid(source, used = [], canPick = false) {
@@ -164,12 +193,13 @@ function questionPanel(question, session) {
   const reveal = session.phase === 'reveal';
   const announcing = session.answering && session.players[session.answering]?.name;
   const photo = reveal && question.answerImage || question.image;
-  const waiting = question.kind === 'handoff' ? 'Ведущий выбирает игрока' :
+  const modifier = question.kind === 'modifier';
+  const waiting = modifier ? 'Ведущий применяет модификатор' : question.kind === 'handoff' ? 'Ведущий выбирает игрока' :
     session.mode === 'turns' ? 'Ждём ведущего' : 'Слушаем вопрос. Кнопки пока закрыты';
   return `<article class="question panel ${photo ? 'has-photo' : ''}" data-stage="${roundIndex(session) + 1}">
     ${photo ? `<figure class="question-figure"><img class="question-image" src="${escape(photo)}" alt="${reveal && question.answerImage ? 'Фото с ответом' : 'Фото к вопросу'}"></figure>` : ''}
     <div class="question-copy">
-      <p class="question-category">${escape(question.category)} <span>${points(question)} очков</span></p>
+      <p class="question-category">${escape(question.category)} <span>${modifier ? 'Модификатор' : points(question) + ' очков'}</span></p>
       <h1>${escape(question.prompt)}</h1>
       ${question.audio && !reveal ? '<p class="sound-note"><span aria-hidden="true">♪</span> Вопрос со звуком</p>' : ''}
       ${session.showHint && question.hint ? `<p class="hint">${escape(question.hint)}</p>` : ''}
@@ -386,7 +416,9 @@ function renderHost() {
     content = `<div class="question-layout">${questionPanel(current, game)}
       <aside class="panel host-actions"><h2>Пульт ведущего</h2>
         ${track ? `<div class="host-sound"><audio controls preload="none" src="${escape(track)}"></audio>${action('replay', 'Повторить звук на ТВ')}</div>` : ''}
-        ${phase === 'reveal' ? action('board', 'К табло', '', 'primary') : `
+        ${phase === 'reveal' ? action('board', 'К табло', '', 'primary') : current?.kind === 'modifier' ? `
+        <p class="muted">Модификатор достаётся тому, кто выбрал вопрос. Прочитайте карточку и поправьте счёт кнопкой ✎ в блоке «Счёт».</p>
+        ${action('reveal', 'К табло', '', 'primary')}` : `
         <details class="answer-detail"><summary>Посмотреть ответ</summary><p>${escape(current?.answer)}</p></details>
         ${idle && !turns && !handoff ? action('open', 'Принимать ответы', '', 'primary') + '<p class="muted">Прочитайте вопрос и откройте кнопки. Кто нажмёт раньше, получит блокировку на секунду.</p>' : ''}
         ${status ? `<p class="answering">${status}</p>` : ''}
@@ -409,7 +441,7 @@ function renderHost() {
   const heard = app.querySelector('.host-sound audio');
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
     <div class="actions">${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
-    ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
+    ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game), true)}</section>` : ''}`;
   // A redraw for a buzz or a hint must not cut off the track the host is listening to.
   const fresh = app.querySelector('.host-sound audio');
   if (heard && fresh?.getAttribute('src') === heard.getAttribute('src')) fresh.replaceWith(heard);
@@ -717,6 +749,12 @@ async function hostButton(button) {
       message('Новая игра: ' + pack.title + '. Игроки уже в комнате.');
       return;
     }
+    if (type === 'score') {
+      const player = button.dataset.player;
+      const score = await askScore(game.players[player].name, game.players[player].score);
+      if (score !== null && command(game, pack, { type, player, score }, true)) syncHost(true);
+      return;
+    }
     if (type === 'mode') remember('vne-ocheredi-mode', button.dataset.mode);
     if (type === 'close') {
       if (confirm('Закрыть эту комнату? Счёт текущей игры будет сброшен.')) await leaveHost();
@@ -920,13 +958,14 @@ function initPlayer() {
     let content;
     if (state.phase === 'question') {
       const view = buzzer(me);
-      if (sameStep) {
+      if (sameStep && !state.modifier) {
         // Another player's buzz can arrive while a finger is still pressing this button.
         paintBuzzer(previousPanel.querySelector('.buzzer'), view);
         previousPanel.querySelector('.player-seat span').textContent = `${me.score} очков`;
         return;
       }
-      content = `<p class="eyebrow">${escape(state.category)} · ${escape(state.value)} очков</p>
+      content = state.modifier ? `<p class="eyebrow">${escape(state.category)}</p><h1>Модификатор</h1><p>Ведущий читает карточку. Отвечать не нужно.</p>` :
+        `<p class="eyebrow">${escape(state.category)} · ${escape(state.value)} очков</p>
         <button type="button" data-action="buzz" class="buzzer"><span aria-hidden="true">↯</span><strong class="buzzer-caption"></strong></button>
         <p class="muted">${state.mode === 'turns' ? 'Игра по очереди: отвечайте вслух, когда назовут ваше имя.' :
           'Жмите после сигнала ведущего. Нажмёте раньше — кнопка заблокируется на секунду.'}</p>`;
@@ -965,7 +1004,7 @@ function initPlayer() {
     }
     app.innerHTML = `<section class="panel player-panel" data-phase="${state.phase}" data-ticket="${escape(state.ticket)}"><div class="player-seat"><strong>${escape(me.name)}</strong><span>${me.score} очков</span></div>${content}</section>
       ${state.phase !== 'question' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(state.players)}</section>` : ''}`;
-    if (state.phase === 'question') paintBuzzer(app.querySelector('.buzzer'), buzzer(me));
+    if (state.phase === 'question' && !state.modifier) paintBuzzer(app.querySelector('.buzzer'), buzzer(me));
   }
 
   function sendPlayer(body) {

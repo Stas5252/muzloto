@@ -23,7 +23,7 @@ async function run() {
     await bigScreen.addInitScript(() => { delete window.BroadcastChannel; });
     const host = await open(phoneHost, site);
     await host.evaluate(async image => {
-      const { demoPack } = await import('./game.mjs?v=19');
+      const { demoPack } = await import('./game.mjs?v=20');
       const { write } = await import('./storage.mjs');
       const draft = structuredClone(demoPack);
       draft.rounds[0].categories[0].questions[3].image = image;
@@ -216,6 +216,46 @@ async function run() {
     await packTv.getByText('adidas (Gazelle)', { exact: true }).waitFor();
     await button(host, 'К табло').click();
     await seats[1].getByRole('heading', { name: 'Твой ход' }).waitFor();
+
+    // A modifier card: nobody answers, the host applies it to the score by hand.
+    await host.locator('[data-id=c4q4]').click();
+    await packTv.getByRole('heading', { name: 'Плюс на минус' }).waitFor();
+    await packTv.getByText('Ведущий применяет модификатор', { exact: true }).waitFor();
+    for (const seat of seats) {
+      await seat.getByRole('heading', { name: 'Модификатор' }).waitFor();
+      assert.equal(await seat.locator('.buzzer').count(), 0, 'A modifier shows no answer button');
+    }
+    assert.equal(await host.locator('[data-action=open], [data-action=judge], .answer-detail').count(), 0);
+    await host.getByRole('button', { name: 'Изменить счёт: Боря' }).click();
+    const sheet = host.locator('.score-dialog');
+    assert.equal(await sheet.getByRole('spinbutton', { name: 'Новый счёт' }).inputValue(), '100');
+    await sheet.getByRole('button', { name: 'Плюс на минус' }).click();
+    await sheet.getByRole('button', { name: '−500' }).click();
+    assert.equal(await sheet.getByRole('spinbutton', { name: 'Новый счёт' }).inputValue(), '-600');
+    await sheet.getByRole('button', { name: 'Сохранить' }).click();
+    await seats[1].locator('.player-seat span', { hasText: '-600 очков' }).waitFor();
+    await host.getByRole('button', { name: 'Изменить счёт: Аня' }).click();
+    await host.locator('.score-dialog').getByRole('button', { name: 'Отмена' }).click();
+    await seats[0].locator('.player-seat span', { hasText: '-100 очков' }).waitFor();
+    await button(host, 'К табло').click();
+    await packTv.locator('.scores li', { hasText: 'Боря' }).filter({ hasText: '-600' }).waitFor();
+    assert.equal(await host.locator('[data-id=c4q4]').isDisabled(), true, 'A played modifier is spent');
+    await seats[0].getByRole('heading', { name: 'Твой ход' }).waitFor();
+
+    // A sign drawn in black on a transparent background must not turn into a black square.
+    await host.locator('[data-id=c0q1]').click();
+    await packTv.waitForFunction(() => document.querySelector('.question-image')?.naturalWidth > 0);
+    const [corner, ink] = await packTv.locator('.question-image').evaluate(image => {
+      const canvas = Object.assign(document.createElement('canvas'), { width: image.naturalWidth, height: image.naturalHeight });
+      const context = canvas.getContext('2d');
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let dark = 0;
+      for (let i = 0; i < pixels.length; i += 4) dark += pixels[i] < 60;
+      return [pixels[0], dark / (pixels.length / 4)];
+    });
+    assert.ok(corner > 200 && ink > .03 && ink < .6, `The zodiac sign is visible on its sheet (corner ${corner}, ink ${ink.toFixed(2)})`);
+    await button(seats[0], 'Отвечай вслух').waitFor();
     assert.ok(await host.locator('#final-topic').count() === 0, 'The final topic is chosen in the last round');
     host.once('dialog', dialog => dialog.accept());
     await button(host, 'Закрыть комнату').click();
@@ -239,7 +279,7 @@ async function run() {
     await host.locator('#join-qr canvas').waitFor({ state: 'attached' });
     assert.equal(await host.locator('.lobby-copy h1').textContent(), 'Проверка редактора', 'The room uses the deck shown in the editor');
     assert.equal(await host.evaluate(async () => {
-      const { validPack } = await import('./game.mjs?v=19');
+      const { validPack } = await import('./game.mjs?v=20');
       const { read } = await import('./storage.mjs?v=2');
       return validPack(await read('draft')).finals.length;
     }), 0, 'A final removed in the editor stays removed');
@@ -266,7 +306,7 @@ async function run() {
     host.once('dialog', dialog => dialog.accept());
     await button(host, 'Закрыть комнату').click();
     assert.deepEqual(errors, []);
-    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players, false start, converted pack in turns mode, editor launch, host audio preview and private final answers');
+    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players, false start, converted pack in turns mode, modifier card with a manual score, editor launch, host audio preview and private final answers');
   } finally {
     await browser.close();
   }

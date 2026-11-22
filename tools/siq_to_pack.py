@@ -103,6 +103,9 @@ def convert(path, meta):
                 result[key] = item
         if node.get('type') == 'secret':
             result['kind'] = 'handoff'
+        if prompt == '[МОДИФИКАТОР]':
+            # The card is its own answer: «Плюс на минус», «Забери 1000 баллов у кого угодно».
+            result.update(prompt=answer, kind='modifier')
         return result
 
     rounds, finals = [], []
