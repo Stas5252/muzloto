@@ -292,8 +292,8 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   // Converted SIGame packs.
   const packsDir = path.join(__dirname, '../quiz/packs');
   const index = JSON.parse(fs.readFileSync(path.join(packsDir, 'index.json'), 'utf8'));
-  assert.equal(index.length, 10);
-  assert.equal(new Set(index.map(item => item.title)).size, 10, 'Every pack has its own title');
+  assert.equal(index.length, 11);
+  assert.equal(new Set(index.map(item => item.title)).size, 11, 'Every pack has its own title');
   const media = new Set();
   for (const item of index) {
     assert.match(item.id, /^[a-z0-9-]{1,24}$/);
@@ -503,5 +503,5 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.equal(imported.filter(question => question.kind === 'modifier').length, 44);
   assert.ok(imported.every(question => !question.prompt.startsWith('[МОДИФИКАТОР]')), 'Modifier cards show their effect, not a placeholder');
 
-  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs, chooser, «кот в мешке», pause, final themes struck in turn and stakes opened one by one');
+  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and the party pack, chooser, «кот в мешке», pause, final themes struck in turn and stakes opened one by one');
 })().catch(error => { console.error(error); process.exitCode = 1; });
