@@ -175,6 +175,18 @@ async function run() {
     assert.equal(await host.evaluate(() => localStorage.getItem('muzloto_active_host_code')), null);
     console.log('PASS MuzLoto: continue after reload; ending tells the players, frees the TV and refuses the old code');
 
+    // «Новая игра» on the landing page ends the running game before its page has connected to the TV.
+    await host.evaluate(tracks(9));
+    await host.locator('#btn-create-room').click();
+    await host.locator('#sec-lobby').waitFor();
+    await tv.waitForURL(/music-screen\.html\?screen=/);
+    await host.goto(site + 'muzloto.html');
+    await host.locator('#hero-new').click();
+    await host.locator('#sec-setup').waitFor({ state: 'visible' });
+    await tv.waitForURL(/screen\.html\?pair=\d{4}/);
+    assert.equal(await host.evaluate(() => localStorage.getItem('muzloto_active_host_code')), null);
+    console.log('PASS MuzLoto «Новая игра» from the landing page: the old room is gone and the TV is back on its code');
+
     // Without the room server (the public site) the same lobby rules hold between tabs.
     const offline = await browser.newContext(mobile);
     await offline.route(/\/(socket\.io\/socket\.io|mqtt\.min|peerjs\.min)\.js/, route => route.abort());

@@ -2504,7 +2504,7 @@
       tvDisplay?.close();
       tvPairReady.then(pair => { if (tvScreenCode === displayCode) pair?.show(); });
 
-      import('./music-screen.mjs?v=3').then(({ openMusicScreen, assetUrl }) => {
+      import('./music-screen.mjs?v=4').then(({ openMusicScreen, assetUrl }) => {
         if (tvScreenCode !== displayCode) return;
         const projectTrack = track => {
           const art = assetUrl(track.art, joinLink);
@@ -2632,10 +2632,19 @@
       $('sec-setup').style.display = 'block';
     };
 
+    const closedScreenKey = 'muzloto_closed_screen';
+    try {
+      const closedScreen = localStorage.getItem(closedScreenKey);
+      localStorage.removeItem(closedScreenKey);
+      if (/^[a-f0-9]{24}$/.test(closedScreen || '')) import('./music-screen.mjs?v=4').then(api => api.closeMusicScreen(closedScreen));
+    } catch {}
+
     function endSession() {
       {
         comm.hostClose?.();
         tvDisplay?.close();
+        // The page reloads right away, and with "Новая игра" the TV link is not up yet: the reloaded page repeats the notice.
+        try { if (tvScreenCode) localStorage.setItem(closedScreenKey, tvScreenCode); } catch {}
         tvScreenCode = null;
         localStorage.removeItem('muzloto_active_host_code');
         localStorage.removeItem('muzloto_last_keg');

@@ -17,6 +17,15 @@ export function assetUrl(value, base = location.href) {
   } catch { return ''; }
 }
 
+// Tells the TV of an ended game to leave it. The notice is repeated: right after a page load the link is still connecting.
+export function closeMusicScreen(code) {
+  const tell = () => link.send({ type: eventType, event: 'music-closed' });
+  const link = connectRoom(code, () => {}, tell);
+  const timer = setInterval(tell, 1000);
+  tell();
+  setTimeout(() => { clearInterval(timer); link.close(); }, 5000);
+}
+
 export function openMusicScreen(code, capture, setOutput) {
   let lastRequest = 0;
   let lastReply = 0;
