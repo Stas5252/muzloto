@@ -33,7 +33,15 @@
       display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; padding: 9px 18px;
       border-radius: 999px; background: var(--accent); color: #101712; font-size: 0.9rem; font-weight: 800;
     }
+    .tv-entry { display: flex; align-items: center; gap: 14px; margin-top: clamp(12px, 2vw, 24px); padding: 14px clamp(14px, 2vw, 24px);
+      border: 1px dashed #3a4a3f; border-radius: 18px; color: var(--text-main); text-decoration: none; --accent: #e9ece9; }
+    .tv-entry:hover { border-color: var(--text-main); }
+    .tv-entry > span:nth-child(2) { flex: 1; display: grid; gap: 3px; }
+    .tv-entry small { color: var(--text-muted); font-size: 0.84rem; line-height: 1.35; }
+    .tv-entry-icon { font-size: 1.8rem; line-height: 1; color: var(--text-muted); }
+    .tv-entry .game-card-go { margin-top: 0; white-space: nowrap; }
     @media (max-width: 700px) {
+      .tv-entry { flex-wrap: wrap; }
       .game-grid { grid-template-columns: 1fr; }
       .game-card { flex-direction: row; border-radius: 18px; }
       .game-card img { width: 36%; aspect-ratio: 1; align-self: stretch; }
@@ -73,6 +81,11 @@
         </div>
       </a>
     </nav>
+    <a class="tv-entry" href="screen.html">
+      <span class="tv-entry-icon" aria-hidden="true">▭</span>
+      <span><strong>Это экран ТВ или проектор?</strong><small>Откройте здесь экран и подключите телефон ведущего по коду.</small></span>
+      <span class="game-card-go">Это экран ТВ <span aria-hidden="true">→</span></span>
+    </a>
   </main>
 </body>
 </html>

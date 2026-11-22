@@ -74,11 +74,12 @@
           </svg>
           <span>Зал славы</span>
         </button>
-        <button id="btn-copy-tv-screen" class="btn btn-secondary btn-sm" type="button" hidden>Скопировать ссылку ТВ</button>
-        <a id="open-tv-screen" class="btn btn-secondary btn-sm" target="_blank" rel="noopener" hidden>Экран ТВ ↗</a>
+        <button id="btn-pair-tv" class="btn btn-gold btn-sm" type="button">Подключить ТВ</button>
+        <button id="btn-copy-tv-screen" class="btn btn-secondary btn-sm" type="button" hidden>Ссылка ТВ</button>
+        <a id="open-tv-screen" class="btn btn-secondary btn-sm" target="_blank" rel="noopener" hidden>Экран ТВ здесь ↗</a>
         <span id="tv-output-status" role="status"></span>
         <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display:none;" title="Завершить текущую игру и выйти в меню">
-          <span>Выйти в меню</span>
+          <span>Завершить игру</span>
         </button>
         <a href="muzloto.html" class="btn btn-secondary btn-sm">На главную</a>
       </div>
@@ -2445,6 +2446,21 @@
 
     previewAudio.onended = stopSetupAudio;
 
+    // One TV for the evening: the host enters the code shown on the TV once.
+    const tvPairReady = import('./tv-pair.mjs?v=1').then(api => {
+      const pair = api.pairHost(() => tvScreenCode ? { game: 'music', code: tvScreenCode } : null, (state, pin) => {
+        const button = $('btn-pair-tv');
+        button.textContent = state === 'attached' ? 'ТВ подключён ✓' : state === 'waiting' ? `ТВ ${pin}: ждём экран…` : 'Подключить ТВ';
+        button.classList.toggle('btn-gold', state !== 'attached');
+        button.classList.toggle('btn-secondary', state === 'attached');
+      });
+      $('btn-pair-tv').onclick = async () => {
+        const pin = await api.askPin(pair.pin());
+        if (pin !== null) pair.connect(pin);
+      };
+      return pair;
+    }).catch(() => null);
+
     function connectTvScreen(code, joinLink, restored = false) {
       const storageKey = 'muzloto_tv_screen_' + code;
       try { tvScreenCode = restored ? localStorage.getItem(storageKey) : null; } catch {}
@@ -2459,8 +2475,9 @@
       $('open-tv-screen').href = tvScreenLink;
       $('open-tv-screen').hidden = $('btn-copy-tv-screen').hidden = false;
       tvDisplay?.close();
+      tvPairReady.then(pair => { if (tvScreenCode === displayCode) pair?.show(); });
 
-      import('./music-screen.mjs?v=2').then(({ openMusicScreen, assetUrl }) => {
+      import('./music-screen.mjs?v=3').then(({ openMusicScreen, assetUrl }) => {
         if (tvScreenCode !== displayCode) return;
         const projectTrack = track => {
           const art = assetUrl(track.art, joinLink);
@@ -2580,7 +2597,8 @@
         if (currentRoomCode) {
           localStorage.removeItem('muzloto_mesh_room_' + currentRoomCode);
         }
-        location.reload();
+        // Give the "room closed" notice for the TV time to leave before the page reloads.
+        setTimeout(() => location.reload(), 400);
       }
     };
 

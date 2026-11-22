@@ -3,6 +3,7 @@ import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, pu
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
 import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=3';
 import { read, write, photoData } from './storage.mjs?v=2';
+import { listenForHost, pairHost, askPin, validPin, waitingUrl } from '../tv-pair.mjs?v=1';
 
 const app = document.querySelector('#app');
 const network = document.querySelector('#network');
@@ -31,6 +32,8 @@ let library = [];
 let chosenPack = stored('vne-ocheredi-pack') || 'draft';
 let raceTimer;
 let wakeLock;
+let pair;
+const pairLabel = () => ({ attached: 'ТВ подключён ✓', waiting: `ТВ ${pair.pin()}: ждём экран…` })[pair?.state()] || 'Подключить ТВ';
 const raceWindow = 300;
 const modeNotes = {
   buzz: 'Ведущий читает вопрос и открывает кнопки. Отвечает тот, кто нажал быстрее всех.',
@@ -360,7 +363,7 @@ function renderHost() {
   if (phase === 'results') content = resultsPanel(game, pack);
   const heard = app.querySelector('.host-sound audio');
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
-    <div class="actions"><a class="button" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy-tv', 'Скопировать ссылку ТВ')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
+    <div class="actions">${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
   // A redraw for a buzz or a hint must not cut off the track the host is listening to.
   const fresh = app.querySelector('.host-sound audio');
@@ -456,6 +459,7 @@ function startHost() {
   }, () => { if (tvRoom === activeTvRoom) sendScreen(); });
   setNetwork(currentNetwork);
   renderHost();
+  pair.show();
   if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
     const activeRoom = room;
     fetch('/api/info').then(r => r.json()).then(info => {
@@ -468,6 +472,26 @@ function startHost() {
       else app.querySelector('[data-tv]')?.setAttribute('href', tvLink().href);
     }).catch(() => {});
   }
+}
+
+// A room replaced by a new one: its players and its TV must not stay on a dead screen.
+async function retire(code) {
+  try {
+    const live = await read('live');
+    const source = validPack(await read('live-pack-' + code));
+    if (live?.room !== code || !live.game) return;
+    const old = restoreGame(live.game, source);
+    const view = { ...publicState(old, source), revision: old.revision + 1, closed: true };
+    const screenCode = validRoom(live.tvRoom) ? live.tvRoom : code;
+    const tell = () => {
+      players.send({ type: 'state', state: view });
+      screens.send({ type: 'screen', event: 'closed' });
+    };
+    const players = connectRoom(code, () => {}, tell);
+    const screens = connectRoom(screenCode, () => {}, tell);
+    tell();
+    setTimeout(() => { players.close(); screens.close(); }, 5000);
+  } catch {}
 }
 
 async function launch() {
@@ -483,6 +507,7 @@ async function launch() {
       if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
       pack = validPack({ ...await response.json(), title: bundled.title });
     } else pack = validPack(draft);
+    if (previousRoom) await retire(previousRoom);
     room = token();
     tvRoom = token();
     game = createGame(stored('vne-ocheredi-mode'));
@@ -504,6 +529,7 @@ async function launch() {
 
 async function leaveHost() {
   const oldRoom = room;
+  pair.idle(tvRoom);
   connection?.send({ type: 'state', state: { ...publicState(game, pack), revision: game.revision + 1, closed: true } });
   const closingScreen = screenConnection;
   closingScreen?.send({ type: 'screen', event: 'closed' });
@@ -616,6 +642,13 @@ async function hostButton(button) {
       catch { window.prompt(type === 'copy-tv' ? 'Ссылка для экрана ТВ' : 'Ссылка для игроков', link); }
       return;
     }
+    if (type === 'pair') {
+      const pin = await askPin(pair.pin());
+      if (pin === null) return;
+      pair.connect(pin);
+      message(pin ? 'Ищем экран с кодом ' + pin + '…' : 'ТВ отключён.');
+      return;
+    }
     if (type === 'replay') {
       screenConnection?.send({ type: 'screen', event: 'replay' });
       message('Звук запущен на ТВ.');
@@ -640,6 +673,13 @@ async function hostButton(button) {
 }
 
 function initHost() {
+  pair = pairHost(() => game && tvRoom && screen === 'room' ? { game: 'quiz', code: tvRoom } : null, state => {
+    const button = app.querySelector('[data-action="pair"]');
+    if (!button) return;
+    button.textContent = pairLabel();
+    button.classList.toggle('primary', state !== 'attached');
+    if (state === 'attached') message('ТВ подключён.');
+  });
   app.addEventListener('click', event => {
     const button = event.target.closest('[data-action]');
     if (button && !button.disabled) hostButton(button);
@@ -983,6 +1023,7 @@ function initTv() {
   document.body.append(unlock);
   stayAwake();
   tv = connectRoom(code, receive, request);
+  listenForHost(params.get('pair'), code);
 
   function startTrack() {
     speaker.currentTime = 0;
@@ -1028,6 +1069,8 @@ function initTv() {
       unlock.hidden = true;
       network.hidden = true;
       waiting('Комната закрыта.');
+      // A paired TV goes back to its code and waits for the next game.
+      if (validPin(params.get('pair'))) setTimeout(() => location.replace(waitingUrl(params.get('pair'))), 1500);
     } else if (frame.event === 'state' && validScreenState(frame.view)) {
       lastSeen = Date.now();
       network.hidden = false;
