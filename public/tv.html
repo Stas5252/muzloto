@@ -2587,8 +2587,8 @@
       $('sec-setup').style.display = 'block';
     };
 
-    $('btn-reset-session').onclick = () => {
-      if (confirm('Завершить текущую игру и выйти в меню выбора треков?')) {
+    function endSession() {
+      {
         tvDisplay?.close();
         tvScreenCode = null;
         localStorage.removeItem('muzloto_active_host_code');
@@ -2600,7 +2600,15 @@
         // Give the "room closed" notice for the TV time to leave before the page reloads.
         setTimeout(() => location.reload(), 400);
       }
+    }
+
+    $('btn-reset-session').onclick = () => {
+      if (confirm('Завершить текущую игру? Игроки и ТВ выйдут из комнаты.')) endSession();
     };
+
+    // "Новая игра" on the landing page: tv.html?new=1 ends the saved game and opens the track setup.
+    const startFresh = new URLSearchParams(location.search).has('new');
+    if (startFresh) history.replaceState(null, '', 'tv.html');
 
     function unlockHostAudio() {
       if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
@@ -3435,6 +3443,7 @@
           $('sec-lobby').style.display = 'block';
           $('sec-game').style.display = 'none';
         }
+        if (startFresh) endSession();
       });
     }
 

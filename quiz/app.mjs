@@ -21,6 +21,16 @@ let screen = 'home';
 let draft = mode === 'host' ? structuredClone(demoPack) : null;
 let editorRound = 0;
 let savedRoom = null;
+let savedInfo = '';
+const plural = (count, one, few, many) => `${count} ${count % 10 === 1 && count % 100 !== 11 ? one :
+  count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? few : many}`;
+const playersLabel = count => plural(count, 'игрок', 'игрока', 'игроков');
+// What the saved room is, so the host can tell "continue" from "new game" at a glance.
+function describeSaved(title, session) {
+  const stage = session.phase === 'lobby' ? 'сбор игроков' : session.phase === 'final' ? 'финал' :
+    session.phase === 'results' ? 'итоги' : `раунд ${roundIndex(session) + 1}`;
+  return `${title} · ${stage} · ${playersLabel(Object.keys(session.players || {}).length)}`;
+}
 let game, pack, room, connection, tvRoom, screenConnection;
 let invite = '';
 let currentNetwork = [];
@@ -215,8 +225,8 @@ function renderHome() {
   const count = chosen.questions;
   const photos = chosen.id === 'draft' ? draft.rounds.flatMap(roundQuestions).filter(question => question.image).length : 0;
   const menu = savedRoom
-    ? `<p class="saved-room">Есть сохранённая игра</p><div class="actions">
-        <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая комната')}${action('edit', 'Редактор вопросов')}</div>`
+    ? `<p class="saved-room">Игра идёт${savedInfo ? ': ' + escape(savedInfo) : ''}</p><div class="actions">
+        <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая игра')}${action('edit', 'Редактор вопросов')}</div>`
     : `<div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>`;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
@@ -362,7 +372,7 @@ function renderHost() {
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
   if (phase === 'results') content = resultsPanel(game, pack);
   const heard = app.querySelector('.host-sound audio');
-  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
+  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
     <div class="actions">${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
   // A redraw for a buzz or a hint must not cut off the track the host is listening to.
@@ -405,7 +415,7 @@ function syncHost(changed = false, force = false) {
   }
   if (changed) {
     sendScreen();
-    write('live', { room, game, tvRoom }).catch(localError);
+    write('live', { room, game, tvRoom, title: pack.title }).catch(localError);
     renderHost();
   }
 }
@@ -515,10 +525,11 @@ async function launch() {
     await storeDraftNow();
     try {
       await write('live-pack-' + room, pack);
-      await write('live', { room, game, tvRoom });
+      await write('live', { room, game, tvRoom, title: pack.title });
       if (previousRoom) await write('live-pack-' + previousRoom, null);
     } catch { localError(); }
     savedRoom = room;
+    savedInfo = describeSaved(pack.title, game);
     history.pushState(null, '', pageLink('host'));
     startHost();
   } catch (error) {
@@ -742,12 +753,13 @@ function initHost() {
         const savedPack = await read('live-pack-' + live.room);
         if (savedPack) {
           savedRoom = live.room;
+          savedInfo = describeSaved(savedPack.title || 'Квиз', live.game);
           if (params.get('host') === savedRoom) {
             pack = validPack(savedPack);
             room = savedRoom;
             tvRoom = validRoom(live.tvRoom) ? live.tvRoom : room;
             game = restoreGame(live.game, pack);
-            if (game !== live.game) await write('live', { room, game, tvRoom }).catch(localError);
+            if (game !== live.game) await write('live', { room, game, tvRoom, title: pack.title }).catch(localError);
             startHost();
             return;
           }
