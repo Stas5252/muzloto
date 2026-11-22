@@ -1,4 +1,4 @@
-import { activeRound, activeFinal, findQuestion, roundIndex, turnPlayer, packImage, packSound, modes } from './game.mjs?v=19';
+import { activeRound, activeFinal, findQuestion, roundIndex, turnPlayer, packImage, packSound, modes } from './game.mjs?v=21';
 import { bundledImages } from './starter.mjs?v=17';
 
 export const photoChunkSize = 16_000;
@@ -104,7 +104,7 @@ export function validScreenState(frame) {
   if (!['question', 'reveal'].includes(session.phase)) return question === null && photoLength === 0;
   return typeof question?.id === 'string' && questionId.test(question.id) && text(question.category, 60) &&
     text(question.prompt, 1200) && text(question.answer, 650) && text(question.hint, 380) &&
-    integer(question.value, 1, 9999) && ['normal', 'double', 'handoff'].includes(question.kind) &&
+    integer(question.value, 1, 9999) && ['normal', 'double', 'handoff', 'modifier'].includes(question.kind) &&
     picture(question.image) && picture(question.answerImage) && track(question.audio) && track(question.answerAudio) &&
     (photoLength === 0 || question.image === '');
 }

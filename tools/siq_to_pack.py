@@ -7,7 +7,7 @@ Needs Pillow and ffmpeg. Writes quiz/packs/<id>.json, quiz/packs/index.json and 
 """
 import hashlib, io, json, os, re, subprocess, sys, tempfile, urllib.parse, zipfile
 import xml.etree.ElementTree as ET
-from PIL import Image
+from PIL import Image, ImageStat
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'quiz', 'packs')
 MEDIA = os.path.join(OUT, 'media')
@@ -27,8 +27,18 @@ def save(data, extension):
     return 'packs/media/' + name
 
 
+def opaque(image):
+    # A dark drawing on a transparent background gets a white sheet, a light one a dark sheet: dropping alpha left it invisible.
+    rgba = image.convert('RGBA')
+    alpha = rgba.getchannel('A')
+    if alpha.getextrema()[0] == 255:
+        return image.convert('RGB')
+    light = ImageStat.Stat(rgba.convert('L'), alpha.point(lambda value: 255 if value > 127 else 0)).mean[0] > 200
+    return Image.alpha_composite(Image.new('RGBA', rgba.size, (16, 18, 28, 255) if light else 'white'), rgba).convert('RGB')
+
+
 def picture(blobs):
-    images = [Image.open(io.BytesIO(blob)).convert('RGB') for blob in blobs]
+    images = [opaque(Image.open(io.BytesIO(blob))) for blob in blobs]
     if len(images) > 1:
         height = min(image.height for image in images)
         images = [image.resize((round(image.width * height / image.height), height)) for image in images]
@@ -93,6 +103,9 @@ def convert(path, meta):
                 result[key] = item
         if node.get('type') == 'secret':
             result['kind'] = 'handoff'
+        if prompt == '[МОДИФИКАТОР]':
+            # The card is its own answer: «Плюс на минус», «Забери 1000 баллов у кого угодно».
+            result.update(prompt=answer, kind='modifier')
         return result
 
     rounds, finals = [], []

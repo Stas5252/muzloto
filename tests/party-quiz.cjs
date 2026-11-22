@@ -368,5 +368,50 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   }
   assert.equal(new Set(fullGame.used).size, 72);
   assert.equal(move('final'), true, 'A full three-round run reaches the final with no skips');
-  console.log('PASS party quiz: 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and sealed final');
+  // Modifier cards: read out by the host, nobody answers, the score is settled by hand.
+  const modPack = validPack({ title: 'Модификаторы', categories: [{ title: 'Сюрприз', questions: [
+    { value: 100, prompt: 'Забери 1000 баллов у кого угодно', answer: 'Забери 1000 баллов у кого угодно', kind: 'modifier' },
+    { value: 200, prompt: 'Столица Франции?', answer: 'Париж' }] }] });
+  const [modCard, plain] = modPack.rounds[0].categories[0].questions;
+  assert.equal(modCard.kind, 'modifier');
+  for (const mode of ['buzz', 'turns']) {
+    const play = createGame(mode);
+    const lead = (type, more = {}) => command(play, modPack, { type, ...more }, true);
+    command(play, modPack, { id: 'pa', type: 'join', name: 'Аня' });
+    command(play, modPack, { id: 'pb', type: 'join', name: 'Боря' });
+    assert.equal(lead('score', { player: 'pa', score: 500 }), false, 'No score edits in the lobby');
+    lead('start');
+    assert.equal(lead('pick', { question: modCard.id }), true);
+    assert.equal(play.answering, null, 'Nobody is put on the spot by a modifier, even in turns mode');
+    assert.equal(publicState(play, modPack).modifier, true);
+    assert.equal(lead('open'), false, 'A modifier never opens the buzzers');
+    assert.equal(command(play, modPack, { id: 'pa', type: 'buzz', ticket: play.ticket, time: 300 }), false);
+    const frame = screenState(play, modPack);
+    assert.ok(validScreenState(frame), 'The TV accepts a modifier card');
+    assert.equal(frame.question.kind, 'modifier');
+    assert.equal(lead('score', { player: 'pa', score: 1000 }), true);
+    assert.equal(lead('score', { player: 'pb', score: -1000 }), true);
+    assert.deepEqual([play.players.pa.score, play.players.pb.score], [1000, -1000]);
+    assert.equal(lead('undo'), true, 'A wrong edit can be undone');
+    assert.equal(play.players.pb.score, 0);
+    for (const score of [1.5, '100', NaN, 1e12, 1000]) assert.equal(lead('score', { player: 'pa', score }), false);
+    assert.equal(lead('score', { player: 'nobody', score: 5 }), false);
+    assert.equal(lead('reveal'), true);
+    assert.deepEqual([play.phase, play.current, play.used], ['board', null, [modCard.id]], 'A modifier goes straight back to the board');
+    assert.equal(lead('pick', { question: plain.id }), true);
+    assert.equal(publicState(play, modPack).modifier, false);
+    if (mode === 'buzz') assert.equal(lead('open'), true, 'Ordinary questions still open the buzzers');
+    else assert.ok(play.answering, 'Ordinary questions still go to the player whose turn it is');
+    lead('reveal');
+    lead('board');
+    assert.equal(lead('final'), true);
+    assert.equal(lead('score', { player: 'pa', score: 5000 }), false, 'Final wagers are capped by the score, so it is frozen');
+  }
+  const imported = fs.readdirSync(path.join(__dirname, '../quiz/packs')).filter(name => name.endsWith('.json') && name !== 'index.json')
+    .flatMap(name => validPack(JSON.parse(fs.readFileSync(path.join(__dirname, '../quiz/packs', name), 'utf8'))).rounds)
+    .flatMap(round => round.categories.flatMap(category => category.questions));
+  assert.equal(imported.filter(question => question.kind === 'modifier').length, 44);
+  assert.ok(imported.every(question => !question.prompt.startsWith('[МОДИФИКАТОР]')), 'Modifier cards show their effect, not a placeholder');
+
+  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and sealed final');
 })().catch(error => { console.error(error); process.exitCode = 1; });

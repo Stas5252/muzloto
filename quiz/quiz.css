@@ -340,6 +340,10 @@ textarea { resize: vertical; }
 }
 .tv .scores.scores-crowd li { justify-content: space-between; padding: 5px 8px; font-size: clamp(.82rem, 1.18vw, 1.06rem); }
 .tv .scores-crowd li span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Two rows of scores under a tall picture: keep everything on a 720p screen. */
+.tv .score-panel:has(.scores-crowd) { padding-block: 10px; }
+.tv .score-panel:has(.scores-crowd) h2 { display: none; }
+.tv .question:has(+ .score-panel .scores-crowd) .question-image { max-height: 53vh; }
 .credits ul { display: grid; gap: 8px; padding-left: 22px; }
 .credits li span { display: block; color: var(--muted); }
 #notice:not(:empty) { position: fixed; z-index: 4; bottom: 18px; right: 18px; max-width: min(430px, calc(100% - 36px)); padding: 12px 16px; border: 1px solid #64728c; border-radius: 10px; background: #293448; box-shadow: 0 6px 20px #10131c; }
@@ -384,3 +388,15 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
 .again { display: grid; gap: 10px; margin-top: 12px; }
 .again p { color: var(--muted); }
 .again label { display: grid; gap: 4px; }
+
+.score-edit { align-self: center; min-width: 34px; min-height: 34px; margin: -3px -5px -3px 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.score-edit:hover, .score-edit:focus-visible { background: #40394b; color: var(--paper); }
+.score-dialog { width: min(420px, calc(100vw - 24px)); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--paper); }
+.score-dialog::backdrop { background: rgb(8 10 16 / .72); }
+.score-dialog form { display: grid; gap: 14px; }
+.score-dialog h2 { margin: 0; overflow-wrap: anywhere; }
+.score-dialog label { display: grid; gap: 6px; }
+.score-dialog input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--ink); color: var(--paper); font: inherit; font-size: 1.4rem; font-weight: 800; }
+.score-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.score-steps button { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--paper); font: inherit; font-weight: 700; cursor: pointer; }
+.score-steps button[data-times] { grid-column: span 3; }

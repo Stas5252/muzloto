@@ -1,7 +1,7 @@
 import { demoPack, bundledImages, legacyZodiacImages, zodiacPrompt } from './starter.mjs?v=17';
 export { demoPack };
 
-export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена' };
+export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена', modifier: 'Модификатор' };
 const own = (object, key) => Object.hasOwn(object, key);
 const clean = (value, limit) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
 const packMedia = /^packs\/media\/[a-f0-9]{12}\.(webp|mp3)$/;
@@ -179,7 +179,8 @@ function applyHost(game, pack, action) {
       if (phase !== 'board' || game.used.includes(action.question)) return false;
       const question = roundQuestions(activeRound(pack, game)).find(q => q.id === action.question);
       if (!question) return false;
-      const first = offersHandoff(game, question) ? null : turnPlayer(game);
+      // A modifier is a card the host reads out and applies by hand: nobody answers it.
+      const first = offersHandoff(game, question) || question.kind === 'modifier' ? null : turnPlayer(game);
       Object.assign(game, {
         current: question.id, ticket: nextTicket(game), phase: 'question', race: [],
         answering: first, queue: [], buzzed: first ? [first] : [], opened: false, showHint: false, askedBy: null
@@ -191,7 +192,7 @@ function applyHost(game, pack, action) {
       game.mode = action.mode;
       return true;
     case 'open':
-      if (phase !== 'question' || game.opened || game.answering) return false;
+      if (phase !== 'question' || game.opened || game.answering || findQuestion(pack, game.current)?.kind === 'modifier') return false;
       if (byTurns(game)) {
         // A handoff the host decides not to hand over goes to the player whose turn it is.
         if (game.buzzed.length || !turnPlayer(game)) return false;
@@ -235,7 +236,16 @@ function applyHost(game, pack, action) {
     case 'reveal':
       if (phase !== 'question') return false;
       resolveQuestion(game);
+      if (findQuestion(pack, game.current)?.kind === 'modifier') Object.assign(game, { phase: 'board', current: null });
       return true;
+    case 'score': {
+      // Modifier cards and disputes: the host sets a player's score by hand. Not in the final: wagers are capped by the score.
+      const player = getPlayer(game, action.player);
+      if (!player || ['lobby', 'final', 'results'].includes(phase) || !Number.isSafeInteger(action.score) ||
+          Math.abs(action.score) > 9_999_999 || action.score === player.score) return false;
+      player.score = action.score;
+      return true;
+    }
     case 'board':
       if (phase !== 'reveal') return false;
       game.phase = 'board';
@@ -332,7 +342,7 @@ export function publicState(game, pack) {
     phase: game.phase, revision: game.revision, ticket: game.ticket, players: standings(game),
     roundNumber: roundIndex(game) + 1, roundTotal: pack.rounds.length, roundTitle: activeRound(pack, game).title,
     answering: game.answering, queue: [...game.queue], buzzed: [...game.buzzed], opened: game.opened,
-    category: question?.category || '', value: question ? points(question) : null,
+    category: question?.category || '', value: question ? points(question) : null, modifier: question?.kind === 'modifier',
     title: pack.title, finalTopic: activeFinal(pack, game)?.topic || '', submitted: Object.keys(game.finalAnswers),
     mode: game.mode || 'buzz', turn: turnPlayer(game), racing: (game.race || []).length > 0
   };
