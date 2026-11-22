@@ -1,7 +1,7 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
-  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=20';
+  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=21';
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
-import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=5';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=6';
 import { read, write, photoData } from './storage.mjs?v=2';
 import { listenForHost, pairHost, askPin, validPin, waitingUrl } from '../tv-pair.mjs?v=1';
 
@@ -141,6 +141,8 @@ function askScore(name, score) {
   const input = dialog.querySelector('input');
   input.value = score;
   dialog.addEventListener('click', event => {
+    const box = dialog.getBoundingClientRect();
+    if (event.target === dialog && (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom)) dialog.close('cancel');
     const { step, times } = event.target.dataset || {};
     if (step || times) input.value = Math.round(step ? (Number(input.value) || 0) + Number(step) : (Number(input.value) || 0) * Number(times));
   });
@@ -441,7 +443,7 @@ function renderHost() {
   const heard = app.querySelector('.host-sound audio');
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
     <div class="actions">${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
-    ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game), true)}</section>` : ''}`;
+    ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game), phase !== 'final')}</section>` : ''}`;
   // A redraw for a buzz or a hint must not cut off the track the host is listening to.
   const fresh = app.querySelector('.host-sound audio');
   if (heard && fresh?.getAttribute('src') === heard.getAttribute('src')) fresh.replaceWith(heard);

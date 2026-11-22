@@ -402,6 +402,10 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
     assert.equal(publicState(play, modPack).modifier, false);
     if (mode === 'buzz') assert.equal(lead('open'), true, 'Ordinary questions still open the buzzers');
     else assert.ok(play.answering, 'Ordinary questions still go to the player whose turn it is');
+    lead('reveal');
+    lead('board');
+    assert.equal(lead('final'), true);
+    assert.equal(lead('score', { player: 'pa', score: 5000 }), false, 'Final wagers are capped by the score, so it is frozen');
   }
   const imported = fs.readdirSync(path.join(__dirname, '../quiz/packs')).filter(name => name.endsWith('.json') && name !== 'index.json')
     .flatMap(name => validPack(JSON.parse(fs.readFileSync(path.join(__dirname, '../quiz/packs', name), 'utf8'))).rounds)

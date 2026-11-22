@@ -239,9 +239,9 @@ function applyHost(game, pack, action) {
       if (findQuestion(pack, game.current)?.kind === 'modifier') Object.assign(game, { phase: 'board', current: null });
       return true;
     case 'score': {
-      // Modifier cards and disputes: the host sets a player's score by hand.
+      // Modifier cards and disputes: the host sets a player's score by hand. Not in the final: wagers are capped by the score.
       const player = getPlayer(game, action.player);
-      if (!player || ['lobby', 'results'].includes(phase) || !Number.isSafeInteger(action.score) ||
+      if (!player || ['lobby', 'final', 'results'].includes(phase) || !Number.isSafeInteger(action.score) ||
           Math.abs(action.score) > 9_999_999 || action.score === player.score) return false;
       player.score = action.score;
       return true;
