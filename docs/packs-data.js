@@ -514,6 +514,164 @@ window.BUILTIN_PACKS = {
       }
     ]
   },
+  "friends": {
+    "id": "friends",
+    "title": "Плейлист компании (15 треков)",
+    "icon": "💌",
+    "desc": "Заявки друзей: Баста, Katy Perry, Enrique Iglesias, Пропаганда, Miyagi, Хаски, Тимати, Rihanna, fem.love",
+    "tracks": [
+      {
+        "id": "6784265769",
+        "artist": "Баста",
+        "title": "На заре",
+        "displayTitle": "Баста — На заре",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a6/05/f3/a605f31f-82e8-94c1-fdca-4ccafeb27d78/mzaf_17689323091686868640.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/42/27/7a/42277ae9-43e3-5091-b48b-d371c1f010ea/cover.jpg/400x400bb.jpg",
+        "genre": "Альтернатива",
+        "kegNum": 1
+      },
+      {
+        "id": "1440871461",
+        "artist": "Katy Perry",
+        "title": "Roar",
+        "displayTitle": "Katy Perry — Roar",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f7/34/1c/f7341c33-1700-532e-7ea8-96de11fded75/mzaf_6385185390030709554.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/b4/d0/9a/b4d09a1e-c7f1-de72-bab3-ff2b2be3981b/13UAAIM70445.rgb.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 2
+      },
+      {
+        "id": "1442687308",
+        "artist": "Enrique Iglesias",
+        "title": "Bailando (Spanish Version)",
+        "displayTitle": "Enrique Iglesias — Bailando (Spanish Version)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/27/20/48272070-aa6f-e789-2970-59acae36a41c/mzaf_15214509143012094075.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/94/16/fa/9416fa77-ec7d-f63a-dac2-da7ece141388/00602547007476.rgb.jpg/400x400bb.jpg",
+        "genre": "Латино",
+        "kegNum": 3
+      },
+      {
+        "id": "1609028324",
+        "artist": "Пропаганда",
+        "title": "Мелом",
+        "displayTitle": "Пропаганда — Мелом",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/cf/fb/ae/cffbae87-8cef-c0d5-777a-59a7b192126f/mzaf_1731362937038187332.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5a/f6/10/5af61040-773c-3e57-dd5b-4caae98f436b/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 4
+      },
+      {
+        "id": "1737216348",
+        "artist": "Егор Крид",
+        "title": "Потрачу",
+        "displayTitle": "Егор Крид — Потрачу",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9e/55/03/9e5503c1-138b-74f3-7f77-fe375d4e4687/mzaf_17987674277656116190.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1c/ec/df/1cecdf13-75f5-947d-cba7-da4fa5c27c51/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 5
+      },
+      {
+        "id": "1604435517",
+        "artist": "Miyagi & Эндшпиль feat. Рем Дигга",
+        "title": "I Got Love",
+        "displayTitle": "Miyagi & Эндшпиль feat. Рем Дигга — I Got Love",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/aa/96/1c/aa961c03-67aa-6594-0194-8342f82a8744/mzaf_10022336969339332223.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/98/f3/dd/98f3dd8f-b5b4-d6a1-849c-795130748b81/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 6
+      },
+      {
+        "id": "1856227469",
+        "artist": "Хаски",
+        "title": "Ветром Снегом Зноем",
+        "displayTitle": "Хаски — Ветром Снегом Зноем",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/27/4d/07/274d0718-2f1a-50c7-42e4-6203ba270c45/mzaf_16350036300879902817.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/4e/6c/74/4e6c74c3-ad2c-be47-0e74-01872d779e5e/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 7
+      },
+      {
+        "id": "1850117925",
+        "artist": "Aarne, Toxi$ & Big Baby Tape",
+        "title": "NOBODY",
+        "displayTitle": "Aarne, Toxi$ & Big Baby Tape — NOBODY",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/87/25/f4/8725f470-7683-56e3-2e32-bce075041167/mzaf_3652870125006780748.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/1c/43/aa/1c43aa83-24e4-1fce-78d6-9321256901dc/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 8
+      },
+      {
+        "id": "1667240973",
+        "artist": "Тимати",
+        "title": "Не сходи с ума",
+        "displayTitle": "Тимати — Не сходи с ума",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/22/1f/69/221f694c-a202-1294-129e-51446d95c237/mzaf_8633454994406778366.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/5c/5d/5c/5c5d5cbc-ddfb-2ef8-8dab-ffdda531a619/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 9
+      },
+      {
+        "id": "1331382218",
+        "artist": "Lizer",
+        "title": "Бабочки",
+        "displayTitle": "Lizer — Бабочки",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f3/aa/a5/f3aaa543-722e-889d-f6b8-025c5dd4dcd5/mzaf_7473501567502982292.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/d4/50/26/d45026d3-0bad-55d8-8c54-4d41ae72b8a0/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 10
+      },
+      {
+        "id": "1569209061",
+        "artist": "GAYAZOV$ BROTHER$",
+        "title": "Rosa X (Роза Хутор)",
+        "displayTitle": "GAYAZOV$ BROTHER$ — Rosa X (Роза Хутор)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/55/9e/1e/559e1ed6-e0ed-e991-a610-6a984f0cece2/mzaf_17127661600795505841.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/80/94/3a/80943a4e-9abb-872e-e7e7-37d7edba6e10/190296648809.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 11
+      },
+      {
+        "id": "1804969518",
+        "artist": "Xcho",
+        "title": "Про любовь",
+        "displayTitle": "Xcho — Про любовь",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1c/24/29/1c24292b-f2de-d96e-d014-3d0891af7e98/mzaf_14259351439126522022.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/8c/99/94/8c99947e-fb6e-dac2-5117-ad2784ac00ce/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 12
+      },
+      {
+        "id": "1443062143",
+        "artist": "Rihanna feat. Calvin Harris",
+        "title": "We Found Love",
+        "displayTitle": "Rihanna feat. Calvin Harris — We Found Love",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0b/14/93/0b14932c-9909-fea3-fff5-8ba34cd473a3/mzaf_3562371518282448348.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/ae/46/51/ae465169-b0a4-3c10-42a0-63e4448d1508/16UMGIM59230.rgb.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 13
+      },
+      {
+        "id": "1565557894",
+        "artist": "fem.love",
+        "title": "Фотографирую закат",
+        "displayTitle": "fem.love — Фотографирую закат",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/2d/2b/14/2d2b1430-6b27-bc4d-f044-9b60d4333c66/mzaf_1320507577750382516.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/2f/f2/4a/2ff24a53-16ba-5395-3678-a70ddeadd508/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 14
+      },
+      {
+        "id": "414193085",
+        "artist": "Dorian",
+        "title": "La Tormenta de Arena",
+        "displayTitle": "Dorian — La Tormenta de Arena",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/18/3c/c0/183cc0d8-d589-ed50-12a4-d370180ddc2a/mzaf_9209324101059026589.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/dc/a7/e4/mzi.holfjwls.jpg/400x400bb.jpg",
+        "genre": "Поп-музыка на испанском",
+        "kegNum": 15
+      }
+    ]
+  },
   "new_school": {
     "id": "new_school",
     "title": "Новая школа (50 треков): Крид, MAYOT, Платон, LOVV66, SODA LUV",
