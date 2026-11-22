@@ -516,9 +516,9 @@ window.BUILTIN_PACKS = {
   },
   "friends": {
     "id": "friends",
-    "title": "Плейлист компании (15 треков)",
+    "title": "Плейлист компании (36 треков)",
     "icon": "💌",
-    "desc": "Заявки друзей: Баста, Katy Perry, Enrique Iglesias, Пропаганда, Miyagi, Хаски, Тимати, Rihanna, fem.love",
+    "desc": "Заявки друзей и хиты в том же духе: Егор Крид, Тимати, Баста, Miyagi, Хаски, Jony, Zivert, Katy Perry, Rihanna, Enrique Iglesias",
     "tracks": [
       {
         "id": "6784265769",
@@ -669,6 +669,216 @@ window.BUILTIN_PACKS = {
         "art": "https://is1-ssl.mzstatic.com/image/thumb/Music/dc/a7/e4/mzi.holfjwls.jpg/400x400bb.jpg",
         "genre": "Поп-музыка на испанском",
         "kegNum": 15
+      },
+      {
+        "id": "1667257331",
+        "artist": "Тимати feat. L'One",
+        "title": "GQ",
+        "displayTitle": "Тимати feat. L'One — GQ",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/84/91/cd/8491cdc2-b836-d4d1-adf9-bc808bbf7337/mzaf_1125228131215513451.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/0b/8a/d5/0b8ad5b4-dbb6-015b-df22-45ebe241edeb/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 16
+      },
+      {
+        "id": "1667519327",
+        "artist": "Тимати",
+        "title": "Мага",
+        "displayTitle": "Тимати — Мага",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/73/8a/e2/738ae27c-9a25-a2a1-1efa-376fb6a45794/mzaf_14528297752085746554.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/9b/0e/4d/9b0e4d98-c043-4d54-0a1d-bc88a2e9aa2b/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 17
+      },
+      {
+        "id": "1667519296",
+        "artist": "Тимати",
+        "title": "Ключи от рая",
+        "displayTitle": "Тимати — Ключи от рая",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/47/87/85/478785d6-ae02-a64b-ea1d-e1944d77dab0/mzaf_15745202533055100352.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/9b/0e/4d/9b0e4d98-c043-4d54-0a1d-bc88a2e9aa2b/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 18
+      },
+      {
+        "id": "973437519",
+        "artist": "Егор Крид",
+        "title": "Самая самая",
+        "displayTitle": "Егор Крид — Самая самая",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/35/f9/c6/35f9c692-06c2-effe-bda6-bdb02690f6fd/mzaf_7219385560347207093.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/3e/dd/ec/3eddec31-df1a-b2ae-52d2-0811e1721fcb/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 19
+      },
+      {
+        "id": "973437535",
+        "artist": "Егор Крид",
+        "title": "Невеста",
+        "displayTitle": "Егор Крид — Невеста",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a6/47/ef/a647efc8-1e2c-6135-3edf-03600eaf4f64/mzaf_1721041852215589713.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/3e/dd/ec/3eddec31-df1a-b2ae-52d2-0811e1721fcb/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 20
+      },
+      {
+        "id": "1112971495",
+        "artist": "Баста",
+        "title": "Выпускной (Медлячок)",
+        "displayTitle": "Баста — Выпускной (Медлячок)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/98/b0/e6/98b0e632-752a-0859-4203-e2498ac3494b/mzaf_8744344887827482957.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/fd/12/96/fd129611-14ab-fef9-3867-ae335d088d46/B5_2_iTunes.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 21
+      },
+      {
+        "id": "1451960376",
+        "artist": "Макс Корж",
+        "title": "Малиновый закат",
+        "displayTitle": "Макс Корж — Малиновый закат",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/52/e3/af/52e3aff8-6d34-2a50-2ff0-b1a5019cb481/mzaf_1960971000188459194.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/87/28/20/872820bb-3eb6-e8a3-1703-12a7874126cf/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 22
+      },
+      {
+        "id": "1570266123",
+        "artist": "JONY",
+        "title": "Комета",
+        "displayTitle": "JONY — Комета",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/52/61/6f/52616fad-48e1-a117-3948-6c38fb3a1fab/mzaf_9574998313104933286.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/cc/53/5b/cc535bca-c53a-8607-dd16-6f9fa3d4ae55/3616401130894.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 23
+      },
+      {
+        "id": "1079308769",
+        "artist": "Мот",
+        "title": "Капкан",
+        "displayTitle": "Мот — Капкан",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ac/4d/10/ac4d10e5-76f7-9542-c732-c5b6d62c7558/mzaf_5041069948186297797.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music69/v4/f6/55/4d/f6554d6a-dd86-c5e3-b47a-9befb8fc564f/cover.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 24
+      },
+      {
+        "id": "1444108518",
+        "artist": "Zivert",
+        "title": "Life",
+        "displayTitle": "Zivert — Life",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/49/db/4b/49db4b9a-0586-01b4-9503-35c3c07b45fe/mzaf_16348026034856673183.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/50/46/ac/5046ac40-d83b-7682-d85e-01fa40a7bc69/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 25
+      },
+      {
+        "id": "1567242188",
+        "artist": "HammAli & Navai",
+        "title": "Птичка",
+        "displayTitle": "HammAli & Navai — Птичка",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/6f/96/d1/6f96d1af-73cd-660e-9aa6-0a84ebb7de29/mzaf_3517199821827240377.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/e0/66/57/e0665781-47da-1c74-7a99-22b6cd6fee4f/190296669637.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 26
+      },
+      {
+        "id": "1570734515",
+        "artist": "Rauf & Faik",
+        "title": "Детство",
+        "displayTitle": "Rauf & Faik — Детство",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c9/34/d5/c934d51b-146c-12ae-6853-94d46f26abb9/mzaf_7046829277709974533.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/55/fa/32/55fa323a-707b-9243-871a-4e0952c3ec20/3615937885049.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 27
+      },
+      {
+        "id": "1497019360",
+        "artist": "Artik & Asti",
+        "title": "Девочка танцуй",
+        "displayTitle": "Artik & Asti — Девочка танцуй",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5b/87/d2/5b87d2f3-fb59-d2dc-e4ee-cb8382605782/mzaf_17229184259351629042.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a4/65/61/a46561df-e61d-88d8-8981-800ca4edb939/190295288952.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 28
+      },
+      {
+        "id": "1355737377",
+        "artist": "Jah Khalib",
+        "title": "Медина",
+        "displayTitle": "Jah Khalib — Медина",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0e/d6/32/0ed6325e-ddde-9894-97d7-f616dd2fa2a5/mzaf_16177157079144021810.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3d/8b/5f/3d8b5f38-d3fb-6c11-6dd8-b7f4d05ceeb8/contsched.cchzdzyc.jpg/400x400bb.jpg",
+        "genre": "Хип-хоп",
+        "kegNum": 29
+      },
+      {
+        "id": "1481507495",
+        "artist": "GAYAZOV$ BROTHER$",
+        "title": "Увезите меня на дип-хаус",
+        "displayTitle": "GAYAZOV$ BROTHER$ — Увезите меня на дип-хаус",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/01/86/c5/0186c5f1-cda6-ab4c-64c7-914672cab782/mzaf_12139156423354795538.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/18/cd/3c/18cd3c1d-b7c4-b364-be92-75d4a43e7575/190295358754.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 30
+      },
+      {
+        "id": "1613845209",
+        "artist": "Ханна",
+        "title": "Мама, я влюбилась",
+        "displayTitle": "Ханна — Мама, я влюбилась",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fc/e3/b4/fce3b4a8-7d79-9e04-1043-9dba1fe83260/mzaf_11380811786920579698.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/93/aa/57/93aa57d8-bb77-9926-f637-5ae5f9ad2932/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 31
+      },
+      {
+        "id": "1482620179",
+        "artist": "Ёлка",
+        "title": "Около тебя",
+        "displayTitle": "Ёлка — Около тебя",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/68/3e/d7/683ed7a2-e57b-c0dd-eec4-f56db58bd66b/mzaf_6496709474109135584.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/18/c9/14/18c914df-1caa-9b60-f23e-1cc3ac8637c2/cover.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 32
+      },
+      {
+        "id": "721686248",
+        "artist": "Pitbull feat. Kesha",
+        "title": "Timber",
+        "displayTitle": "Pitbull feat. Kesha — Timber",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e0/a3/9c/e0a39c85-5b1b-f099-9ce2-458d53d4bd8e/mzaf_7584270366405612181.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/e4/50/42/e450427e-b899-01a9-3120-cf9a783bc0e6/886444273480.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 33
+      },
+      {
+        "id": "1082506273",
+        "artist": "Sia feat. Sean Paul",
+        "title": "Cheap Thrills",
+        "displayTitle": "Sia feat. Sean Paul — Cheap Thrills",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/86/f3/f8/86f3f89a-1d64-6178-826e-0f98e813e216/mzaf_15547448419187473148.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1f/60/44/1f604422-0062-b3c6-7e52-867f496619e8/886445739930.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 34
+      },
+      {
+        "id": "1443286882",
+        "artist": "Lady Gaga",
+        "title": "Poker Face",
+        "displayTitle": "Lady Gaga — Poker Face",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/39/9c/27/399c27fd-c9c0-140b-b4b9-d49c84c38dde/mzaf_2602497394807148469.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/99/e6/b1/99e6b1e5-a246-913a-2df6-9f270c2eab10/10UMGIM12390.rgb.jpg/400x400bb.jpg",
+        "genre": "Поп",
+        "kegNum": 35
+      },
+      {
+        "id": "371784883",
+        "artist": "Shakira",
+        "title": "Waka Waka (This Time for Africa)",
+        "displayTitle": "Shakira — Waka Waka (This Time for Africa)",
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/98/88/e5/9888e55d-4daf-0e96-480b-a38259013586/mzaf_9048311608369053538.plus.aac.p.m4a",
+        "art": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3e/3a/73/3e3a73da-e19e-b26c-ec19-9da6a5da93fa/mzi.ixhiugev.jpg/400x400bb.jpg",
+        "genre": "Поп-музыка на испанском",
+        "kegNum": 36
       }
     ]
   },
