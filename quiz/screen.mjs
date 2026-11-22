@@ -1,4 +1,4 @@
-import { activeRound, findQuestion, roundIndex } from './game.mjs?v=17';
+import { activeRound, activeFinal, findQuestion, roundIndex, turnPlayer, packImage, packSound, modes } from './game.mjs?v=18';
 import { bundledImages } from './starter.mjs?v=17';
 
 export const photoChunkSize = 16_000;
@@ -11,6 +11,8 @@ const playerId = /^p[a-zA-Z0-9_-]{1,48}$/;
 const validPhoto = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 const own = (record, key) => Object.prototype.hasOwnProperty.call(record, key);
 const text = (value, max) => typeof value === 'string' && value.length <= max;
+const picture = value => value === '' || bundledImages.has(value) || packImage(value);
+const track = value => value === '' || packSound(value);
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
 export function screenState(game, pack, invite = '') {
@@ -19,13 +21,16 @@ export function screenState(game, pack, invite = '') {
   const round = activeRound(pack, game);
   const board = game.phase === 'board';
   const finished = game.phase === 'results';
+  const final = activeFinal(pack, game);
+  const inFinal = game.phase === 'final';
+  const reveal = game.phase === 'reveal';
   return {
     revision: game.revision,
     invite: game.phase === 'lobby' ? invite : '',
     session: {
       phase: game.phase, roundIndex: roundIndex(game), players: game.players, answering: game.answering,
       used: board ? game.used : [], showHint: game.showHint, opened: game.opened,
-      verdicts: finished ? game.verdicts : []
+      verdicts: finished ? game.verdicts : [], mode: game.mode || 'buzz', turn: turnPlayer(game)
     },
     source: {
       title: pack.title,
@@ -37,17 +42,22 @@ export function screenState(game, pack, invite = '') {
           }))
         })) : []
       } : { title, note: '', categories: [] }),
-      final: pack.final ? {
-        topic: game.phase === 'final' ? pack.final.topic : '',
-        prompt: game.phase === 'final' ? pack.final.prompt : '',
-        answer: finished ? pack.final.answer : ''
+      final: final ? {
+        topic: inFinal ? final.topic : '',
+        prompt: inFinal ? final.prompt : '',
+        answer: finished ? final.answer : '',
+        image: inFinal && final.image || '',
+        audio: inFinal && final.audio || '',
+        answerImage: finished && final.answerImage || ''
       } : null
     },
     question: question && {
       ...question,
-      image: bundledImages.has(question.image) ? question.image : '',
+      image: bundledImages.has(question.image) || packImage(question.image) ? question.image : '',
       hint: game.showHint ? question.hint : '',
-      answer: game.phase === 'reveal' ? question.answer : ''
+      answer: reveal ? question.answer : '',
+      answerImage: reveal ? question.answerImage : '',
+      answerAudio: reveal ? question.answerAudio : ''
     },
     photoLength: question?.image.startsWith('data:') ? question.image.length : 0
   };
@@ -79,7 +89,8 @@ export function validScreenState(frame) {
       !session.verdicts.every(v => typeof v?.id === 'string' && own(players, v.id) &&
         text(v.answer, 180) && integer(v.wager, 0, Number.MAX_SAFE_INTEGER) && typeof v.correct === 'boolean') ||
       (session.answering !== null && (typeof session.answering !== 'string' || !own(players, session.answering))) ||
-      typeof session.showHint !== 'boolean' || typeof session.opened !== 'boolean') return false;
+      typeof session.showHint !== 'boolean' || typeof session.opened !== 'boolean' ||
+      !own(modes, session.mode) || (session.turn !== null && !own(players, session.turn))) return false;
 
   if (!source.rounds.every(round => text(round?.title, 48) && text(round.note, 160) &&
       Array.isArray(round.categories) && round.categories.length <= 8 &&
@@ -88,12 +99,14 @@ export function validScreenState(frame) {
         category.questions.every(q => typeof q?.id === 'string' && questionId.test(q.id) &&
           integer(q.value, 1, 9999) && typeof q.image === 'boolean')))) return false;
   if (source.final === null ? session.phase === 'final' :
-      !text(source.final?.topic, 60) || !text(source.final.prompt, 1200) || !text(source.final.answer, 650)) return false;
+      !text(source.final?.topic, 60) || !text(source.final.prompt, 1200) || !text(source.final.answer, 650) ||
+      !picture(source.final.image) || !picture(source.final.answerImage) || !track(source.final.audio)) return false;
   if (!['question', 'reveal'].includes(session.phase)) return question === null && photoLength === 0;
   return typeof question?.id === 'string' && questionId.test(question.id) && text(question.category, 60) &&
     text(question.prompt, 1200) && text(question.answer, 650) && text(question.hint, 380) &&
     integer(question.value, 1, 9999) && ['normal', 'double', 'handoff'].includes(question.kind) &&
-    (question.image === '' || bundledImages.has(question.image)) && (photoLength === 0 || question.image === '');
+    picture(question.image) && picture(question.answerImage) && track(question.audio) && track(question.answerAudio) &&
+    (photoLength === 0 || question.image === '');
 }
 
 export function screenPhotoChunk(photo, index) {

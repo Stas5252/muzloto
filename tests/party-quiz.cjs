@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 (async () => {
-  const { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, remainingQuestions } = await import('../quiz/game.mjs');
+  const { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, remainingQuestions, settle, activeFinal, findQuestion } = await import('../quiz/game.mjs');
   const { screenState, validScreenState, screenPhotoChunk, photoChunkSize, validScreenPhoto } = await import('../quiz/screen.mjs');
   const pack = validPack(demoPack);
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
@@ -92,17 +92,49 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
 
   host('pick', { question: 'c0q0' });
   const ticket = game.ticket;
-  assert.equal(publicState(game, pack).opened, true, 'Choosing an ordinary question opens the buzzers');
-  assert.equal(send('p2', 'buzz', { ticket: 'old' }), false);
-  assert.equal(send('p1', 'buzz', { ticket }), true);
-  assert.equal(send('p2', 'buzz', { ticket }), true);
-  assert.equal(game.answering, 'p1', 'Arrival order determines who can answer');
-  assert.equal(send('p2', 'buzz', { ticket }), false, 'Repeated taps do not requeue players');
+  assert.equal(publicState(game, pack).opened, false, 'Buttons stay closed while the host reads the question');
+  assert.equal(send('p1', 'buzz', { ticket, ms: 5 }), false, 'A press before the host opens the buttons does not count');
+  assert.equal(host('open'), true);
+  assert.equal(host('open'), false);
+  assert.equal(send('p2', 'buzz', { ticket: 'old', ms: 5 }), false);
+  assert.equal(send('p1', 'buzz', { ticket, ms: 480 }), true);
+  assert.equal(game.answering, null, 'The host waits a moment for slower connections before naming the winner');
+  assert.equal(publicState(game, pack).racing, true);
+  assert.equal(send('p2', 'buzz', { ticket, ms: 210 }), true);
+  assert.equal(send('p2', 'buzz', { ticket, ms: 1 }), false, 'Repeated taps do not count twice');
+  assert.equal(send('p1', 'buzz', { ticket, ms: 1 }), false);
+  assert.equal(host('judge', { verdict: 'correct' }), false, 'Nobody is judged before the race is settled');
+  const beforeSettle = game.revision;
+  assert.equal(settle(game), true);
+  assert.equal(game.revision, beforeSettle + 1);
+  assert.equal(game.answering, 'p2', 'The fastest reaction wins even when its message arrived later');
+  assert.deepEqual(game.queue, ['p1']);
+  assert.equal(settle(game), false);
+  assert.equal(publicState(game, pack).racing, false);
+  host('judge', { verdict: 'wrong' });
+  assert.equal(game.players.p2.score, -100);
+  assert.equal(game.answering, 'p1', 'The next player gets the question after a wrong answer');
   host('judge', { verdict: 'wrong' });
   assert.equal(game.players.p1.score, -100);
-  assert.equal(game.answering, 'p2', 'The next player gets the question after a wrong answer');
+  assert.equal(game.answering, null);
+  assert.equal(game.opened, true);
+  host('reveal');
+  host('board');
+  assert.equal(host('undo'), true);
+  host('board');
+
+  host('pick', { question: 'c0q1' });
+  host('open');
+  assert.equal(send('p1', 'buzz', { ticket: game.ticket, ms: -4 }), true, 'A broken reaction time is ranked last');
+  assert.equal(send('p2', 'buzz', { ticket: game.ticket, ms: 59000 }), true);
+  settle(game);
+  assert.equal(game.answering, 'p2');
+  assert.equal(send('p1', 'buzz', { ticket: game.ticket, ms: 3 }), false);
+  host('judge', { verdict: 'neutral' });
+  assert.equal(game.answering, 'p1');
   host('judge', { verdict: 'correct' });
-  assert.equal(game.players.p2.score, 100);
+  assert.equal(game.players.p1.score, 100);
+  assert.equal(game.players.p2.score, -100);
   assert.equal(game.phase, 'reveal');
   host('board');
   assert.equal(host('pick', { question: 'c0q0' }), false, 'A used question cannot be reopened');
@@ -118,15 +150,18 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.equal(host('assign', { player: 'p1' }), true);
   assert.equal(game.answering, 'p1');
   host('judge', { verdict: 'neutral' });
-  assert.equal(game.players.p1.score, -100);
-  assert.equal(send('p2', 'buzz', { ticket: game.ticket }), true);
+  assert.equal(game.players.p1.score, 100);
+  assert.equal(send('p2', 'buzz', { ticket: game.ticket, ms: 300 }), true);
   host('reveal');
   host('board');
 
   host('pick', { question: 'c2q1' });
-  assert.equal(send('p1', 'buzz', { ticket: game.ticket }), true, 'Double-price questions open immediately');
+  assert.equal(send('p1', 'buzz', { ticket: game.ticket, ms: 300 }), false, 'Double-price questions wait for the host too');
+  host('open');
+  assert.equal(send('p1', 'buzz', { ticket: game.ticket, ms: 300 }), true);
+  settle(game);
   host('judge', { verdict: 'correct' });
-  assert.equal(game.players.p1.score, 300, 'Double-price questions apply the bonus once');
+  assert.equal(game.players.p1.score, 500, 'Double-price questions apply the bonus once');
   host('board');
 
   const output = JSON.stringify(publicState(game, pack));
@@ -139,7 +174,7 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.equal(host('next-round', { skip: true }), true);
   assert.equal(game.phase, 'intermission');
   assert.equal(game.roundIndex, 1);
-  assert.equal(game.players.p2.score, 100);
+  assert.equal(game.players.p2.score, -100);
   assert.equal(host('undo'), true);
   assert.equal(game.roundIndex, 0);
   assert.ok(game.used.includes('c0q0'));
@@ -157,13 +192,13 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
 
   assert.equal(host('final'), false);
   assert.equal(host('final', { skip: true }), true);
-  assert.equal(send('p2', 'final-answer', { ticket: game.ticket, wager: 200, answer: 'Тайна' }), false);
-  assert.equal(send('p2', 'final-answer', { ticket: game.ticket, wager: 75, answer: 'Тайна' }), true);
+  assert.equal(send('p1', 'final-answer', { ticket: game.ticket, wager: 600, answer: 'Тайна' }), false);
+  assert.equal(send('p1', 'final-answer', { ticket: game.ticket, wager: 75, answer: 'Тайна' }), true);
   assert.ok(!JSON.stringify(publicState(game, pack)).includes('Тайна'), 'Final responses stay off the public scoreboard');
-  assert.equal(send('p2', 'final-answer', { ticket: game.ticket, wager: 25, answer: 'Другое' }), false);
-  host('finish', { correct: ['p2'] });
-  assert.equal(game.players.p2.score, 175);
-  assert.equal(host('finish', { correct: ['p2'] }), false, 'A final wager is calculated once');
+  assert.equal(send('p1', 'final-answer', { ticket: game.ticket, wager: 25, answer: 'Другое' }), false);
+  host('finish', { correct: ['p1'] });
+  assert.equal(game.players.p1.score, 575);
+  assert.equal(host('finish', { correct: ['p1'] }), false, 'A final wager is calculated once');
 
   const legacy = validPack({ title: 'Старый набор', categories: [{ title: 'Тема', questions: [{ prompt: 'Вопрос?', answer: 'Ответ', value: 100 }] }] });
   assert.equal(legacy.rounds.length, 1);
@@ -172,15 +207,120 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   delete oldGame.roundIndex;
   assert.equal(command(oldGame, legacy, { type: 'start' }, true), true);
   assert.equal(command(oldGame, legacy, { type: 'pick', question: 'c0q0' }, true), true);
-  oldGame.opened = false;
-  const resumed = restoreGame(oldGame, legacy);
-  assert.equal(resumed.opened, true, 'A saved question waiting for manual opening can resume');
-  assert.equal(resumed.revision, oldGame.revision + 1);
-  assert.equal(resumed.ticket, oldGame.ticket);
-  assert.equal(restoreGame(resumed, legacy), resumed);
-  resumed.previous = { ...oldGame, previous: null };
-  assert.equal(command(resumed, legacy, { type: 'undo' }, true), true);
-  assert.equal(resumed.opened, true, 'Undo cannot restore a disabled ordinary question');
+  delete oldGame.mode;
+  delete oldGame.race;
+  delete oldGame.turn;
+  assert.equal(restoreGame(oldGame, legacy), oldGame, 'A saved question stays closed until the host opens it');
+  assert.equal(publicState(oldGame, legacy).mode, 'buzz');
+  assert.equal(command(oldGame, legacy, { type: 'open' }, true), true, 'A game saved by the previous version keeps working');
+  assert.equal(command(oldGame, legacy, { id: 'p9', type: 'join', name: 'Гость' }), true);
+  assert.equal(command(oldGame, legacy, { id: 'p9', type: 'buzz', ticket: oldGame.ticket, ms: 100 }), true);
+  assert.equal(settle(oldGame), true);
+  assert.equal(oldGame.answering, 'p9');
+
+  // Answering in turns: no button, players go round the table.
+  const table = createGame('turns');
+  const seat = (type, data = {}) => command(table, pack, { type, ...data }, true);
+  for (const [id, name] of [['p1', 'Аня'], ['p2', 'Боря'], ['p3', 'Вера']]) command(table, pack, { id, type: 'join', name });
+  seat('start');
+  assert.equal(publicState(table, pack).mode, 'turns');
+  assert.equal(publicState(table, pack).turn, 'p1');
+  seat('pick', { question: 'c0q0' });
+  assert.equal(table.answering, 'p1', 'The player whose turn it is answers first');
+  assert.equal(table.opened, false);
+  assert.equal(seat('open'), false);
+  assert.equal(command(table, pack, { id: 'p2', type: 'buzz', ticket: table.ticket, ms: 1 }), false, 'There is no button race in turns mode');
+  seat('judge', { verdict: 'wrong' });
+  assert.equal(table.answering, 'p2', 'A miss passes the question to the next seat');
+  seat('judge', { verdict: 'neutral' });
+  assert.equal(table.answering, 'p3');
+  seat('judge', { verdict: 'wrong' });
+  assert.equal(table.answering, null, 'Everyone gets one try');
+  assert.deepEqual([table.players.p1.score, table.players.p2.score, table.players.p3.score], [-100, 0, -100]);
+  seat('reveal');
+  seat('board');
+  assert.equal(publicState(table, pack).turn, 'p2', 'The turn moves on after every question');
+  seat('pick', { question: 'c0q1' });
+  assert.equal(table.answering, 'p2');
+  seat('judge', { verdict: 'correct' });
+  seat('board');
+  assert.equal(publicState(table, pack).turn, 'p3');
+  seat('pick', { question: 'c0q3' });
+  assert.equal(table.answering, null, 'A handoff question still waits for the host');
+  assert.equal(seat('open'), true);
+  assert.equal(table.answering, 'p3', 'Declining the handoff gives the question to the player whose turn it is');
+  seat('judge', { verdict: 'wrong' });
+  assert.equal(table.answering, 'p1', 'The round wraps to the first seat');
+  seat('reveal');
+  seat('board');
+  assert.equal(seat('mode', { mode: 'buzz' }), true, 'The host can switch modes between questions');
+  assert.equal(seat('mode', { mode: 'buzz' }), false);
+  assert.equal(seat('mode', { mode: 'chaos' }), false);
+  assert.equal(publicState(table, pack).turn, null);
+  seat('pick', { question: 'c0q2' });
+  assert.equal(seat('mode', { mode: 'turns' }), false, 'The mode is fixed while a question is open');
+  assert.equal(table.answering, null);
+
+  // Converted SIGame packs.
+  const packsDir = path.join(__dirname, '../quiz/packs');
+  const index = JSON.parse(fs.readFileSync(path.join(packsDir, 'index.json'), 'utf8'));
+  assert.equal(index.length, 10);
+  assert.equal(new Set(index.map(item => item.title)).size, 10, 'Every pack has its own title');
+  const media = new Set();
+  for (const item of index) {
+    assert.match(item.id, /^[a-z0-9-]{1,24}$/);
+    assert.ok(item.title.length <= 80 && item.description && item.themes.length === 3);
+    const bundled = validPack(JSON.parse(fs.readFileSync(path.join(packsDir, item.id + '.json'), 'utf8')));
+    assert.equal(bundled.title, item.title);
+    const questions = bundled.rounds.flatMap(round => round.categories.flatMap(category => category.questions));
+    assert.equal(questions.length, item.questions);
+    assert.equal(bundled.finals.length, item.finals);
+    assert.ok(bundled.finals.length >= 6);
+    for (const entry of [...questions, ...bundled.finals]) {
+      for (const key of ['image', 'answerImage', 'audio', 'answerAudio']) if (entry[key]) media.add(entry[key]);
+    }
+  }
+  assert.ok(media.size > 600);
+  for (const file of media) assert.ok(fs.statSync(path.join(__dirname, '../quiz', file)).size > 200, file);
+  assert.deepEqual(fs.readdirSync(path.join(packsDir, 'media')).sort(), [...media].map(file => path.basename(file)).sort(), 'No unused media is shipped');
+  assert.throws(() => validPack({ ...demoPack, finals: [{ topic: 'Тема', prompt: 'Вопрос', answer: 'Ответ', image: 'packs/media/../../secret.webp' }] }));
+
+  const zodiacPack = validPack(JSON.parse(fs.readFileSync(path.join(packsDir, 'zodiak.json'), 'utf8')));
+  const sneakers = zodiacPack.rounds[0].categories[1].questions[0];
+  assert.ok(sneakers.image && sneakers.answerImage, 'Picture answers are kept');
+  const quiz = createGame();
+  const lead = (type, data = {}) => command(quiz, zodiacPack, { type, ...data }, true);
+  command(quiz, zodiacPack, { id: 'p1', type: 'join', name: 'Аня' });
+  lead('start');
+  lead('pick', { question: sneakers.id });
+  let shown = screenState(quiz, zodiacPack);
+  assert.ok(validScreenState(shown));
+  assert.equal(shown.question.image, sneakers.image);
+  assert.equal(shown.question.answerImage, '', 'The answer picture stays off the TV until the reveal');
+  assert.ok(!JSON.stringify(shown).includes(sneakers.answerImage));
+  lead('reveal');
+  shown = screenState(quiz, zodiacPack);
+  assert.ok(validScreenState(shown));
+  assert.equal(shown.question.answerImage, sneakers.answerImage);
+  assert.ok(!validScreenState({ ...shown, question: { ...shown.question, answerImage: 'https://example.com/a.webp' } }));
+  assert.ok(!validScreenState({ ...shown, question: { ...shown.question, audio: 'packs/media/000000000000.webp' } }));
+  lead('board');
+  const sounded = zodiacPack.rounds.flatMap(round => round.categories.flatMap(category => category.questions)).find(q => q.audio);
+  assert.ok(sounded, 'Audio questions are kept');
+  assert.equal(findQuestion(zodiacPack, sounded.id).audio, sounded.audio);
+  lead('next-round', { skip: true }); lead('start-round'); lead('next-round', { skip: true }); lead('start-round');
+  assert.equal(lead('final', { skip: true, topic: 3 }), true, 'The host chooses the final topic');
+  assert.equal(activeFinal(zodiacPack, quiz), zodiacPack.finals[3]);
+  assert.equal(publicState(quiz, zodiacPack).finalTopic, zodiacPack.finals[3].topic);
+  shown = screenState(quiz, zodiacPack);
+  assert.ok(validScreenState(shown));
+  assert.equal(shown.source.final.prompt, zodiacPack.finals[3].prompt);
+  assert.equal(shown.source.final.answer, '');
+  assert.ok(!JSON.stringify(shown).includes(zodiacPack.finals[3].answer));
+  lead('finish', { correct: [] });
+  shown = screenState(quiz, zodiacPack);
+  assert.ok(validScreenState(shown));
+  assert.equal(shown.source.final.answer, zodiacPack.finals[3].answer);
 
   const migratedDraft = restoreDraft({ title: 'Свой черновик', categories: [{ title: 'Фото', questions: [{ prompt: '', answer: 'Вика', value: 100 }] }] });
   assert.equal(migratedDraft.rounds[0].categories[0].questions[0].answer, 'Вика');
@@ -205,5 +345,5 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   }
   assert.equal(new Set(fullGame.used).size, 72);
   assert.equal(move('final'), true, 'A full three-round run reaches the final with no skips');
-  console.log('PASS party quiz: 72 questions, bundled photos, round gates, carryover, undo, legacy packs, buzzer and sealed final');
+  console.log('PASS party quiz: 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and sealed final');
 })().catch(error => { console.error(error); process.exitCode = 1; });
