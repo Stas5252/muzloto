@@ -359,15 +359,22 @@ async function run() {
       const { read } = await import('./storage.mjs?v=2');
       return validPack(await read('draft')).finals.length;
     }), 0, 'A final removed in the editor stays removed');
-    const listener = await open(await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }),
-      await host.getByRole('link', { name: /Открыть игрока/ }).getAttribute('href'));
-    await listener.getByRole('textbox', { name: 'Имя на табло' }).fill('Аня');
+    const door = await host.getByRole('link', { name: /Открыть игрока/ }).getAttribute('href');
+    const listener = await open(await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }), door);
+    await listener.getByRole('textbox', { name: 'Имя на табло' }).fill('Аня<b id=x>');
     await button(listener, 'Войти').click();
     await host.getByText('1/12', { exact: true }).waitFor();
+    const watcher = await open(await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }), door);
+    await watcher.getByRole('textbox', { name: 'Имя на табло' }).fill('Боря');
+    await button(watcher, 'Войти').click();
+    await host.getByText('2/12', { exact: true }).waitFor();
     await host.getByRole('button', { name: 'По очереди', exact: true, pressed: true }).waitFor();
     await button(host, 'Кто быстрее').click();
     await button(host, '7 секунд').click();
     await button(host, 'Начать игру').click();
+    // The name of whoever chooses is text on the other phones, never markup.
+    await watcher.getByRole('heading', { name: 'Выбирает: Аня<b id=x>' }).waitFor();
+    assert.equal(await watcher.locator('#x').count() + await host.locator('#x').count(), 0);
     await host.locator('[data-id=c0q0]').click();
     await host.locator('.host-sound audio').evaluate(async audio => {
       window.heardTrack = audio;

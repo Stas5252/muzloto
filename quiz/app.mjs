@@ -1229,7 +1229,7 @@ function initPlayer() {
       };
       const [heading, sub] = copy[state.phase];
       content = `${state.phase !== 'lobby' && state.roundNumber && state.roundTotal ? `<p class="eyebrow">Раунд ${escape(state.roundNumber)} из ${escape(state.roundTotal)}</p>` : ''}
-        <h1>${heading}</h1><p>${escape(sub)}</p>`;
+        <h1>${escape(heading)}</h1><p>${escape(sub)}</p>`;
     }
     app.innerHTML = `<section class="panel player-panel" data-phase="${state.phase}" data-ticket="${escape(state.ticket)}" data-step="${escape(step)}"><div class="player-seat"><strong>${escape(me.name)}</strong><span>${me.score} очков</span></div>
       ${state.paused ? '<p class="paused-note" role="status">Пауза. Ждём ведущего.</p>' : ''}${content}</section>
