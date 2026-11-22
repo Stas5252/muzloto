@@ -4,6 +4,8 @@
   window.createCloudAudioCatalog = function (config) {
     const tracks = new Map();
     let ownPacks = [];
+    let ownTracks = [];
+    let ownExpiresAt = 0;
     let expiresAt = 0;
 
     const request = url => fetch(url, { headers: { apikey: config.key }, cache: 'no-store' }).then(response => {
@@ -36,11 +38,16 @@
         for (const track of data.tracks) {
           if (wanted.has(track.id)) tracks.set(track.id, track.url);
         }
+        // A failed refresh keeps the owner's links until they expire, then the catalogue asks again.
         if (own) {
-          for (const track of own.tracks) tracks.set(track.id, track.url);
           ownPacks = own.packs;
+          ownTracks = own.tracks;
+          ownExpiresAt = Date.now() + (own.expiresIn - 300) * 1000;
+        } else if (Date.now() >= ownExpiresAt) {
+          ownTracks = [];
         }
-        expiresAt = Date.now() + (Math.min(data.expiresIn, own?.expiresIn ?? Infinity) - 300) * 1000;
+        for (const track of ownTracks) tracks.set(track.id, track.url);
+        expiresAt = Math.min(Date.now() + (data.expiresIn - 300) * 1000, ownTracks.length ? ownExpiresAt : Infinity);
         return tracks.size;
       }
     };

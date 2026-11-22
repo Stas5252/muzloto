@@ -75,3 +75,44 @@ const memoryBucket = require('./own-music-bucket.cjs');
   assert.equal((await handle(new Request(url, { method: 'PUT' }), bucket, password)).status, 405);
   console.log('PASS: owner music catalogue, password, upload links, save, replace and delete');
 })().catch(error => { console.error(error); process.exit(1); });
+
+// The host's catalogue: a failed refresh of the owner's packs keeps their links while they are valid.
+(async () => {
+  global.window = {};
+  require('../cloud-audio.js');
+  const realFetch = global.fetch;
+  const realNow = Date.now;
+  let now = realNow();
+  Date.now = () => now;
+  let ownFails = false;
+  global.fetch = async url => {
+    if (String(url).endsWith('/own')) {
+      if (ownFails) throw new TypeError('offline');
+      return Response.json({ expiresIn: 7200, packs: [{ id: 'p1', title: 'Свой', tracks: [] }], tracks: [{ id: 'u1', url: 'https://storage.test/u1' }] });
+    }
+    return Response.json({ expiresIn: 7200, tracks: [{ id: '1', url: 'https://storage.test/1' }, { id: '2', url: 'https://storage.test/2' }] });
+  };
+  try {
+    const catalogue = window.createCloudAudioCatalog({ url: 'https://cloud.test/game', ownUrl: 'https://cloud.test/own', key: 'k' });
+    assert.equal(await catalogue.load(['1']), 2);
+    assert.equal(catalogue.get('u1'), 'https://storage.test/u1');
+    assert.equal(catalogue.get('2'), null, 'Built-in recordings of other packs are not kept');
+    ownFails = true;
+    now += 3600 * 1000;
+    assert.equal(await catalogue.load(['1']), 2);
+    assert.equal(catalogue.get('u1'), 'https://storage.test/u1', 'Links that are still valid survive a failed refresh');
+    assert.equal(catalogue.ownPacks().length, 1);
+    now += 3301 * 1000;
+    assert.equal(catalogue.hasTracks(), false, 'The catalogue asks again when the kept links run out');
+    assert.equal(await catalogue.load(['1']), 1);
+    assert.equal(catalogue.get('u1'), null);
+    assert.equal(catalogue.get('1'), 'https://storage.test/1');
+    const plain = window.createCloudAudioCatalog({ url: 'https://cloud.test/game', key: 'k' });
+    assert.equal(await plain.load(['1', '2']), 2);
+    assert.deepEqual(plain.ownPacks(), []);
+    console.log('PASS: host catalogue keeps valid owner links through a failed refresh');
+  } finally {
+    global.fetch = realFetch;
+    Date.now = realNow;
+  }
+})().catch(error => { console.error(error); process.exit(1); });
