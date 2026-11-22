@@ -157,7 +157,7 @@ function showTimer(timer, paused = false, ticking = false) {
   if (timer) timer = { ...timer, left: Math.max(0, timer.left - (paused || !timer.at ? 0 : Date.now() - timer.at)) };
   const end = timer ? Date.now() + timer.left : 0;
   if (timer && !bar.hidden && timer.kind === strip.kind && paused === strip.paused &&
-      (paused || Math.abs(end - strip.end) < 900)) return;
+      (paused || Math.abs(end - strip.end) < 900 || (!timer.left && strip.end <= Date.now()))) return;
   strip.ticks.forEach(clearTimeout);
   Object.assign(strip, { end, kind: timer?.kind || '', paused, ticks: [] });
   bar.hidden = !timer;
@@ -270,13 +270,13 @@ function questionPanel(question, session, picker = '') {
   // Pack questions that are only a picture or a sound carry the theme name as their text: do not repeat it.
   const textless = !modifier && !reveal && question.prompt === question.category && Boolean(question.image || question.audio);
   const state = `<p class="question-state${session.opened && !announcing ? ' open' : ''}">${announcing ? (question.kind === 'handoff' ? 'Кот в мешке · отвечает ' : 'Отвечает ') + escape(announcing) : session.opened ? 'Жмите кнопку!' : waiting}</p>`;
-  const asking = `${textless ? (photo ? '' : '<p class="listen"><span aria-hidden="true">♪</span> Слушайте</p>') : `<h1>${escape(question.prompt)}</h1>`}
+  const asking = `${textless ? (photo ? '' : '<p class="listen"><span aria-hidden="true">♪</span> Слушайте</p>') : `<h1${question.prompt.length > 140 ? ' class="long"' : ''}>${escape(question.prompt)}</h1>`}
       ${question.audio && !textless ? '<p class="sound-note"><span aria-hidden="true">♪</span> Вопрос со звуком</p>' : ''}
       ${session.showHint && question.hint ? `<p class="hint">${escape(question.hint)}</p>` : ''}${state}`;
   const answered = `<div class="answer-reveal"><p class="answer-label">Ответ</p>
       <h1 class="revealed${question.answer.length > 70 ? ' long' : ''}">${escape(question.answer)}</h1></div>
       ${question.prompt === question.category ? '' : `<p class="asked">${escape(question.prompt)}</p>`}`;
-  return `<article class="question panel${photo ? ' has-photo' : ''}${textless ? ' textless' : ''}${reveal ? ' answered' : ''}" data-stage="${roundIndex(session) + 1}">
+  return `<article class="question panel${photo ? ' has-photo' : ''}${textless ? ' textless' : ''}${reveal ? ' answered' : ''}${modifier ? ' modifier' : ''}" data-stage="${roundIndex(session) + 1}">
     ${photo ? `<figure class="question-figure"><img class="question-image" src="${escape(photo)}" alt="${reveal && question.answerImage ? 'Фото с ответом' : 'Фото к вопросу'}"></figure>` : ''}
     <div class="question-copy">
       <p class="question-category">${escape(question.category)} <span>${modifier ? 'Модификатор' : points(question) + ' очков'}</span></p>
@@ -335,7 +335,7 @@ function resultsPanel(session, source) {
   const leaders = ranking.filter(player => player.score === ranking[0]?.score);
   return `<section class="panel result">
     <p class="eyebrow">Результаты</p>
-    <h1>${leaders.length ? escape(leaders.map(p => p.name).join(' и ')) : 'Игра окончена'}</h1>
+    <h1>${leaders.length > 3 ? 'Ничья' : leaders.length ? escape(leaders.map(p => p.name).join(' и ')) : 'Игра окончена'}</h1>
     ${leaders.length ? `<p>${leaders[0].score} очков</p>` : ''}
     ${scoreList(ranking)}
     ${final && session.verdicts.length ? `<p class="answer-label">Ответ в финале</p><p class="revealed">${escape(final.answer)}</p>
@@ -584,7 +584,7 @@ let lastPublicSend = 0;
 function playerCards(session, flash = {}) {
   const seats = Object.entries(session.players);
   const lit = session.phase === 'board' ? session.turn : session.phase === 'themes' ? session.remover : null;
-  return seats.length ? `<section class="score-panel player-strip" aria-label="Счёт"><ul class="scores player-cards${seats.length > 6 ? ' scores-crowd' : ''}">${seats.map(([id, player]) =>
+  return seats.length ? `<section class="score-panel player-strip" aria-label="Счёт"><ul class="scores player-cards">${seats.map(([id, player]) =>
     `<li class="${id === session.answering ? 'answering' : id === lit ? 'choosing' : ''}"><span title="${escape(player.name)}">${escape(player.name)}</span><strong>${player.score}</strong>${
       flash[id] ? `<em class="delta ${flash[id] > 0 ? 'up' : 'down'}">${flash[id] > 0 ? '+' : '−'}${Math.abs(flash[id])}</em>` : ''}</li>`).join('')}</ul></section>` : '';
 }
@@ -634,7 +634,9 @@ function timerView() {
 
 function armClock() {
   const seconds = game ? pace(game) : 0;
-  const kind = !seconds || game.phase !== 'question' ? '' : game.answering ? 'answer' : game.opened && !game.race?.length ? 'buzz' : '';
+  // The answer clock starts for whoever pressed the button or answers after a miss: they have heard the question already.
+  const kind = !seconds || game.phase !== 'question' ? '' : game.answering ? (game.opened || game.buzzed.length > 1 ? 'answer' : '') :
+    game.opened && !game.race?.length ? 'buzz' : '';
   const key = kind && [kind, game.ticket, game.answering || '', game.buzzed.length].join(':');
   if (!kind) clock = null;
   else if (clock?.key !== key) {
@@ -1157,6 +1159,9 @@ function initPlayer() {
     const previousPanel = app.querySelector('.player-panel');
     // A pause, a handed-over «кот в мешке» and a struck theme redraw the step; a buzz only repaints the button.
     const step = [state.handoff, state.paused, themes.filter(theme => theme.out).length, state.remover].join('|');
+    const asked = `${state.image ? `<img class="player-photo" src="${escape(state.image)}" alt="Фото к вопросу">` : ''}${
+      state.prompt ? `<p class="player-prompt">${escape(state.prompt)}</p>` : ''}${
+      state.sound ? '<p class="sound-note"><span aria-hidden="true">♪</span> Звук играет на ТВ</p>' : ''}`;
     const sameStep = previousPanel?.dataset.phase === state.phase && previousPanel.dataset.ticket === state.ticket &&
       previousPanel.dataset.step === step;
     showTimer(state.phase === 'question' ? state.timer : null, state.paused);
@@ -1173,8 +1178,6 @@ function initPlayer() {
         previousPanel.querySelector('.player-seat span').textContent = `${me.score} очков`;
         return;
       }
-      const asked = `${state.image ? `<img class="player-photo" src="${escape(state.image)}" alt="Фото к вопросу">` : ''}${
-        state.prompt ? `<p class="player-prompt">${escape(state.prompt)}</p>` : ''}`;
       const picker = state.players.find(person => person.id === state.chooser);
       content = state.modifier ? `<p class="eyebrow">${escape(state.category)}</p><h1>Модификатор</h1>${asked}
         <p>${picker ? (picker.id === me.id ? 'Карточка достаётся тебе.' : `Карточка достаётся игроку ${escape(picker.name)}.`) : 'Ведущий читает карточку.'} Отвечать не нужно.</p>` :
@@ -1198,7 +1201,7 @@ function initPlayer() {
       }
       content = submitted
         ? '<h1>Ответ принят</h1><p>Ждём, пока ведущий откроет финал.</p>'
-        : `<form id="final-form"><p class="eyebrow">Финал</p><h1>${escape(state.finalTopic)}</h1>
+        : `<form id="final-form"><p class="eyebrow">Финал</p><h1>${escape(state.finalTopic)}</h1>${asked}
           <label><span>Твой ответ</span><input name="answer" required maxlength="180" value="${escape(finalDraft.answer)}"></label>
           <label><span>Ставка (до ${Math.max(0, me.score)} очков)</span><input name="wager" type="number" min="0" max="${Math.max(0, me.score)}" step="1" required value="${escape(finalDraft.wager)}"></label>
           <button class="button primary" type="submit" ${sending ? 'disabled' : ''}>${submitLabel}</button>
@@ -1282,7 +1285,7 @@ function initPlayer() {
     if (state && next.revision <= state.revision) return;
     if (pending && (next.ticket !== pending.ticket ||
       (pending.type === 'buzz' && (next.buzzed.includes(player.id) || next.phase !== 'question')) ||
-      (pending.type === 'strike' && (next.phase !== 'themes' || next.remover !== player.id)) ||
+      (pending.type === 'strike' && (next.phase !== 'themes' || next.themes?.[pending.topic]?.out !== false)) ||
       (pending.type === 'final-answer' && (next.submitted.includes(player.id) || next.phase !== 'final')))) pending = null;
     if (next.timer && typeof next.timer === 'object') next.timer.at = Date.now(); else next.timer = null;
     if (next.ticket !== state?.ticket) finalDraft = { answer: '', wager: '0' };

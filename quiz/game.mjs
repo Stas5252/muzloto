@@ -1,7 +1,7 @@
 import { demoPack, bundledImages, legacyZodiacImages, zodiacPrompt } from './starter.mjs?v=17';
 export { demoPack };
 
-export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена', modifier: 'Модификатор' };
+export const kinds = { normal: 'Обычный вопрос', handoff: 'Кот в мешке', double: 'Двойная цена', modifier: 'Модификатор' };
 const own = (object, key) => Object.hasOwn(object, key);
 const clean = (value, limit) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
 const packMedia = /^packs\/media\/[a-f0-9]{12}\.(webp|mp3)$/;
@@ -101,7 +101,7 @@ export function restoreDraft(input) {
 
 export const modes = { buzz: 'Кто быстрее', turns: 'По очереди' };
 // Seconds to press the button once the host has opened it; the answer itself gets answerTime.
-export const paces = { 0: 'Без таймера', 7: '7 секунд', 10: '10 секунд', 15: '15 секунд' };
+export const paces = { 0: 'Без таймера', 7: '7 секунд', 10: '10 секунд', 15: '15 секунд', 30: '30 секунд' };
 export const answerTime = 20;
 export const pace = game => own(paces, game.pace ?? 10) ? game.pace ?? 10 : 10;
 
@@ -392,7 +392,8 @@ export function command(game, pack, action, host = false) {
 export function publicState(game, pack) {
   const question = findQuestion(pack, game.current);
   const closed = awaitingHandoff(game, pack);
-  const shown = question && !closed ? question : null;
+  // In the final the phones show the question next to the answer field.
+  const shown = game.phase === 'final' ? activeFinal(pack, game) : question && !closed ? question : null;
   return {
     phase: game.phase, revision: game.revision, ticket: game.ticket, players: standings(game),
     roundNumber: roundIndex(game) + 1, roundTotal: pack.rounds.length, roundTitle: activeRound(pack, game).title,
@@ -400,6 +401,7 @@ export function publicState(game, pack) {
     category: question?.category || '', value: question ? points(question) : null, modifier: question?.kind === 'modifier',
     // The phone repeats the TV for those who sit far from it: the text and a pack picture, never the answer before the reveal.
     prompt: shown && shown.prompt !== shown.category ? shown.prompt : '',
+    sound: Boolean(shown?.audio),
     image: shown && (bundledImages.has(shown.image) || packImage(shown.image)) ? shown.image : '',
     answer: game.phase === 'reveal' && question ? question.answer : '',
     title: pack.title, finalTopic: activeFinal(pack, game)?.topic || '', submitted: Object.keys(game.finalAnswers),

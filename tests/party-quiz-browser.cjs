@@ -6,6 +6,11 @@ const site = process.env.QUIZ_URL || 'http://localhost:3000/quiz/';
 const chrome = process.env.MUZLOTO_CHROME || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
 const names = Array.from({ length: 11 }, (_, index) => `Участник ${index + 1} из команды`);
 const button = (page, name) => page.getByRole('button', { name, exact: true });
+// During a game the service buttons of the host fold into «Меню».
+async function closeRoom(page) {
+  if (!await button(page, 'Закрыть комнату').isVisible()) await page.locator('.room-menu summary').click();
+  await button(page, 'Закрыть комнату').click();
+}
 
 async function run() {
   const browser = await chromium.launch({ executablePath: chrome });
@@ -116,15 +121,30 @@ async function run() {
     console.log('11 presses, queue, scoring and player reconnect verified');
 
     await button(host, 'К табло').click();
+    await tv.locator('.player-cards li.choosing', { hasText: winnerName }).waitFor();
+    await tv.getByText('Выбирает вопрос:').waitFor();
     await host.locator('[data-id=c0q3]').click();
+    // «Кот в мешке»: the question stays closed on the TV and on the phones until the host hands it over.
+    await tv.getByRole('heading', { name: 'Кот в мешке' }).waitFor();
+    await tv.getByText(`${winnerName} отдаёт вопрос другому игроку`, { exact: true }).waitFor();
+    assert.equal(await tv.locator('.question-image').count(), 0);
+    await players[0].getByRole('heading', { name: 'Кот в мешке' }).waitFor();
+    assert.equal(await players[0].locator('.buzzer').count(), 0);
+    assert.equal(await host.locator('.heirs [data-action=assign]').count(), names.length - 1, 'The chooser cannot keep the cat');
+    await button(host, 'Дать ответить всем').click();
     await tv.waitForFunction(() => document.querySelector('.question-image[src^="data:image/webp;base64,"]')?.naturalWidth > 0);
     await tv.reload({ waitUntil: 'domcontentloaded' });
     await tv.waitForFunction(() => document.querySelector('.question-image[src^="data:image/webp;base64,"]')?.naturalWidth > 0);
-    const waitingForHandoff = button(players[0], 'Жди сигнала');
-    await waitingForHandoff.waitFor();
-    assert.equal(await waitingForHandoff.getAttribute('aria-disabled'), 'true');
-    await button(host, 'Дать ответить всем').click();
     await Promise.all(players.map(phone => button(phone, 'Ответить').waitFor()));
+    await tv.locator('#timer[data-kind=buzz]:not([hidden])').waitFor();
+    // A pause stops the buttons and the clock on every screen.
+    await button(host, 'Пауза').click();
+    await tv.locator('.pause-veil').waitFor();
+    await button(players[0], 'Пауза').waitFor();
+    assert.equal(await button(players[0], 'Пауза').isDisabled(), true);
+    await button(host, 'Продолжить игру').click();
+    await tv.locator('.pause-veil').waitFor({ state: 'detached' });
+    await button(players[0], 'Ответить').waitFor();
     await button(host, 'Открыть ответ').click();
     await button(host, 'К табло').click();
     for (const [title, next, category] of [['К раунду 2', 'Знакомые лица и звуки', 'Угадай инструмент'], ['К раунду 3', 'Всё знакомое', 'Пословица по картинке']]) {
@@ -179,13 +199,16 @@ async function run() {
     await Promise.all(players.filter(phone => phone !== winner).map((phone, index) => submit(phone, `Ответ ${index + 1}`)));
     await host.getByText('11/11', { exact: true }).waitFor();
     await host.getByRole('checkbox', { name: /Кубик Рубика/ }).check();
-    await button(host, 'Подвести итоги').click();
+    await button(host, 'Открыть ставки').click();
+    await tv.getByRole('heading', { name: 'Открываем ставки' }).waitFor();
+    assert.equal(await tv.getByText('Кубик Рубика').count(), 0, 'A stake stays closed until the host opens it');
+    await button(host, 'Сразу итоги').click();
     await tv.getByText('150 очков', { exact: true }).waitFor();
     assert.equal(await tv.locator('.scores li').count(), names.length);
     assert.equal(await tv.locator('.verdicts li').count(), names.length);
     assert.ok(scoreBottom <= 720, `TV scores should all fit at 1280×720, found bottom at ${scoreBottom}px`);
     host.once('dialog', dialog => dialog.accept());
-    await button(host, 'Закрыть комнату').click();
+    await closeRoom(host);
     await tv.getByText('Комната закрыта.', { exact: true }).waitFor();
 
     // A converted pack: picture question, picture answer, and answering in turns.
@@ -232,7 +255,7 @@ async function run() {
     // A modifier card: nobody answers, the host applies it to the score by hand.
     await host.locator('[data-id=c4q4]').click();
     await packTv.getByRole('heading', { name: 'Плюс на минус' }).waitFor();
-    await packTv.getByText('Ведущий применяет модификатор', { exact: true }).waitFor();
+    await packTv.getByText('Модификатор получает Боря', { exact: true }).waitFor();
     for (const seat of seats) {
       await seat.getByRole('heading', { name: 'Модификатор' }).waitFor();
       assert.equal(await seat.locator('.buzzer').count(), 0, 'A modifier shows no answer button');
@@ -270,9 +293,48 @@ async function run() {
     });
     assert.ok(corner > 200 && ink > .03 && ink < .6, `The zodiac sign is visible on its sheet (corner ${corner}, ink ${ink.toFixed(2)})`);
     await button(seats[0], 'Отвечай вслух').waitFor();
-    assert.ok(await host.locator('#final-topic').count() === 0, 'The final topic is chosen in the last round');
+    assert.equal(await seats[1].locator('.player-photo').getAttribute('src'), await packTv.locator('.question-image').getAttribute('src'),
+      'The phone repeats the picture for those who sit far from the TV');
+    await button(host, 'Открыть ответ').click();
+    await packTv.locator('.question.answered h1.revealed').waitFor();
+    await seats[0].getByRole('heading', { name: 'Ответ', exact: true }).waitFor();
+    await button(host, 'К табло').click();
+
+    // The final: themes are struck out in turn, on a phone or by the host, and the stakes open one by one.
+    for (const title of ['К раунду 2', 'К раунду 3']) {
+      host.once('dialog', dialog => dialog.accept());
+      await button(host, title).click();
+      await button(host, 'Начать раунд').click();
+    }
     host.once('dialog', dialog => dialog.accept());
-    await button(host, 'Закрыть комнату').click();
+    await button(host, 'Перейти в финал').click();
+    await packTv.getByRole('heading', { name: 'Убирает тему: Боря' }).waitFor();
+    const themes = await packTv.locator('.theme-list li').count();
+    assert.ok(themes > 2);
+    assert.equal(await seats[0].locator('[data-action=strike]').count(), 0, 'Only the player whose turn it is strikes a theme');
+    await seats[1].locator('[data-action=strike]').first().click();
+    await packTv.getByRole('heading', { name: 'Убирает тему: Аня' }).waitFor();
+    assert.equal(await packTv.locator('.theme-list li.out').count(), 1);
+    for (let left = themes - 1; left > 1; left--) await host.locator('[data-action=strike]').first().click();
+    const lastTheme = await host.locator('.question .eyebrow').innerText();
+    await packTv.locator('.question .eyebrow', { hasText: lastTheme.replace(/^Финал · /i, '') }).waitFor();
+    for (const [index, seat] of seats.entries()) {
+      await seat.getByRole('textbox', { name: 'Твой ответ' }).fill('Версия ' + (index + 1));
+      await button(seat, 'Зафиксировать ответ').click();
+    }
+    await host.getByText('2/2', { exact: true }).waitFor();
+    await button(host, 'Открыть ставки').click();
+    await packTv.getByRole('heading', { name: 'Открываем ставки' }).waitFor();
+    await button(host, 'Открыть: Боря').click();
+    await packTv.getByRole('heading', { name: 'Боря' }).waitFor();
+    await packTv.getByText('«Версия 2»', { exact: true }).waitFor();
+    assert.equal(await packTv.getByText('«Версия 1»').count(), 0);
+    await button(host, 'Открыть: Аня').click();
+    await packTv.getByText('Правильный ответ', { exact: true }).waitFor();
+    await button(host, 'Показать итоги').click();
+    await packTv.locator('.result').waitFor();
+    host.once('dialog', dialog => dialog.accept());
+    await closeRoom(host);
     await packTv.getByText('Комната закрыта.', { exact: true }).waitFor();
 
     // The editor launches its own draft even though a bundled pack is still chosen on the home screen.
@@ -304,6 +366,7 @@ async function run() {
     await host.getByText('1/12', { exact: true }).waitFor();
     await host.getByRole('button', { name: 'По очереди', exact: true, pressed: true }).waitFor();
     await button(host, 'Кто быстрее').click();
+    await button(host, '7 секунд').click();
     await button(host, 'Начать игру').click();
     await host.locator('[data-id=c0q0]').click();
     await host.locator('.host-sound audio').evaluate(async audio => {
@@ -317,10 +380,18 @@ async function run() {
     await host.locator('.answering', { hasText: 'Аня' }).waitFor();
     assert.equal(await host.evaluate(() => window.heardTrack.isConnected && !window.heardTrack.paused &&
       document.querySelectorAll('.host-sound audio').length === 1), true, 'Opening the buttons and a buzz keep the host preview playing');
+    // Nobody presses before the clock runs out: the answer opens by itself.
+    await host.locator('#timer[data-kind=answer]:not([hidden])').waitFor();
+    await button(host, '−100 · Неверно').click();
+    await host.locator('#timer[data-kind=buzz]:not([hidden])').waitFor();
+    const opened = Date.now();
+    await button(host, 'К табло').waitFor({ timeout: 12000 });
+    assert.ok(Date.now() - opened > 5000, 'The answer opens after the seven seconds, not before');
+    await listener.getByRole('heading', { name: 'Ответ', exact: true }).waitFor();
     host.once('dialog', dialog => dialog.accept());
-    await button(host, 'Закрыть комнату').click();
+    await closeRoom(host);
     assert.deepEqual(errors, []);
-    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players, false start, converted pack in turns mode, modifier card with a manual score, editor launch, host audio preview and private final answers');
+    console.log('PASS mobile host, separate TV, photo and link recovery, 11 players, false start, «кот в мешке», pause, timers, converted pack in turns mode, final themes and stakes, modifier card with a manual score, editor launch, host audio preview and private final answers');
   } finally {
     await browser.close();
   }

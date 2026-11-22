@@ -453,7 +453,7 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
 /* TV extras: round titles, «кот в мешке», seats, a change of score */
 .round-splash { display: grid; align-content: center; justify-items: center; gap: 14px; text-align: center; }
 .round-splash h1 { font-size: clamp(2.6rem, 7vw, 6.4rem); }
-.round-splash.cat h1 { color: #ffd978; }
+.round-splash.cat h1, .question.modifier h1 { color: #ffd978; }
 .round-splash .eyebrow { font-size: clamp(.9rem, 1.6vw, 1.5rem); }
 .round-splash .intro { max-width: none; font-size: clamp(1.2rem, 2.4vw, 2.2rem); }
 .splash-themes { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
@@ -528,6 +528,10 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
   .tv .question-image { max-height: calc(100vh - 300px); }
   .tv .question.textless.has-photo .question-image { max-height: calc(100vh - 355px); }
   .tv .question-state, .tv .question-category { font-size: clamp(1rem, 1.6vw, 1.5rem); }
+  .tv .question:not(.has-photo) h1 { font-size: clamp(2.2rem, 5.6vw, 6.5rem); }
+  .tv .question.answered h1.revealed { font-size: clamp(2.2rem, 5vw, 5.4rem); }
+  .tv .question h1.long, .tv .question h1.revealed.long { font-size: clamp(1.3rem, 2.9vw, 3.2rem); line-height: 1.2; }
+  .tv .showdown .verdicts li { font-size: clamp(.95rem, 1.5vw, 1.4rem); }
   .tv .themes, .tv .showdown { align-content: center; justify-items: center; text-align: center; }
   .tv .themes h1, .tv .showdown h1 { font-size: clamp(2rem, 4.6vw, 4.4rem); }
   .tv .theme-list { width: 100%; }

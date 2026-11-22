@@ -503,5 +503,5 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.equal(imported.filter(question => question.kind === 'modifier').length, 44);
   assert.ok(imported.every(question => !question.prompt.startsWith('[МОДИФИКАТОР]')), 'Modifier cards show their effect, not a placeholder');
 
-  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and sealed final');
+  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs, chooser, «кот в мешке», pause, final themes struck in turn and stakes opened one by one');
 })().catch(error => { console.error(error); process.exitCode = 1; });
