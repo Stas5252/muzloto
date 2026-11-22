@@ -284,6 +284,15 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   for (const file of media) assert.ok(fs.statSync(path.join(__dirname, '../quiz', file)).size > 200, file);
   assert.deepEqual(fs.readdirSync(path.join(packsDir, 'media')).sort(), [...media].map(file => path.basename(file)).sort(), 'No unused media is shipped');
   assert.throws(() => validPack({ ...demoPack, finals: [{ topic: 'Тема', prompt: 'Вопрос', answer: 'Ответ', image: 'packs/media/../../secret.webp' }] }));
+  const inline = 'data:image/png;base64,AAAA';
+  assert.throws(() => validPack({ ...demoPack, finals: [{ topic: 'Тема', prompt: 'Вопрос', answer: 'Ответ', answerImage: inline }] }),
+    /Фото ответа/, 'The TV frame carries no inline pictures, so a final cannot hold one');
+  const inlineAnswer = structuredClone(demoPack);
+  inlineAnswer.rounds[0].categories[0].questions[0].answerImage = inline;
+  assert.throws(() => validPack(inlineAnswer), /Фото ответа/);
+  inlineAnswer.rounds[0].categories[0].questions[0].answerImage = '';
+  inlineAnswer.rounds[0].categories[0].questions[0].image = inline;
+  assert.equal(validPack(inlineAnswer).rounds[0].categories[0].questions[0].image, inline, 'Question photos may still be uploaded');
 
   const zodiacPack = validPack(JSON.parse(fs.readFileSync(path.join(packsDir, 'zodiak.json'), 'utf8')));
   const sneakers = zodiacPack.rounds[0].categories[1].questions[0];

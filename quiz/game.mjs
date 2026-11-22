@@ -16,6 +16,13 @@ const image = value => {
   return value;
 };
 
+// Answer and final pictures reach the TV inside the state frame, which carries paths only.
+const stock = value => {
+  if (!value) return '';
+  if (bundledImages.has(value) || packImage(value)) return value;
+  throw new Error('Фото ответа и фото финала можно брать только из готовых наборов.');
+};
+
 export function validPack(input) {
   const title = clean(input?.title, 80);
   if (!title) throw new Error('Дайте набору название.');
@@ -46,7 +53,7 @@ export function validPack(input) {
         return {
           id: `${r === 0 ? '' : 'r' + r}c${i}q${j}`, prompt: legacyZodiac ? zodiacPrompt : prompt, answer, value,
           hint: clean(question.hint, 380),
-          image: photo, answerImage: image(question.answerImage),
+          image: photo, answerImage: stock(question.answerImage),
           audio: sound(question.audio), answerAudio: sound(question.answerAudio),
           kind: own(kinds, question.kind) ? question.kind : 'normal'
         };
@@ -61,7 +68,7 @@ export function validPack(input) {
     const prompt = clean(item?.prompt, 1200);
     const answer = clean(item?.answer, 650);
     if (!topic || !prompt || !answer) throw new Error('У финала должны быть тема, вопрос и ответ.');
-    return { topic, prompt, answer, image: image(item.image), answerImage: image(item.answerImage), audio: sound(item.audio) };
+    return { topic, prompt, answer, image: stock(item.image), answerImage: stock(item.answerImage), audio: sound(item.audio) };
   });
   return { title, rounds, final: finals[0] || null, finals };
 }
