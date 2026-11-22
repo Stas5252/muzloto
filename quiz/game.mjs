@@ -1,7 +1,7 @@
 import { demoPack, bundledImages, legacyZodiacImages, zodiacPrompt } from './starter.mjs?v=17';
 export { demoPack };
 
-export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена', modifier: 'Модификатор' };
+export const kinds = { normal: 'Обычный вопрос', handoff: 'Кот в мешке', double: 'Двойная цена', modifier: 'Модификатор' };
 const own = (object, key) => Object.hasOwn(object, key);
 const clean = (value, limit) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
 const packMedia = /^packs\/media\/[a-f0-9]{12}\.(webp|mp3)$/;
@@ -100,12 +100,17 @@ export function restoreDraft(input) {
 }
 
 export const modes = { buzz: 'Кто быстрее', turns: 'По очереди' };
+// Seconds to press the button once the host has opened it; the answer itself gets answerTime.
+export const paces = { 0: 'Без таймера', 7: '7 секунд', 10: '10 секунд', 15: '15 секунд', 30: '30 секунд' };
+export const answerTime = 20;
+export const pace = game => own(paces, game.pace ?? 10) ? game.pace ?? 10 : 10;
 
 export function createGame(mode = 'buzz') {
   return {
     mode: own(modes, mode) ? mode : 'buzz', turn: 0, finalIndex: 0, race: [],
     phase: 'lobby', roundIndex: 0, players: {}, used: [], current: null, revision: 0, ticket: '',
     answering: null, queue: [], buzzed: [], showHint: false, opened: false,
+    chooser: null, pace: 10, paused: false, finalOut: [], revealed: 0,
     finalAnswers: {}, verdicts: [], previous: null
   };
 }
@@ -137,6 +142,28 @@ const offersHandoff = (game, question) => question.kind === 'handoff' && Object.
 const byTurns = game => game.mode === 'turns';
 const order = game => Object.keys(game.players);
 export const turnPlayer = game => byTurns(game) && order(game).length ? order(game)[(game.turn || 0) % order(game).length] : null;
+// «Кто быстрее»: whoever answered right picks the next question; the first player opens the game.
+export const chooser = game => byTurns(game) ? turnPlayer(game) :
+  own(game.players, game.chooser || '') ? game.chooser : order(game)[0] || null;
+// A «кот в мешке» nobody has been given yet: the screens keep the question closed until the host hands it over.
+export const awaitingHandoff = (game, pack) => game.phase === 'question' && !game.opened && !game.answering &&
+  !game.buzzed.length && order(game).length > 0 && findQuestion(pack, game.current)?.kind === 'handoff';
+
+export const finalTopics = (pack, game) => (pack.finals || []).map((final, index) =>
+  ({ topic: final.topic, out: (game.finalOut || []).includes(index) }));
+// Final themes are struck out in turn, the lowest score first.
+export const remover = game => {
+  const seats = standings(game).reverse();
+  return game.phase === 'themes' && seats.length ? seats[(game.finalOut || []).length % seats.length].id : null;
+};
+
+function strike(game, pack, topic) {
+  const left = (pack.finals || []).map((_, index) => index).filter(index => !(game.finalOut || []).includes(index));
+  if (game.phase !== 'themes' || !left.includes(topic) || left.length < 2) return false;
+  game.finalOut = [...(game.finalOut || []), topic];
+  if (left.length === 2) Object.assign(game, { phase: 'final', finalIndex: left.find(index => index !== topic), ticket: nextTicket(game) });
+  return true;
+}
 
 // The button opens only when the host has read the question, so a restored game stays as it was saved.
 export const restoreGame = game => game;
@@ -168,7 +195,7 @@ function applyHost(game, pack, action) {
     case 'again':
       // Same room and players, a fresh score: nobody has to scan the code again.
       if (phase !== 'results') return false;
-      Object.assign(game, createGame(game.mode), { revision: game.revision,
+      Object.assign(game, createGame(game.mode), { revision: game.revision, pace: pace(game),
         players: Object.fromEntries(Object.entries(game.players).map(([id, player]) => [id, { name: player.name, score: 0 }])) });
       return true;
     case 'start':
@@ -190,6 +217,10 @@ function applyHost(game, pack, action) {
     case 'mode':
       if (!['lobby', 'board', 'intermission'].includes(phase) || !own(modes, action.mode) || action.mode === game.mode) return false;
       game.mode = action.mode;
+      return true;
+    case 'pace':
+      if (!['lobby', 'board', 'intermission'].includes(phase) || !Number.isInteger(action.seconds) || !own(paces, action.seconds) || action.seconds === pace(game)) return false;
+      game.pace = action.seconds;
       return true;
     case 'open':
       if (phase !== 'question' || game.opened || game.answering || findQuestion(pack, game.current)?.kind === 'modifier') return false;
@@ -217,6 +248,7 @@ function applyHost(game, pack, action) {
       if (!player) return false;
       if (action.verdict === 'correct') {
         player.score += value;
+        game.chooser = game.answering;
         resolveQuestion(game);
       } else {
         if (action.verdict === 'wrong') player.score -= value;
@@ -241,7 +273,7 @@ function applyHost(game, pack, action) {
     case 'score': {
       // Modifier cards and disputes: the host sets a player's score by hand. Not in the final: wagers are capped by the score.
       const player = getPlayer(game, action.player);
-      if (!player || ['lobby', 'final', 'results'].includes(phase) || !Number.isSafeInteger(action.score) ||
+      if (!player || ['lobby', 'final', 'showdown', 'results'].includes(phase) || !Number.isSafeInteger(action.score) ||
           Math.abs(action.score) > 9_999_999 || action.score === player.score) return false;
       player.score = action.score;
       return true;
@@ -266,19 +298,33 @@ function applyHost(game, pack, action) {
     case 'final':
       if (phase !== 'board' || roundIndex(game) !== pack.rounds.length - 1 ||
           (remainingQuestions(pack, game) && action.skip !== true)) return false;
-      game.phase = pack.final ? 'final' : 'results';
-      game.finalIndex = Number.isInteger(action.topic) && pack.finals?.[action.topic] ? action.topic : 0;
-      game.ticket = nextTicket(game);
-      game.finalAnswers = {};
+      Object.assign(game, { ticket: nextTicket(game), finalAnswers: {}, finalOut: [], verdicts: [], revealed: 0, finalIndex: 0 });
+      if (!pack.final) game.phase = 'results';
+      else if (Number.isInteger(action.topic) && pack.finals?.[action.topic]) Object.assign(game, { phase: 'final', finalIndex: action.topic });
+      // Several themes: the players strike them out one by one until a single theme is left.
+      else game.phase = (pack.finals?.length || 0) > 1 && order(game).length ? 'themes' : 'final';
+      return true;
+    case 'strike':
+      return strike(game, pack, action.topic);
+    case 'final-topic':
+      if (phase !== 'themes' || !pack.finals?.[action.topic]) return false;
+      Object.assign(game, { phase: 'final', finalIndex: action.topic, ticket: nextTicket(game) });
       return true;
     case 'finish': {
       if (phase !== 'final' || !Array.isArray(action.correct)) return false;
-      game.verdicts = Object.entries(game.finalAnswers).map(([id, entry]) => {
-        const correct = action.correct.includes(id);
-        getPlayer(game, id).score += correct ? entry.wager : -entry.wager;
-        return { id, ...entry, correct };
-      });
-      game.phase = 'results';
+      // The stakes are opened one by one, the lowest score first, so the leader is the last to know.
+      game.verdicts = standings(game).reverse().filter(player => own(game.finalAnswers, player.id))
+        .map(({ id }) => ({ id, ...game.finalAnswers[id], correct: action.correct.includes(id) }));
+      game.revealed = 0;
+      game.phase = game.verdicts.length ? 'showdown' : 'results';
+      return true;
+    }
+    case 'unveil': {
+      if (phase !== 'showdown') return false;
+      const rest = game.verdicts.slice(game.revealed, action.all === true ? undefined : game.revealed + 1);
+      for (const verdict of rest) getPlayer(game, verdict.id).score += verdict.correct ? verdict.wager : -verdict.wager;
+      game.revealed += rest.length;
+      if (!rest.length || action.all === true) game.phase = 'results';
       return true;
     }
     default:
@@ -286,7 +332,7 @@ function applyHost(game, pack, action) {
   }
 }
 
-function applyPlayer(game, action) {
+function applyPlayer(game, pack, action) {
   const id = typeof action.id === 'string' ? action.id : '';
   if (!/^p[a-zA-Z0-9_-]{1,48}$/.test(id)) return false;
   const player = getPlayer(game, id);
@@ -299,7 +345,8 @@ function applyPlayer(game, action) {
     game.players[id] = { name: display, score: 0 };
     return true;
   }
-  if (!player || action.ticket !== game.ticket) return false;
+  if (!player || game.paused || action.ticket !== game.ticket) return false;
+  if (action.type === 'strike') return remover(game) === id && strike(game, pack, action.topic);
   if (action.type === 'buzz' && game.phase === 'question' && game.opened && !game.buzzed.includes(id)) {
     game.buzzed.push(id);
     if (game.answering) game.queue.push(id);
@@ -318,11 +365,17 @@ function applyPlayer(game, action) {
 
 export function command(game, pack, action, host = false) {
   if (!action || typeof action !== 'object') return false;
+  if (host && action.type === 'pause') {
+    // A pause is not a move: «Отмена» still takes back the last real action.
+    if (['lobby', 'results'].includes(game.phase)) return false;
+    game.paused = !game.paused;
+    game.revision++;
+    return true;
+  }
   if (host && action.type === 'undo') {
     if (!game.previous) return false;
-    const revision = game.revision;
-    const players = game.players;
-    Object.assign(game, restoreGame(game.previous, pack), { revision: revision + 1, previous: null });
+    const { revision, players, paused } = game;
+    Object.assign(game, restoreGame(game.previous, pack), { revision: revision + 1, previous: null, paused });
     if (['question', 'final'].includes(game.phase)) game.ticket = nextTicket(game);
     for (const [id, player] of Object.entries(players)) {
       if (!getPlayer(game, id)) game.players[id] = player;
@@ -330,7 +383,7 @@ export function command(game, pack, action, host = false) {
     return true;
   }
   const before = host ? structuredClone({ ...game, previous: null }) : null;
-  if (!(host ? applyHost(game, pack, action) : applyPlayer(game, action))) return false;
+  if (!(host ? applyHost(game, pack, action) : applyPlayer(game, pack, action))) return false;
   if (host) game.previous = action.type === 'again' ? null : before;
   game.revision++;
   return true;
@@ -338,12 +391,22 @@ export function command(game, pack, action, host = false) {
 
 export function publicState(game, pack) {
   const question = findQuestion(pack, game.current);
+  const closed = awaitingHandoff(game, pack);
+  // In the final the phones show the question next to the answer field.
+  const shown = game.phase === 'final' ? activeFinal(pack, game) : question && !closed ? question : null;
   return {
     phase: game.phase, revision: game.revision, ticket: game.ticket, players: standings(game),
     roundNumber: roundIndex(game) + 1, roundTotal: pack.rounds.length, roundTitle: activeRound(pack, game).title,
     answering: game.answering, queue: [...game.queue], buzzed: [...game.buzzed], opened: game.opened,
     category: question?.category || '', value: question ? points(question) : null, modifier: question?.kind === 'modifier',
+    // The phone repeats the TV for those who sit far from it: the text and a pack picture, never the answer before the reveal.
+    prompt: shown && shown.prompt !== shown.category ? shown.prompt : '',
+    sound: Boolean(shown?.audio),
+    image: shown && (bundledImages.has(shown.image) || packImage(shown.image)) ? shown.image : '',
+    answer: game.phase === 'reveal' && question ? question.answer : '',
     title: pack.title, finalTopic: activeFinal(pack, game)?.topic || '', submitted: Object.keys(game.finalAnswers),
-    mode: game.mode || 'buzz', turn: turnPlayer(game), racing: (game.race || []).length > 0
+    mode: game.mode || 'buzz', turn: turnPlayer(game), racing: (game.race || []).length > 0,
+    chooser: chooser(game), handoff: closed, paused: Boolean(game.paused),
+    themes: game.phase === 'themes' ? finalTopics(pack, game) : [], remover: remover(game)
   };
 }

@@ -74,8 +74,9 @@ async function run() {
     await host.getByRole('button', { name: 'Начать игру' }).click();
     await answer(anya);
     await host.getByRole('button', { name: 'К табло' }).click();
-    for (let step = 0; step < 6; step++) {
-      const next = host.locator('[data-action="next-round"], [data-action="final"], [data-action="start-round"], [data-action="finish"]').first();
+    for (let step = 0; step < 7; step++) {
+      // «Играть её» skips striking the final themes out one by one.
+      const next = host.locator('[data-action="next-round"], [data-action="final"], [data-action="start-round"], [data-action="final-topic"], [data-action="finish"]').first();
       await next.waitFor();
       const type = await next.getAttribute('data-action');
       await next.click();
@@ -107,6 +108,7 @@ async function run() {
     await host.goto(site + 'quiz/');
     assert.match(await host.locator('.saved-room').innerText(), new RegExp('Игра идёт: .*раунд 1 · 3 игрока'));
     await host.getByRole('link', { name: 'Продолжить игру' }).click();
+    await host.locator('.room-menu summary').click();
     await host.getByRole('button', { name: 'Закрыть комнату' }).click();
     for (const page of [anya, boris]) await page.getByRole('heading', { name: 'Комната закрыта' }).waitFor();
     await tv.waitForURL(/screen\.html\?pair=\d{4}/);

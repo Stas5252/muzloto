@@ -3,7 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 (async () => {
-  const { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, remainingQuestions, settle, activeFinal, findQuestion } = await import('../quiz/game.mjs');
+  const { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, remainingQuestions, settle, activeFinal, findQuestion,
+    chooser, awaitingHandoff, remover, pace } = await import('../quiz/game.mjs');
   const { screenState, validScreenState, screenPhotoChunk, photoChunkSize, validScreenPhoto } = await import('../quiz/screen.mjs');
   const pack = validPack(demoPack);
   assert.equal(pack.rounds?.length, 3, 'The starter game has three rounds');
@@ -197,8 +198,21 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.ok(!JSON.stringify(publicState(game, pack)).includes('Тайна'), 'Final responses stay off the public scoreboard');
   assert.equal(send('p1', 'final-answer', { ticket: game.ticket, wager: 25, answer: 'Другое' }), false);
   host('finish', { correct: ['p1'] });
-  assert.equal(game.players.p1.score, 575);
+  assert.equal(game.phase, 'showdown', 'The stakes are opened one by one');
+  assert.equal(game.players.p1.score, 500, 'A stake counts when it is opened');
   assert.equal(host('finish', { correct: ['p1'] }), false, 'A final wager is calculated once');
+  assert.equal(host('score', { player: 'p1', score: 1 }), false, 'The score is frozen while the stakes are opened');
+  assert.equal(screenState(game, pack).session.verdicts.length, 0, 'A closed stake stays off the TV');
+  assert.equal(screenState(game, pack).source.final.answer, '');
+  assert.equal(host('unveil'), true);
+  assert.equal(game.players.p1.score, 575);
+  const opened = screenState(game, pack);
+  assert.ok(validScreenState(opened));
+  assert.deepEqual(opened.session.verdicts.map(v => [v.id, v.wager, v.correct]), [['p1', 75, true]]);
+  assert.equal(opened.source.final.answer, pack.final.answer, 'The right answer follows the last stake');
+  assert.equal(host('unveil'), true);
+  assert.equal(game.phase, 'results');
+  assert.equal(game.players.p1.score, 575);
 
   // Play again: the same room and players, a clean score, no way back into the old results.
   const revisionBefore = game.revision;
@@ -407,11 +421,87 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
     assert.equal(lead('final'), true);
     assert.equal(lead('score', { player: 'pa', score: 5000 }), false, 'Final wagers are capped by the score, so it is frozen');
   }
+  {
+    // «Своя игра» rules: who chooses, «кот в мешке», the timer setting, a pause, themes of the final struck out in turn.
+    const show = createGame();
+    const act = (type, extra = {}) => command(show, zodiacPack, { type, ...extra }, true);
+    const say = (id, type, extra = {}) => command(show, zodiacPack, { type, id, ticket: show.ticket, ...extra });
+    for (const [id, name] of [['pa', 'Аня'], ['pb', 'Боря'], ['pc', 'Вика']]) command(show, zodiacPack, { type: 'join', id, name });
+    assert.equal(pace(show), 10);
+    assert.equal(act('pace', { seconds: 9 }), false);
+    assert.equal(act('pace', { seconds: 15 }), true);
+    assert.equal(act('pace', { seconds: 15 }), false);
+    assert.equal(act('pause'), false, 'There is nothing to pause in the lobby');
+    act('start');
+    assert.equal(chooser(show), 'pa', 'The first player opens the game');
+    const cards = zodiacPack.rounds[0].categories.flatMap(category => category.questions);
+    const plain = cards.find(q => q.kind === 'normal');
+    act('pick', { question: plain.id });
+    act('open');
+    assert.equal(act('pause'), true);
+    assert.equal(say('pb', 'buzz', { ms: 200 }), false, 'A paused game takes no buzzes');
+    assert.ok(publicState(show, zodiacPack).paused && screenState(show, zodiacPack).session.paused);
+    assert.equal(act('pause'), true);
+    assert.equal(say('pb', 'buzz', { ms: 200 }), true);
+    settle(show);
+    act('judge', { verdict: 'correct' });
+    assert.equal(chooser(show), 'pb', 'Whoever answered right chooses next');
+    assert.equal(screenState(show, zodiacPack).session.turn, 'pb');
+    act('pause');
+    assert.equal(act('undo'), true, 'A pause does not replace the action that «Отмена» takes back');
+    assert.equal(show.phase, 'question');
+    assert.equal(show.paused, true, 'Undo leaves the pause as it is');
+    act('pause');
+    act('reveal'); act('board');
+    const cat = cards.find(q => q.kind === 'handoff');
+    act('pick', { question: cat.id });
+    assert.equal(awaitingHandoff(show, zodiacPack), true);
+    let frame = screenState(show, zodiacPack, '', { kind: 'buzz', left: 4000, total: 15000 });
+    assert.ok(validScreenState(frame) && frame.session.handoff);
+    assert.equal(publicState(show, zodiacPack).prompt, '', 'A «кот в мешке» stays closed on the phones until it is handed over');
+    assert.equal(publicState(show, zodiacPack).image, '');
+    assert.equal(validScreenState({ ...frame, session: { ...frame.session, timer: { kind: 'buzz', left: -1, total: 15000 } } }), false);
+    assert.equal(validScreenState({ ...frame, session: { ...frame.session, timer: { kind: 'wait', left: 1, total: 15000 } } }), false);
+    act('assign', { player: 'pc' });
+    assert.equal(awaitingHandoff(show, zodiacPack), false);
+    assert.equal(show.answering, 'pc');
+    assert.equal(publicState(show, zodiacPack).image, cat.image);
+    act('judge', { verdict: 'correct' });
+    assert.equal(chooser(show), 'pc');
+    assert.equal(publicState(show, zodiacPack).answer, cat.answer, 'The phones show the answer once it is revealed');
+    act('board');
+    act('next-round', { skip: true }); act('start-round'); act('next-round', { skip: true }); act('start-round');
+    assert.equal(act('final', { skip: true }), true);
+    assert.equal(show.phase, 'themes', 'Several final themes are struck out one by one');
+    frame = screenState(show, zodiacPack);
+    assert.ok(validScreenState(frame));
+    assert.equal(frame.source.themes.length, zodiacPack.finals.length);
+    assert.equal(frame.source.final.prompt, '', 'The final question stays closed while themes are struck out');
+    const first = remover(show);
+    assert.equal(show.players[first].score, Math.min(...Object.values(show.players).map(p => p.score)), 'The lowest score strikes first');
+    const other = Object.keys(show.players).find(id => id !== first);
+    assert.equal(say(other, 'strike', { topic: 0 }), false, 'Only the player whose turn it is strikes a theme');
+    assert.equal(say(first, 'strike', { topic: 0 }), true);
+    assert.notEqual(remover(show), first, 'The next player strikes the next theme');
+    assert.equal(say(remover(show), 'strike', { topic: 0 }), false, 'A struck theme is gone');
+    assert.equal(act('score', { player: 'pa', score: 50 }), true, 'The score can still be corrected before the stakes');
+    for (let topic = 1; topic < zodiacPack.finals.length - 1; topic++) assert.equal(act('strike', { topic }), true);
+    assert.equal(show.phase, 'final');
+    assert.equal(activeFinal(zodiacPack, show), zodiacPack.finals.at(-1), 'The last theme left is played');
+    assert.equal(act('strike', { topic: 0 }), false);
+    for (const [id, wager] of [['pa', 50], ['pb', 0], ['pc', 100]]) assert.equal(say(id, 'final-answer', { wager, answer: 'Ответ ' + id }), true);
+    act('finish', { correct: ['pc'] });
+    assert.equal(show.verdicts.at(-1).id, 'pc', 'The leader learns the result last');
+    const before = Object.fromEntries(Object.entries(show.players).map(([id, p]) => [id, p.score]));
+    assert.equal(act('unveil', { all: true }), true);
+    assert.equal(show.phase, 'results');
+    assert.deepEqual([show.players.pa.score, show.players.pc.score], [before.pa - 50, before.pc + 100]);
+  }
   const imported = fs.readdirSync(path.join(__dirname, '../quiz/packs')).filter(name => name.endsWith('.json') && name !== 'index.json')
     .flatMap(name => validPack(JSON.parse(fs.readFileSync(path.join(__dirname, '../quiz/packs', name), 'utf8'))).rounds)
     .flatMap(round => round.categories.flatMap(category => category.questions));
   assert.equal(imported.filter(question => question.kind === 'modifier').length, 44);
   assert.ok(imported.every(question => !question.prompt.startsWith('[МОДИФИКАТОР]')), 'Modifier cards show their effect, not a placeholder');
 
-  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and sealed final');
+  console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs, chooser, «кот в мешке», pause, final themes struck in turn and stakes opened one by one');
 })().catch(error => { console.error(error); process.exitCode = 1; });
