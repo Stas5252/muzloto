@@ -23,6 +23,7 @@ let draft = mode === 'host' ? structuredClone(demoPack) : null;
 let editorRound = 0;
 let savedRoom = null;
 let savedInfo = '';
+let homeNote = '';
 const plural = (count, one, few, many) => `${count} ${count % 10 === 1 && count % 100 !== 11 ? one :
   count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? few : many}`;
 const playersLabel = count => plural(count, 'игрок', 'игрока', 'игроков');
@@ -288,7 +289,7 @@ function questionPanel(question, session, picker = '') {
 function finalPanel(final, note) {
   return `<article class="question panel ${final.image ? 'has-photo' : ''}" data-stage="final">
     ${final.image ? `<figure class="question-figure"><img class="question-image" src="${escape(final.image)}" alt="Фото к финалу"></figure>` : ''}
-    <div class="question-copy"><p class="eyebrow">Финал · ${escape(final.topic)}</p><h1>${escape(final.prompt)}</h1>
+    <div class="question-copy"><p class="eyebrow">Финал · ${escape(final.topic)}</p><h1${final.prompt.length > 140 ? ' class="long"' : ''}>${escape(final.prompt)}</h1>
       ${final.audio ? '<p class="sound-note"><span aria-hidden="true">♪</span> Вопрос со звуком</p>' : ''}<p class="muted">${note}</p></div></article>`;
 }
 
@@ -393,7 +394,7 @@ function renderHome() {
       <h1>Вне очереди<span>.</span></h1>
       <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
       <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${chosen.finals ? '<span>Финал со ставками</span>' : ''}</div>
-      <nav class="home-menu" aria-label="Главное меню">${picked}${menu}</nav>
+      <nav class="home-menu" aria-label="Главное меню">${homeNote ? `<p class="saved-room">${homeNote}</p>` : ''}${picked}${menu}</nav>
     </div>
     <figure class="hero-art"><img src="./media/auditorium.webp" alt="Зрительный зал, вид со сцены" fetchpriority="high"></figure>
   </section>
@@ -563,7 +564,7 @@ function renderHost() {
   const running = !['lobby', 'results'].includes(phase);
   const menuOpen = app.querySelector('.room-menu')?.open;
   const service = `${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}`;
-  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
+  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Меню квиза</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
     <div class="actions">${running ? `${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('pause', game.paused ? 'Продолжить игру' : 'Пауза', `aria-pressed="${Boolean(game.paused)}"`, game.paused ? 'primary' : 'quiet')}
       <details class="room-menu" ${menuOpen ? 'open' : ''}><summary class="button quiet">Меню</summary><div class="actions">${service}${action('close', 'Закрыть комнату', '', 'quiet')}</div></details>` :
       `${service}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}`}</div></div>
@@ -982,9 +983,17 @@ function initHost() {
     if (steps && game?.phase === 'lobby') steps.outerHTML = lobbySteps();
     if (state === 'attached') message('ТВ подключён.');
   });
+  // A double tap must not reach the button that the first tap has just put under the finger.
+  let lastTap = null;
   app.addEventListener('click', event => {
     const button = event.target.closest('[data-action]');
-    if (button && !button.disabled) hostButton(button);
+    if (!button || button.disabled) return;
+    const tap = { what: JSON.stringify(button.dataset), x: event.clientX, y: event.clientY, at: performance.now() };
+    const through = lastTap && event.detail > 0 && tap.what !== lastTap.what && tap.at - lastTap.at < 400 &&
+      Math.hypot(tap.x - lastTap.x, tap.y - lastTap.y) < 48;
+    if (through) return;
+    lastTap = tap;
+    hostButton(button);
   });
   app.addEventListener('input', event => {
     const { field, correct } = event.target.dataset;
@@ -1061,7 +1070,10 @@ function initHost() {
         }
       }
     } catch { localError(); }
-    if (params.has('host')) history.replaceState(null, '', './');
+    const stray = params.has('host');
+    if (stray) history.replaceState(null, '', './');
+    // The remote lives in the browser that created the room: a copied link cannot move it to another phone.
+    if (stray) homeNote = 'Пульт этой игры остался в том браузере, где её создали. Вернитесь к нему или начните новую игру здесь.';
     renderHome();
   })();
   fetch('./packs/index.json').then(response => response.json()).then(list => {
@@ -1078,6 +1090,8 @@ function initPlayer() {
     return;
   }
   document.body.classList.add('player');
+  // The logo must not take a player out of the game into the host's menu.
+  document.querySelector('.wordmark')?.removeAttribute('href');
   const storageKey = 'vne-ocheredi-player-' + room;
   let player = stored(storageKey);
   if (!player || typeof player.name !== 'string' || !/^p[a-f0-9]{24}$/.test(player.id || '')) player = null;
@@ -1153,12 +1167,13 @@ function initPlayer() {
       return;
     }
     if (!player) {
-      app.innerHTML = '<form id="join-form" class="panel player-panel"><p class="eyebrow">Войти в игру</p><h1>Как вас зовут?</h1><label><span>Имя на табло</span><input name="name" maxlength="24" required autocomplete="nickname"></label><button class="button primary" type="submit">Войти</button></form>';
+      app.innerHTML = '<form id="join-form" class="panel player-panel"><p class="eyebrow">Войти в игру</p><h1>Как вас зовут?</h1><label><span>Имя на табло <small class="muted">до 24 букв</small></span><input name="name" maxlength="24" required autocomplete="nickname"></label><button class="button primary" type="submit">Войти</button></form>';
       return;
     }
     if (!me) {
-      app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">Подключение</p><h1>Привет, ${escape(player.name)}</h1><p>${state?.phase === 'results' ?
-        'Эта игра уже закончилась. Вы войдёте, как только ведущий начнёт следующую.' : 'Ждём комнату ведущего.'}</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
+      const full = state?.players.length >= 12;
+      app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">${full ? 'Мест нет' : 'Подключение'}</p><h1>${full ? 'Комната заполнена' : `Привет, ${escape(player.name)}`}</h1><p>${state?.phase === 'results' ?
+        'Эта игра уже закончилась. Вы войдёте, как только ведущий начнёт следующую.' : full ? 'В игре уже 12 игроков: это предел. Смотрите игру на ТВ.' : 'Ждём комнату ведущего.'}</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
       return;
     }
     const previousPanel = app.querySelector('.player-panel');
@@ -1251,7 +1266,7 @@ function initPlayer() {
     sendPlayer({ type: 'join' });
     const note = document.querySelector('#join-note');
     if (note && Date.now() - attempted > 6500) {
-      note.textContent = state?.phase === 'results' ? '' : currentNetwork.length ?
+      note.textContent = state?.phase === 'results' || state?.players.length >= 12 ? '' : currentNetwork.length ?
         'Ведущий не отвечает. Проверьте, что его вкладка открыта. Если игра уже завершена, попросите новый QR-код.' :
         'Связь пока не появилась. Если вы в одном Wi‑Fi, ведущий может запустить локальную версию.';
     }
@@ -1457,8 +1472,20 @@ function initTv() {
       if (qr && window.QRCode) {
         try { new window.QRCode(qr, { text: snapshot.invite, width: 320, height: 320, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
       }
+      fit();
     }
   }
+  // A question of any length stays on one screen: its text shrinks until the page stops scrolling.
+  function fit() {
+    const heading = app.querySelector('.question h1');
+    if (!heading) return;
+    heading.style.fontSize = '';
+    if (!matchMedia('(min-width: 751px)').matches) return;
+    let size = parseFloat(getComputedStyle(heading).fontSize);
+    while (size > 16 && document.documentElement.scrollHeight > innerHeight + 1) heading.style.fontSize = `${size *= .93}px`;
+  }
+  app.addEventListener('load', fit, true);
+  window.addEventListener('resize', fit);
 
   function receive(frame) {
     if (ended || frame.type !== 'screen') return;

@@ -267,7 +267,7 @@ async function quizMenu() {
     assert.equal(page.url(), roomUrl);
     await page.reload(nav);
     await board.waitFor();
-    await page.getByRole('link', { name: 'Главное меню', exact: true }).click();
+    await page.getByRole('link', { name: 'Меню квиза', exact: true }).click();
     await resume.waitFor();
     assert.equal(await resume.getAttribute('href'), roomUrl);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));

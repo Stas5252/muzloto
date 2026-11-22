@@ -7,6 +7,9 @@ const chrome = process.env.MUZLOTO_CHROME || (fs.existsSync('/usr/bin/chromium')
 const names = Array.from({ length: 11 }, (_, index) => `Участник ${index + 1} из команды`);
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 // During a game the service buttons of the host fold into «Меню».
+// A tap that lands on a new button under the finger sooner than this is ignored as a double tap.
+const unhurried = page => page.waitForTimeout(450);
+
 async function closeRoom(page) {
   if (!await button(page, 'Закрыть комнату').isVisible()) await page.locator('.room-menu summary').click();
   await button(page, 'Закрыть комнату').click();
@@ -202,6 +205,7 @@ async function run() {
     await button(host, 'Открыть ставки').click();
     await tv.getByRole('heading', { name: 'Открываем ставки' }).waitFor();
     assert.equal(await tv.getByText('Кубик Рубика').count(), 0, 'A stake stays closed until the host opens it');
+    await unhurried(host);
     await button(host, 'Сразу итоги').click();
     await tv.getByText('150 очков', { exact: true }).waitFor();
     assert.equal(await tv.locator('.scores li').count(), names.length);
@@ -269,6 +273,7 @@ async function run() {
     assert.equal(await sheet.getByRole('spinbutton', { name: 'Новый счёт' }).inputValue(), '-600');
     await sheet.getByRole('button', { name: 'Сохранить' }).click();
     await seats[1].locator('.player-seat span', { hasText: '-600 очков' }).waitFor();
+    await unhurried(host);
     await host.getByRole('button', { name: 'Изменить счёт: Аня' }).click();
     await host.locator('.score-dialog').getByRole('button', { name: '+1000' }).click();
     await host.mouse.click(4, 4);
@@ -307,6 +312,7 @@ async function run() {
       await button(host, 'Начать раунд').click();
     }
     host.once('dialog', dialog => dialog.accept());
+    await unhurried(host);
     await button(host, 'Перейти в финал').click();
     await packTv.getByRole('heading', { name: 'Убирает тему: Боря' }).waitFor();
     const themes = await packTv.locator('.theme-list li').count();
@@ -347,6 +353,7 @@ async function run() {
       rounds: [{ title: 'Раунд со звуком', categories: [{ title: 'Мелодии', questions: [{ prompt: 'Что звучит?', answer: 'Мелодия', value: 100, audio: tune }] }] }]
     })) });
     await host.getByRole('heading', { name: 'Финал · тема 1 из 2' }).waitFor();
+    await unhurried(host);
     await button(host, 'Убрать тему').click();
     assert.equal(await host.getByRole('textbox', { name: 'Тема финала' }).inputValue(), 'Вторая тема');
     await button(host, 'Убрать финал').click();
@@ -375,6 +382,7 @@ async function run() {
     // The name of whoever chooses is text on the other phones, never markup.
     await watcher.getByRole('heading', { name: 'Выбирает: Аня<b id=x>' }).waitFor();
     assert.equal(await watcher.locator('#x').count() + await host.locator('#x').count(), 0);
+    await unhurried(host);
     await host.locator('[data-id=c0q0]').click();
     await host.locator('.host-sound audio').evaluate(async audio => {
       window.heardTrack = audio;

@@ -32,6 +32,7 @@ export function openMusicScreen(code, capture, setOutput) {
   let lastReady = 0;
   let readyTrack = '';
   let tvSound = false;
+  let locked = false;
   let waitingSince = 0;
   let lastLayout = '';
   let layoutRevision = 0;
@@ -40,6 +41,8 @@ export function openMusicScreen(code, capture, setOutput) {
     if (frame.type !== eventType) return;
     if (frame.event === 'music-request') {
       lastRequest = Date.now();
+      // The TV says whether somebody has pressed «Включить звук на ТВ» on it.
+      locked = frame.sound === false;
       if (lastRequest - lastReply > 100) {
         lastReply = lastRequest;
         send(frame.full === true);
@@ -71,7 +74,7 @@ export function openMusicScreen(code, capture, setOutput) {
       waitingSince ||= now;
       if (now - waitingSince > handoverLimit) tvSound = false;
     }
-    setOutput(Boolean(playback.url && tvSound), true);
+    setOutput(Boolean(playback.url && tvSound), true, locked);
     const serialized = JSON.stringify(layout);
     const changed = serialized !== lastLayout;
     if (changed) {
@@ -210,7 +213,7 @@ function startViewer(code) {
   link = connectRoom(code, receive, () => request(true));
 
   function request(full = false) {
-    link?.send({ type: eventType, event: 'music-request', full });
+    link?.send({ type: eventType, event: 'music-request', full, sound: enabled });
   }
 
   function ready() {

@@ -186,8 +186,11 @@
     let gridSize = 3;
     const activePlayerKey = 'muzloto_active_player';
 
-    $('input-room').value = urlParams.get('room') || '';
-    $('input-name').value = localStorage.getItem('muzloto_player_name') || '';
+    // The form is on the page before the scripts load: keep what was already typed into it.
+    const typedRoom = $('input-room').value.trim();
+    const typedName = $('input-name').value.trim();
+    if (!$('input-room').value) $('input-room').value = urlParams.get('room') || '';
+    if (!$('input-name').value) $('input-name').value = localStorage.getItem('muzloto_player_name') || '';
 
     // Web Audio Sounds
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -507,6 +510,8 @@
         name: localStorage.getItem('muzloto_player_name')
       };
       if (!saved?.code || !saved.name || (urlRoom && urlRoom !== saved.code)) return;
+      // Somebody is already typing another name or code: do not pull them back into the old room.
+      if (typedRoom && typedRoom !== saved.code || typedName && typedName !== saved.name) return;
       $('input-room').value = saved.code;
       $('input-name').value = saved.name;
       joinRoom(saved.code, saved.name);

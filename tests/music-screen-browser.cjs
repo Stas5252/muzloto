@@ -26,7 +26,7 @@ function testAudio() {
 }
 
 async function run() {
-  const browser = await chromium.launch({ executablePath: chrome });
+  const browser = await chromium.launch({ executablePath: chrome, ignoreDefaultArgs: ['--hide-scrollbars'] });
   const errors = [];
   const body = testAudio();
   const mobile = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
@@ -53,7 +53,7 @@ async function run() {
     const host = await open(mobile, new URL('tv.html', site));
     await host.evaluate(source => {
       setTracks(Array.from({ length: 9 }, (_, i) => ({
-        id: 'fixture_' + i, artist: 'Проверка', title: 'Трек ' + (i + 1), preview: source + i + '.wav'
+        id: 'fixture_' + i, artist: 'Проверка', title: 'My Heart Will Go On (Love Theme from “Titanic”) ' + (i + 1), preview: source + i + '.wav'
       })));
     }, fixture);
     await host.locator('#opt-mode').selectOption('line');
@@ -72,7 +72,10 @@ async function run() {
     assert.equal(await tv.getByRole('button', { name: 'Следующий бочонок' }).count(), 0);
     console.log('PASS separate TV connects to the phone and shows the lobby and the player');
 
+    await host.waitForFunction(() => /Включить звук на ТВ/.test(document.querySelector('#tv-output-status').textContent));
     await tv.locator('#music-enable').click();
+    await host.waitForFunction(() => document.querySelector('#tv-output-status').textContent === 'ТВ подключён');
+    console.log('PASS the phone says that the sound on the TV is still off');
     await host.locator('#btn-start-game').click();
     await host.locator('#chk-auto-next').uncheck();
     await tv.getByText('Ход 1', { exact: true }).waitFor();
@@ -106,6 +109,7 @@ async function run() {
       await player.waitForFunction(expected => calledTrackIds.size === expected, turn);
       await tv.getByText('Ход ' + turn, { exact: true }).waitFor();
       assert.equal(await tv.locator('#music-history .board-keg-item').count(), turn);
+      assert.ok(await tv.evaluate(() => document.documentElement.scrollHeight) <= 720, 'A long title leaves the drawn kegs on a 720p TV');
       assert.equal(await tv.locator('#lotto-keg-number').textContent(), await host.locator('#lotto-keg-number').textContent());
       await player.locator('.bingo-cell').evaluateAll(cells => {
         for (const cell of cells) if (!cell.classList.contains('marked') && calledTrackIds.has(cell.dataset.id)) cell.click();
@@ -114,6 +118,12 @@ async function run() {
         await player.locator('#btn-bingo').click();
         await tv.getByText('Победитель: Игрок ТВ', { exact: true }).waitFor();
         assert.ok(await tv.locator('#music-winning-card .win-highlight').count() >= 3);
+        assert.ok(await tv.evaluate(() => document.documentElement.scrollHeight) <= 720, 'Bingo fits a 720p TV');
+        assert.ok(await tv.evaluate(() => {
+          const drawn = document.querySelector('#music-history');
+          while (drawn.children.length < 12) drawn.append(drawn.lastElementChild.cloneNode(true));
+          return drawn.scrollWidth > drawn.clientWidth && document.documentElement.scrollHeight <= 720;
+        }), 'More drawn kegs than a 720p TV is wide do not add a scrollbar under them');
         await tv.waitForFunction(() => document.querySelector('#music-audio').paused);
         won = true;
         break;

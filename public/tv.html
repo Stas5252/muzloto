@@ -52,7 +52,7 @@
     .lobby-steps span { grid-column: 2; color: var(--text-muted); font-size: .9rem; }
     @media (min-width: 900px) { .lobby-steps { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
   </style>
-  <link rel="stylesheet" href="stream-theme.css?v=6">
+  <link rel="stylesheet" href="stream-theme.css?v=7">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
 </head>
 <body class="host-page">
@@ -157,7 +157,7 @@
       <ol class="lobby-steps" aria-label="Что делать дальше">
         <li id="step-tv"><strong>Экран</strong><span id="step-tv-text"></span></li>
         <li id="step-players"><strong>Игроки</strong><span id="step-players-text"></span></li>
-        <li><strong>Старт</strong><span>Нажмите «Начать игру». Музыка заиграет на ТВ.</span></li>
+        <li><strong>Старт</strong><span>Нажмите «Начать игру», и заиграет первый трек.</span></li>
       </ol>
       <div class="tv-lobby-grid stream-lobby-grid">
         <section class="card lobby-invite" aria-labelledby="invite-heading">
@@ -2504,7 +2504,7 @@
       tvDisplay?.close();
       tvPairReady.then(pair => { if (tvScreenCode === displayCode) pair?.show(); });
 
-      import('./music-screen.mjs?v=4').then(({ openMusicScreen, assetUrl }) => {
+      import('./music-screen.mjs?v=5').then(({ openMusicScreen, assetUrl }) => {
         if (tvScreenCode !== displayCode) return;
         const projectTrack = track => {
           const art = assetUrl(track.art, joinLink);
@@ -2546,10 +2546,11 @@
             position: mainAudio.currentTime, duration: Number(trackProgress.max)
           };
           return { layout, playback };
-        }, (muted, attached) => {
+        }, (muted, attached, locked) => {
           tvKeepsSound = muted;
           if (mainAudio.muted !== muted) mainAudio.muted = muted;
-          const output = muted ? 'Звук на ТВ' : attached ? 'ТВ подключён' : '';
+          const output = muted ? 'Звук на ТВ' : !attached ? '' : locked
+            ? 'ТВ подключён, но звук на нём выключен: музыка пойдёт с телефона. Нажмите на ТВ «Включить звук на ТВ».' : 'ТВ подключён';
           if (previousOutput !== output) $('tv-output-status').textContent = previousOutput = output;
         });
       }).catch(() => {
@@ -2636,7 +2637,7 @@
     try {
       const closedScreen = localStorage.getItem(closedScreenKey);
       localStorage.removeItem(closedScreenKey);
-      if (/^[a-f0-9]{24}$/.test(closedScreen || '')) import('./music-screen.mjs?v=4').then(api => api.closeMusicScreen(closedScreen));
+      if (/^[a-f0-9]{24}$/.test(closedScreen || '')) import('./music-screen.mjs?v=5').then(api => api.closeMusicScreen(closedScreen));
     } catch {}
 
     function endSession() {
