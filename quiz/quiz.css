@@ -361,7 +361,8 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
   .hero { gap: 0; min-height: 0; }
   .hero-copy { padding: 24px; }
   .hero h1 { font-size: clamp(3.25rem, 11vw, 5rem); }
-  .hero-art { min-height: 225px; }
+  /* On a phone the packs come right after the buttons, the photo is for wide screens. */
+  .hero-art { display: none; }
   .home-menu { margin-top: 18px; }
   .round-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topic { grid-template-columns: 1fr; gap: 1px; }
@@ -389,7 +390,7 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
 .again p { color: var(--muted); }
 .again label { display: grid; gap: 4px; }
 
-.score-edit { align-self: center; min-width: 34px; min-height: 34px; margin: -3px -5px -3px 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.score-edit { align-self: center; min-width: 44px; min-height: 44px; margin: -8px -8px -8px 0; font-size: 1.15rem; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
 .score-edit:hover, .score-edit:focus-visible { background: #40394b; color: var(--paper); }
 .score-dialog { width: min(420px, calc(100vw - 24px)); padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--paper); }
 .score-dialog::backdrop { background: rgb(8 10 16 / .72); }

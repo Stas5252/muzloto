@@ -43,6 +43,8 @@ async function run() {
     const host = await open(site + 'quiz/');
     await host.locator('.pack-card').nth(3).click();
     const firstPack = await host.locator('.picked-pack strong').innerText();
+    // A tap that lands on a new button under the finger within 0.4 s is ignored as a double tap.
+    await host.waitForTimeout(450);
     await host.locator('.pack-go button').click();
     await host.locator('.steps').waitFor();
     assert.equal(await host.locator('.room-bar strong').innerText(), firstPack);
@@ -66,10 +68,14 @@ async function run() {
     console.log('PASS quiz lobby: chosen pack, TV attached by code, steps ticked off');
 
     const answer = async player => {
+      await host.waitForTimeout(450);
       await host.locator('[data-action="pick"]').first().click();
+      await host.waitForTimeout(450);
       await host.getByRole('button', { name: /Принимать ответы/ }).click();
       await player.locator('.buzzer').tap();
+      await host.waitForTimeout(450);
       await host.locator('[data-verdict="correct"]').first().click();
+      await host.waitForTimeout(450);
     };
     await host.getByRole('button', { name: 'Начать игру' }).click();
     await answer(anya);
@@ -81,7 +87,7 @@ async function run() {
       const type = await next.getAttribute('data-action');
       await next.click();
       if (type === 'finish') break;
-      await host.waitForTimeout(250);
+      await host.waitForTimeout(450);
     }
     await host.locator('.again').waitFor();
     const late = await enter('Вика');
@@ -234,6 +240,17 @@ async function run() {
     await phone.getByText('ТВ подключён к этому телефону').waitFor();
     assert.equal(await phone.evaluate(() => localStorage.getItem('party-tv-pin')), pin);
     console.log('PASS TV code: a wrong code waits, the TV can be forgotten, the QR link stores the code');
+
+    // A player types the name and the code while the scripts of the page are still loading.
+    const early = watch(await (await browser.newContext(mobile)).newPage());
+    await early.route('**/peerjs.min.js', async route => { await new Promise(done => setTimeout(done, 1500)); await route.continue(); });
+    await early.goto(site + 'play.html', { waitUntil: 'commit' });
+    await early.locator('#input-name').fill('Ранний');
+    await early.locator('#input-room').fill('4321');
+    await early.waitForFunction(() => typeof joinRoom === 'function');
+    assert.equal(await early.locator('#input-name').inputValue(), 'Ранний');
+    assert.equal(await early.locator('#input-room').inputValue(), '4321');
+    console.log('PASS MuzLoto player: what was typed while the page loads stays in the form');
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 }
