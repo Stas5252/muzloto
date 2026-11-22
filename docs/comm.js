@@ -286,6 +286,7 @@ window.createComm = function(role) {
         marks: [...p.marks],
         markSequence: p.markSequence ? [...p.markSequence] : undefined,
         attempt: p.attempt,
+        won: p.won,
         left: p.left
       }]);
       const dataToSave = {
@@ -399,6 +400,9 @@ window.createComm = function(role) {
       if (roomState.state !== 'playing') {
         return reply({ ok: false, msg: 'Игра сейчас не идёт' });
       }
+      if (p.won) {
+        return reply({ ok: false, msg: 'Вы уже победили в этом раунде' });
+      }
       // Reconcile client-reported marks safely with called barrels
       if (msg.marks && Array.isArray(msg.marks)) {
         for (const mId of msg.marks) {
@@ -411,6 +415,7 @@ window.createComm = function(role) {
       if (winInfo.win) {
         roomState.state = 'finished';
         roomState.winner = p.name;
+        p.won = true;
         roomState.winnerPid = p.pid;
         roomState.winnerRequest = msg.request;
         roomState.winnerDetails = {
@@ -609,6 +614,7 @@ window.createComm = function(role) {
         p.card = newCard(roomState);
         p.marks = new Set();
         p.markSequence?.clear();
+        p.won = false;
         if (p.left) continue;
         sendToPlayer(p.pid, {
           type: 'card',

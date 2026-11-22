@@ -167,7 +167,7 @@
   <script src="mqtt.min.js"></script>
   <script src="room-mqtt.js?v=2"></script>
   <script src="peerjs.min.js"></script>
-  <script src="comm.js?v=8"></script>
+  <script src="comm.js?v=9"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -367,6 +367,7 @@
             cell.classList.remove('marked');
             myMarks.delete(id);
           }
+          cell.setAttribute('aria-pressed', String(willMark));
 
           comm.playerMark({ id, marked: willMark });
           playTapSound(willMark);

@@ -186,6 +186,15 @@ assert.equal(bingo?.ok, true, 'Retry a lost bingo request and a lost success res
 assert.equal(state.state, 'finished');
 assert.equal(JSON.parse(hostStorage.getItem('muzloto_db_stats')).history.length, 1, 'A retried win is recorded once');
 
+host.comm.hostResume();
+advance();
+let repeat;
+player.comm.playerBingo({ marks: tracks.map(track => track.id) }, result => { repeat = result; });
+advance(3300);
+assert.equal(repeat?.ok, false, 'A winner cannot win the continued round again');
+assert.equal(state.state, 'playing', 'The continued round stays open for the other players');
+assert.equal(JSON.parse(hostStorage.getItem('muzloto_db_stats')).history.length, 1, 'A repeated claim is not recorded');
+
 drop = () => false;
 const mqttHost = open('host', makeStorage(), 'mqtt');
 const mqttPlayer = open('player', makeStorage(), 'mqtt');
@@ -240,4 +249,4 @@ const receiver = delayed.onmessage;
 receiver({ data: retry });
 advance();
 assert.equal(state.players.length, 0, 'A delayed retry does not reactivate a departed player');
-console.log('PASS mesh: join retry, offline marks and bingo, deduplication, round isolation, MQTT subscription race, card resync and explicit leave');
+console.log('PASS mesh: join retry, offline marks and bingo, no repeat win after continue, deduplication, round isolation, MQTT subscription race, card resync and explicit leave');

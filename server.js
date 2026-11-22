@@ -521,6 +521,7 @@ io.on('connection', s => {
     for (const p of r.players.values()) {
       p.card = newCard(r);
       p.marks = new Set();
+      p.won = false;
       if (p.sid) io.to(p.sid).emit('card', cardOut(r, p));
     }
     push(r);
@@ -642,6 +643,9 @@ io.on('connection', s => {
     if (r.state !== 'playing') {
       return ack({ ok: false, msg: 'Игра сейчас не идёт' });
     }
+    if (p.won) {
+      return ack({ ok: false, msg: 'Вы уже победили в этом раунде' });
+    }
 
     // Safely reconcile client-reported marks with called barrels (never allows uncalled tracks)
     if (d && Array.isArray(d.marks)) {
@@ -656,6 +660,7 @@ io.on('connection', s => {
     if (winInfo.win) {
       r.state = 'finished';
       r.winner = p.name;
+      p.won = true;
       r.winnerPid = p.pid;
       r.winnerDetails = {
         name: p.name,
