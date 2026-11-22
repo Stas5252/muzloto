@@ -358,9 +358,13 @@ function renderHost() {
     ${Object.entries(game.finalAnswers).map(([id, entry]) => `<label class="final-entry"><input type="checkbox" data-correct="${id}" ${correctFinal.has(id) ? 'checked' : ''}><span><strong>${escape(game.players[id].name)}</strong> · ставка ${entry.wager}<br>${escape(entry.answer)}</span></label>`).join('')}
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
   if (phase === 'results') content = resultsPanel(game, pack);
+  const heard = app.querySelector('.host-sound audio');
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
     <div class="actions"><a class="button" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy-tv', 'Скопировать ссылку ТВ')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
+  // A redraw for a buzz or a hint must not cut off the track the host is listening to.
+  const fresh = app.querySelector('.host-sound audio');
+  if (heard && fresh?.getAttribute('src') === heard.getAttribute('src')) fresh.replaceWith(heard);
   if (phase === 'lobby' && window.QRCode) {
     try { new window.QRCode(document.querySelector('#join-qr'), { text: invite, width: 176, height: 176, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
   }
