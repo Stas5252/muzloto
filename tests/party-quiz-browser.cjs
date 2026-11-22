@@ -69,6 +69,18 @@ async function run() {
     await tv.waitForFunction(() => document.querySelector('.question-image[src="media/new-bag-phone.webp"]')?.naturalWidth > 0);
     await Promise.all(players.map(phone => button(phone, 'Жди сигнала').waitFor()));
     assert.equal(await tv.getByText('Жмите кнопку!', { exact: true }).count(), 0);
+    // A square picture is the tallest case: two rows of scores must still fit a 720p screen.
+    const overflow = await tv.evaluate(async () => {
+      const image = document.querySelector('.question-image');
+      const before = image.src;
+      image.src = 'packs/media/7852f39d392e.webp';
+      await image.decode();
+      const extra = Math.round(document.querySelector('.score-panel').getBoundingClientRect().bottom + scrollY - innerHeight);
+      image.src = before;
+      await image.decode();
+      return extra;
+    });
+    assert.ok(overflow <= 0, `The TV question with a square picture and 11 players fits the screen (${overflow}px over)`);
     await players[1].locator('.buzzer').click({ force: true });
     await button(players[1], 'Рано! Подожди').waitFor();
     assert.equal(await host.locator('.answering').count(), 0, 'A press before the signal does not reach the host');

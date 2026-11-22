@@ -340,6 +340,10 @@ textarea { resize: vertical; }
 }
 .tv .scores.scores-crowd li { justify-content: space-between; padding: 5px 8px; font-size: clamp(.82rem, 1.18vw, 1.06rem); }
 .tv .scores-crowd li span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Two rows of scores under a tall picture: keep everything on a 720p screen. */
+.tv .score-panel:has(.scores-crowd) { padding-block: 10px; }
+.tv .score-panel:has(.scores-crowd) h2 { display: none; }
+.tv .question:has(+ .score-panel .scores-crowd) .question-image { max-height: 53vh; }
 .credits ul { display: grid; gap: 8px; padding-left: 22px; }
 .credits li span { display: block; color: var(--muted); }
 #notice:not(:empty) { position: fixed; z-index: 4; bottom: 18px; right: 18px; max-width: min(430px, calc(100% - 36px)); padding: 12px 16px; border: 1px solid #64728c; border-radius: 10px; background: #293448; box-shadow: 0 6px 20px #10131c; }
