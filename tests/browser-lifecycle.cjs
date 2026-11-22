@@ -274,6 +274,34 @@ async function quizMenu() {
   } finally { await context.close(); }
 }
 
+async function gameMenu() {
+  const context = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true });
+  context.setDefaultTimeout(timeout);
+  try {
+    const page = await context.newPage();
+    const menu = page.getByRole('heading', { name: 'Во что играем?' });
+    const back = page.getByRole('link', { name: 'Все игры' }).first();
+    await page.goto(root, nav);
+    await menu.waitFor();
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    await page.getByRole('link', { name: /МузЛото/ }).click();
+    await page.getByRole('link', { name: 'Создать игру' }).first().waitFor();
+    assert.equal(new URL(page.url()).pathname, new URL('muzloto.html', root).pathname);
+    await back.click();
+    await menu.waitFor();
+    await page.getByRole('link', { name: /Вне очереди/ }).click();
+    await page.getByRole('button', { name: 'Создать комнату' }).waitFor();
+    assert.equal(page.url(), new URL('quiz/', root).href);
+    await back.click();
+    await menu.waitFor();
+    for (const file of ['tv.html', 'play.html']) {
+      await page.goto(root + file, nav);
+      assert.equal(await page.locator('a[href="index.html"]').count(), 0, file + ' returns to the MuzLoto home page');
+      assert.ok(await page.locator('a[href="muzloto.html"]').count() > 0);
+    }
+  } finally { await context.close(); }
+}
+
 async function main() {
   let server;
   if (process.env.MUZLOTO_AUDIT_SITE) root = process.env.MUZLOTO_AUDIT_SITE;
@@ -290,7 +318,9 @@ async function main() {
       executablePath: process.env.MUZLOTO_CHROME || (fs.existsSync(windowsChrome) ? windowsChrome : undefined),
       headless: true,
     });
-    if (process.argv.includes('--quiz-only')) {
+    if (process.argv.includes('--menu-only')) {
+      await check('Main menu opens both games and each game returns to it', gameMenu);
+    } else if (process.argv.includes('--quiz-only')) {
       await check('Quiz opens its mobile menu and resumes the exact saved question', quizMenu);
     } else if (process.argv.includes('--estimate-only')) {
       await check('Duration estimate uses the selected pack and card size', durationEstimate);
@@ -308,8 +338,9 @@ async function main() {
       await check('Special player name remains an ordinary leaderboard entry', specialName);
       await check('Duration estimate uses the selected pack and card size', durationEstimate);
       await check('Quiz opens its mobile menu and resumes the exact saved question', quizMenu);
+      await check('Main menu opens both games and each game returns to it', gameMenu);
     }
-    if (!process.argv.some(arg => ['--leave-only', '--name-only', '--estimate-only', '--rejoin-only', '--quiz-only'].includes(arg))) await check('Same winner at the same draw in consecutive rounds', repeatRound);
+    if (!process.argv.some(arg => ['--leave-only', '--name-only', '--estimate-only', '--rejoin-only', '--quiz-only', '--menu-only'].includes(arg))) await check('Same winner at the same draw in consecutive rounds', repeatRound);
   } finally {
     if (browser) await browser.close();
     if (server) await new Promise(resolve => server.close(resolve));

@@ -162,6 +162,7 @@ function renderHome() {
     : `<div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>`;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
+      <a class="menu-link" href="../"><span aria-hidden="true">←</span> Все игры</a>
       <p class="eyebrow">Квиз для компании</p>
       <h1>Вне очереди<span>.</span></h1>
       <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
