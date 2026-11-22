@@ -1,6 +1,7 @@
 import { connectRoom, validRoom } from './quiz/relay.mjs?v=3';
 
 const eventType = 'screen';
+const handoverLimit = 4000;
 const silence = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA';
 const $ = id => document.getElementById(id);
 const clip = (value, limit = 160) => String(value ?? '').slice(0, limit);
@@ -20,6 +21,8 @@ export function openMusicScreen(code, capture, setOutput) {
   let lastReply = 0;
   let lastReady = 0;
   let readyTrack = '';
+  let tvSound = false;
+  let waitingSince = 0;
   let lastLayout = '';
   let layoutRevision = 0;
   let sequence = Date.now() * 1000;
@@ -40,12 +43,25 @@ export function openMusicScreen(code, capture, setOutput) {
   function send(force = false) {
     const attached = Date.now() - lastRequest < 6500;
     if (!attached) {
+      tvSound = false;
+      waitingSince = 0;
       setOutput(false, false);
       return;
     }
     const { layout, playback } = capture();
-    const onTv = playback.url && playback.key === readyTrack && Date.now() - lastReady < 2000;
-    setOutput(Boolean(onTv), true);
+    const now = Date.now();
+    const onTv = playback.url && playback.key === readyTrack && now - lastReady < 2000;
+    if (onTv) {
+      tvSound = true;
+      waitingSince = 0;
+    } else if (!tvSound || !playback.url || !playback.playing) {
+      waitingSince = 0;
+    } else {
+      // The TV had the sound: keep the phone silent while it loads the next track.
+      waitingSince ||= now;
+      if (now - waitingSince > handoverLimit) tvSound = false;
+    }
+    setOutput(Boolean(playback.url && tvSound), true);
     const serialized = JSON.stringify(layout);
     const changed = serialized !== lastLayout;
     if (changed) {
@@ -106,7 +122,11 @@ function paint(layout) {
     }
     const players = (Array.isArray(layout.players) ? layout.players : []).slice(0, 200);
     $('music-player-count').textContent = players.length;
-    $('music-players').replaceChildren(...players.map(name => node('span', 'player-pill', clip(name, 48))));
+    $('music-players').replaceChildren(...players.map(name => {
+      const pill = node('span', 'player-pill');
+      pill.append(node('span', 'p-dot'), node('span', '', clip(name, 48)));
+      return pill;
+    }));
     return;
   }
 
@@ -146,9 +166,17 @@ function paint(layout) {
   grid.className = 'card-showcase-grid size-' + (cards.length === 16 ? '4' : '3');
   grid.replaceChildren(...cards.filter(validTrack).map(card => {
     const cell = node('div', 'card-showcase-cell' + (card.winning === true ? ' win-highlight' : ''));
+    const cover = node('div', 'showcase-cover-wrap');
+    if (assetUrl(card.art)) cover.append(album(card.art, 'showcase-cover-img'));
+    cover.append(node('div', 'showcase-cover-gradient'));
+    const head = node('div', 'music-card-head');
+    head.append(node('span', 'keg-number-badge', '№ ' + card.keg));
+    if (card.winning === true) head.append(node('span', 'music-card-mark', '✓'));
+    const text = node('div', 'music-card-text');
+    text.append(node('span', 'music-card-artist', clip(card.artist)), node('strong', 'music-card-title', clip(card.title)));
     const info = node('div', 'showcase-content');
-    info.append(node('span', 'keg-number-badge', '№ ' + card.keg), node('strong', 'music-card-title', clip(card.title)));
-    cell.append(album(card.art, 'showcase-cover-img'), info);
+    info.append(head, text);
+    cell.append(cover, info);
     return cell;
   }));
 }

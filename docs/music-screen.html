@@ -5,11 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>МузЛото — Экран ТВ</title>
   <link rel="stylesheet" href="style.css?v=3">
-  <link rel="stylesheet" href="stream-theme.css?v=5">
+  <link rel="stylesheet" href="stream-theme.css?v=6">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
   <style>
     #music-enable { position: relative; z-index: 10002; }
-    .music-card-title { color: #fff; font-size: .8rem; }
-    #music-winning-card .showcase-cover-img { width: 100%; height: 100%; object-fit: cover; opacity: .36; }
+    #music-players .player-pill { font-size: clamp(1rem, 1.5vw, 1.6rem); }
+    #music-winner h1 { margin: 0; font-size: clamp(2.2rem, 8vh, 6rem); line-height: 1.1; color: var(--primary); }
+    #music-winner h2 { margin: 0; font-size: clamp(1.3rem, 4.2vh, 3.2rem); line-height: 1.2; }
+    /* Fit the whole winning card on a 16:9 screen: a cell is 1.05 times taller than wide. */
+    #music-winning-card { width: min(92vw, 68vh); max-width: none; gap: 1vh; margin: 2vh 0 0; }
+    #music-winning-card .showcase-content { padding: 1vh 1.1vh; }
+    .music-card-head { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+    .music-card-mark { color: #4bea83; font-weight: 900; }
+    .music-card-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .music-card-artist { color: #c2e6cb; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .music-card-title { color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    #music-winning-card .keg-number-badge, .music-card-mark, .music-card-title { font-size: clamp(.72rem, 2.3vh, 1.8rem); }
+    .music-card-artist { font-size: clamp(.62rem, 1.8vh, 1.4rem); }
+    #music-winning-card.size-4 .keg-number-badge, #music-winning-card.size-4 .music-card-mark,
+    #music-winning-card.size-4 .music-card-title { font-size: clamp(.68rem, 1.9vh, 1.5rem); }
+    #music-winning-card.size-4 .music-card-artist { font-size: clamp(.58rem, 1.5vh, 1.15rem); }
     #music-placeholder:not([hidden]) { display: flex; }
     #tv-stage-cover:not([hidden]) { display: block; }
   </style>
@@ -106,6 +121,6 @@
   <script src="room-mqtt.js?v=2"></script>
   <script src="qrcode.min.js"></script>
   <script src="cloud-audio-config.js?v=3"></script>
-  <script type="module" src="music-screen.mjs?v=1"></script>
+  <script type="module" src="music-screen.mjs?v=2"></script>
 </body>
 </html>

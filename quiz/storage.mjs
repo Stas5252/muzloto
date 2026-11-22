@@ -19,6 +19,7 @@ export async function write(key, value) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('drafts', 'readwrite');
     tx.objectStore('drafts').put(value, key);
+    tx.commit?.();
     tx.oncomplete = () => resolve();
     tx.onabort = tx.onerror = () => reject(tx.error);
   });

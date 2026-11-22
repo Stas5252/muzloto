@@ -37,6 +37,8 @@ async function run() {
     assert.notEqual(new URL(joinUrl).searchParams.get('play'), new URL(tvUrl).searchParams.get('tv'));
     const tv = await open(bigScreen, tvUrl);
     await tv.getByText('Собираем игроков', { exact: true }).waitFor();
+    await tv.locator('#join-qr canvas').waitFor({ state: 'attached' });
+    assert.match(await tv.locator('.join-link').textContent(), /\?play=[a-f0-9]{24}$/, 'The TV lobby shows the player link');
     assert.equal(await tv.getByRole('button', { name: 'Начать игру', exact: true }).count(), 0);
     const players = [];
 

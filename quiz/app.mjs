@@ -1,8 +1,8 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
   standings, activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=17';
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
-import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=1';
-import { read, write, photoData } from './storage.mjs';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=2';
+import { read, write, photoData } from './storage.mjs?v=2';
 
 const app = document.querySelector('#app');
 const network = document.querySelector('#network');
@@ -292,11 +292,14 @@ function renderHost() {
 }
 
 let lastPublicSend = 0;
-function presentation(session, source, question) {
+function presentation(session, source, question, invite = '') {
   const round = activeRound(source, session);
   const stage = roundIndex(session) + 1;
   let content;
-  if (session.phase === 'lobby') content = `<section class="panel center"><p class="eyebrow">Собираем игроков</p><h1>${escape(source.title)}</h1>${scoreList(standings(session))}</section>`;
+  if (session.phase === 'lobby') content = `<section class="panel tv-lobby">
+    ${invite ? `<div class="invite"><div id="join-qr"></div><p class="join-link">${escape(invite.replace(/^https?:\/\//, ''))}</p></div>` : ''}
+    <div class="center"><p class="eyebrow">Собираем игроков</p><h1>${escape(source.title)}</h1>
+    ${invite ? '<p class="intro">Наведите камеру телефона на QR-код, чтобы войти в игру.</p>' : ''}${scoreList(standings(session))}</div></section>`;
   else if (session.phase === 'board') content = `<section class="panel round-board" data-stage="${stage}"><div class="section-top"><div>
     <p class="eyebrow">Раунд ${stage}</p><h1>${escape(round.title)}</h1></div><p class="muted">Осталось ${remainingQuestions(source, session)} из ${roundQuestions(round).length}</p></div>
     ${cardGrid(round, session.used)}</section>`;
@@ -308,7 +311,7 @@ function presentation(session, source, question) {
 }
 
 function sendScreen() {
-  screenConnection?.send({ type: 'screen', event: 'state', view: screenState(game, pack) });
+  screenConnection?.send({ type: 'screen', event: 'state', view: screenState(game, pack, invite) });
 }
 
 function syncHost(changed = false, force = false) {
@@ -367,6 +370,7 @@ function startHost() {
       const link = pageLink('play');
       link.hostname = info.lan;
       invite = link.href;
+      sendScreen();
       if (game.phase === 'lobby') renderHost();
       else app.querySelector('[data-tv]')?.setAttribute('href', tvLink().href);
     }).catch(() => {});
@@ -795,10 +799,14 @@ function initTv() {
   function render() {
     const question = snapshot.question;
     const shown = photo?.url && question ? { ...question, image: photo.url } : question;
-    const html = presentation(snapshot.session, snapshot.source, shown);
+    const html = presentation(snapshot.session, snapshot.source, shown, snapshot.invite);
     if (html !== lastHtml) {
       lastHtml = html;
       app.innerHTML = html;
+      const qr = app.querySelector('#join-qr');
+      if (qr && window.QRCode) {
+        try { new window.QRCode(qr, { text: snapshot.invite, width: 320, height: 320, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
+      }
     }
   }
 
@@ -815,7 +823,8 @@ function initTv() {
       network.hidden = false;
       network.classList.add('online');
       network.textContent = 'Связь с ведущим';
-      if (snapshot && frame.view.revision <= snapshot.revision) return;
+      if (snapshot && (frame.view.revision < snapshot.revision ||
+          (frame.view.revision === snapshot.revision && frame.view.invite === snapshot.invite))) return;
       snapshot = frame.view;
       const id = snapshot.question?.id;
       const length = snapshot.photoLength;

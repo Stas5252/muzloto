@@ -45,7 +45,7 @@
       text-transform: uppercase;
     }
   </style>
-  <link rel="stylesheet" href="stream-theme.css?v=5">
+  <link rel="stylesheet" href="stream-theme.css?v=6">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
 </head>
 <body class="host-page">
@@ -136,12 +136,6 @@
                   <option value="party">Вечеринка · повтор</option>
                   <option value="timer25">Быстрый квиз · 25 сек</option>
                   <option value="once" selected>Одиночный · один раз</option>
-                </select>
-              </label>
-              <label>Название трека
-                <select id="opt-reveal">
-                  <option value="manual" selected>Вскрывать вручную</option>
-                  <option value="auto">Показывать сразу</option>
                 </select>
               </label>
             </div>
@@ -2048,6 +2042,7 @@
     let trackTimer = null;
     let currentRoomCode = null;
     let tvDisplay;
+    let tvKeepsSound = false;
     let tvRoomState;
     let tvScreenLink;
     let tvScreenCode;
@@ -2465,7 +2460,7 @@
       $('open-tv-screen').hidden = $('btn-copy-tv-screen').hidden = false;
       tvDisplay?.close();
 
-      import('./music-screen.mjs?v=1').then(({ openMusicScreen, assetUrl }) => {
+      import('./music-screen.mjs?v=2').then(({ openMusicScreen, assetUrl }) => {
         if (tvScreenCode !== displayCode) return;
         const projectTrack = track => {
           const art = assetUrl(track.art, joinLink);
@@ -2508,6 +2503,7 @@
           };
           return { layout, playback };
         }, (muted, attached) => {
+          tvKeepsSound = muted;
           if (mainAudio.muted !== muted) mainAudio.muted = muted;
           const output = muted ? 'Звук на ТВ' : attached ? 'ТВ подключён' : '';
           if (previousOutput !== output) $('tv-output-status').textContent = previousOutput = output;
@@ -2868,7 +2864,7 @@
         clearNextAudio();
       }
       roundAudio = audio;
-      mainAudio.muted = false;
+      mainAudio.muted = tvKeepsSound && !isLocalFile;
       mainAudio.loop = format === 'party' && !continued;
       mainAudio.onplaying = () => {
         showRoundAudioStatus(audio);
@@ -3253,8 +3249,8 @@
             </div>
             <div class="showcase-content">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="keg-number-badge" style="font-size:0.75rem;">№ ${item.kegNum}</span>
-                ${isWinCell ? '<span style="font-size:0.8rem; font-weight:900; color:#4bea83; text-shadow:0 0 8px #4bea83;">✓ БИНГО</span>' : ''}
+                <span class="keg-number-badge" style="font-size:0.75rem; white-space:nowrap;">№ ${item.kegNum}</span>
+                ${isWinCell ? '<span style="font-size:0.8rem; font-weight:900; color:#4bea83; text-shadow:0 0 8px #4bea83;" aria-label="Бинго">✓</span>' : ''}
               </div>
               <div style="display:flex; flex-direction:column; gap:2px;">
                 <div style="font-weight:800; font-size:0.68rem; text-transform:uppercase; color:#c2e6cb; text-shadow:0 1px 3px #000; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.artist)}</div>

@@ -51,8 +51,16 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.throws(() => validPack({ title: 'Пусто', categories: [] }));
 
   const screenGame = createGame();
+  const inviteLink = 'https://example.com/quiz/?play=' + 'a'.repeat(24);
+  const lobbyScreen = screenState(screenGame, pack, inviteLink);
+  assert.equal(lobbyScreen.invite, inviteLink, 'The TV lobby gets the player link for its QR code');
+  assert.ok(validScreenState(lobbyScreen));
+  assert.ok(validScreenState(screenState(screenGame, pack)));
+  assert.ok(!validScreenState({ ...lobbyScreen, invite: 'javascript:alert(1)' }));
+  assert.ok(!validScreenState({ ...lobbyScreen, invite: 'https://example.com/quiz/?play=short' }));
   assert.ok(command(screenGame, pack, { type: 'start' }, true));
-  const board = screenState(screenGame, pack);
+  const board = screenState(screenGame, pack, inviteLink);
+  assert.equal(board.invite, '');
   assert.ok(validScreenState(board));
   assert.ok(!JSON.stringify(board).includes(pack.rounds[0].categories[0].questions[0].prompt));
   assert.ok(command(screenGame, pack, { type: 'pick', question: 'c0q0' }, true));

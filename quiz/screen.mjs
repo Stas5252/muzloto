@@ -6,13 +6,14 @@ export const photoBatchSize = 6;
 const maxPhotoLength = 1_250_000;
 const phases = ['lobby', 'board', 'question', 'reveal', 'intermission', 'final', 'results'];
 const questionId = /^(?:r[12])?c[0-7]q[0-7]$/;
+const roomCode = /^[a-f0-9]{24}$/;
 const playerId = /^p[a-zA-Z0-9_-]{1,48}$/;
 const validPhoto = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 const own = (record, key) => Object.prototype.hasOwnProperty.call(record, key);
 const text = (value, max) => typeof value === 'string' && value.length <= max;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
-export function screenState(game, pack) {
+export function screenState(game, pack, invite = '') {
   const displayingQuestion = game.phase === 'question' || game.phase === 'reveal';
   const question = displayingQuestion ? findQuestion(pack, game.current) : null;
   const round = activeRound(pack, game);
@@ -20,6 +21,7 @@ export function screenState(game, pack) {
   const finished = game.phase === 'results';
   return {
     revision: game.revision,
+    invite: game.phase === 'lobby' ? invite : '',
     session: {
       phase: game.phase, roundIndex: roundIndex(game), players: game.players, answering: game.answering,
       used: board ? game.used : [], showHint: game.showHint, opened: game.opened,
@@ -51,9 +53,18 @@ export function screenState(game, pack) {
   };
 }
 
+function validInvite(invite) {
+  if (invite === '') return true;
+  if (!text(invite, 300)) return false;
+  try {
+    const link = new URL(invite);
+    return ['http:', 'https:'].includes(link.protocol) && roomCode.test(link.searchParams.get('play') || '');
+  } catch { return false; }
+}
+
 export function validScreenState(frame) {
-  const { session, source, question, photoLength, revision } = frame || {};
-  if (!integer(revision, 0, Number.MAX_SAFE_INTEGER) || !phases.includes(session?.phase) ||
+  const { session, source, question, photoLength, revision, invite = '' } = frame || {};
+  if (!integer(revision, 0, Number.MAX_SAFE_INTEGER) || !validInvite(invite) || !phases.includes(session?.phase) ||
       !text(source?.title, 80) || !Array.isArray(source.rounds) || !integer(source.rounds.length, 1, 3) ||
       !integer(session.roundIndex, 0, source.rounds.length - 1) ||
       !integer(photoLength, 0, maxPhotoLength)) return false;
