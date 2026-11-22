@@ -637,7 +637,8 @@ function armClock() {
   // The answer clock starts for whoever pressed the button or answers after a miss: they have heard the question already.
   const kind = !seconds || game.phase !== 'question' ? '' : game.answering ? (game.opened || game.buzzed.length > 1 ? 'answer' : '') :
     game.opened && !game.race?.length ? 'buzz' : '';
-  const key = kind && [kind, game.ticket, game.answering || '', game.buzzed.length].join(':');
+  // A player who joins the queue must not restart the clock of the one who is answering.
+  const key = kind && [kind, game.ticket, game.answering || game.buzzed.length].join(':');
   if (!kind) clock = null;
   else if (clock?.key !== key) {
     const total = (kind === 'buzz' ? seconds : answerTime) * 1000;
