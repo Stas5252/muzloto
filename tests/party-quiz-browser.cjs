@@ -392,8 +392,12 @@ async function run() {
     await button(host, '−100 · Неверно').click();
     await host.locator('#timer[data-kind=buzz]:not([hidden])').waitFor();
     const opened = Date.now();
+    // The host reloads the phone mid-clock: the deadline stays where the TV strip shows it.
+    await host.waitForTimeout(2000);
+    await host.reload({ waitUntil: 'domcontentloaded' });
     await button(host, 'К табло').waitFor({ timeout: 12000 });
     assert.ok(Date.now() - opened > 5000, 'The answer opens after the seven seconds, not before');
+    assert.ok(Date.now() - opened < 8500, 'A reload of the host phone does not restart the clock');
     await listener.getByRole('heading', { name: 'Ответ', exact: true }).waitFor();
     host.once('dialog', dialog => dialog.accept());
     await closeRoom(host);

@@ -325,7 +325,7 @@ function showdownPanel(session, final, total) {
       <p class="stake ${last.correct ? 'up' : 'down'}">${last.correct ? 'Верно' : 'Неверно'} · ${last.wager ? (last.correct ? '+' : '−') + last.wager : 'без ставки'}</p>` : '<h1>Открываем ставки</h1><p class="muted">Начинаем с последнего места.</p>'}
     ${final?.answer ? `<div class="answer-reveal"><p class="answer-label">Правильный ответ</p><p class="revealed">${escape(final.answer)}</p></div>` : ''}
     ${session.verdicts.length > 1 ? `<ul class="verdicts">${session.verdicts.slice(0, -1).map(v =>
-      `<li>${escape(session.players[v.id]?.name)} · ${escape(v.answer)} · ${v.correct ? '+' : '−'}${v.wager}</li>`).join('')}</ul>` : ''}
+      `<li>${escape(session.players[v.id]?.name)} · ${v.correct ? '+' : '−'}${v.wager} · ${escape(v.answer)}</li>`).join('')}</ul>` : ''}
   </section>`;
 }
 
@@ -340,7 +340,7 @@ function resultsPanel(session, source) {
     ${scoreList(ranking)}
     ${final && session.verdicts.length ? `<p class="answer-label">Ответ в финале</p><p class="revealed">${escape(final.answer)}</p>
       ${final.answerImage ? `<img class="final-answer-image" src="${escape(final.answerImage)}" alt="Фото с ответом">` : ''}
-      <ul class="verdicts">${session.verdicts.map(v => `<li>${escape(session.players[v.id]?.name)} · ${escape(v.answer)} · ${v.correct ? '+' : '−'}${v.wager}</li>`).join('')}</ul>` : ''}
+      <ul class="verdicts">${session.verdicts.map(v => `<li>${escape(session.players[v.id]?.name)} · ${v.correct ? '+' : '−'}${v.wager} · ${escape(v.answer)}</li>`).join('')}</ul>` : ''}
   </section>`;
 }
 
@@ -673,7 +673,7 @@ function syncHost(changed = false, force = false) {
   }
   if (changed) {
     sendScreen();
-    write('live', { room, game, tvRoom, title: pack.title }).catch(localError);
+    write('live', { room, game, tvRoom, title: pack.title, clock }).catch(localError);
     renderHost();
   }
 }
@@ -1050,6 +1050,10 @@ function initHost() {
             room = savedRoom;
             tvRoom = validRoom(live.tvRoom) ? live.tvRoom : room;
             game = restoreGame(live.game, pack);
+            // A reload keeps the deadline: the strip on the TV is still running towards it.
+            const saved = live.clock;
+            clock = saved && typeof saved.key === 'string' && ['buzz', 'answer'].includes(saved.kind) && Number.isFinite(saved.total) &&
+              (Number.isFinite(saved.left) || saved.until > Date.now() - 30_000) ? saved : null;
             if (game !== live.game) await write('live', { room, game, tvRoom, title: pack.title }).catch(localError);
             startHost();
             return;
