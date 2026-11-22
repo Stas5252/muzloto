@@ -500,7 +500,7 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   const imported = fs.readdirSync(path.join(__dirname, '../quiz/packs')).filter(name => name.endsWith('.json') && name !== 'index.json')
     .flatMap(name => validPack(JSON.parse(fs.readFileSync(path.join(__dirname, '../quiz/packs', name), 'utf8'))).rounds)
     .flatMap(round => round.categories.flatMap(category => category.questions));
-  assert.equal(imported.filter(question => question.kind === 'modifier').length, 44);
+  assert.equal(imported.filter(question => question.kind === 'modifier').length, 49);
   assert.ok(imported.every(question => !question.prompt.startsWith('[МОДИФИКАТОР]')), 'Modifier cards show their effect, not a placeholder');
 
   console.log('PASS party quiz: modifiers and manual score, 72 questions, bundled photos, round gates, carryover, undo, legacy packs, fair buzzer, turns mode, 10 converted packs and the party pack, chooser, «кот в мешке», pause, final themes struck in turn and stakes opened one by one');
