@@ -1,208 +1,78 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Музыкальное лото для компании. Создайте комнату с телефона и откройте табло на телевизоре.">
-  <title>МузЛото — музыкальная вечеринка</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Игры для компании: музыкальное лото и квиз. Ведущий управляет с телефона, игра идёт на ТВ.">
+  <title>Игры для компании — МузЛото и квиз</title>
   <link rel="stylesheet" href="style.css?v=3">
   <link rel="stylesheet" href="stream-theme.css?v=3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
+  <style>
+    .game-menu { max-width: 1180px; margin: 0 auto; padding: clamp(18px, 3.4vw, 48px) clamp(14px, 2.2vw, 34px) 40px; }
+    .game-menu h1 { font-size: clamp(2rem, 4.6vw, 3.6rem); font-weight: 900; letter-spacing: -0.05em; line-height: 1.05; }
+    .game-menu-lead { max-width: 52ch; margin: 12px 0 clamp(18px, 3vw, 32px); color: #d7dbd8; font-size: clamp(0.92rem, 1.4vw, 1.1rem); line-height: 1.5; }
+    .game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); }
+    .game-card {
+      --accent: var(--primary);
+      display: flex; flex-direction: column; overflow: hidden;
+      border: 1px solid #29362d; border-radius: 22px; background: var(--bg-card);
+      color: var(--text-main); text-decoration: none;
+      transition: border-color .15s, transform .15s;
+    }
+    .game-card-quiz { --accent: #ff6845; }
+    .game-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .game-card:focus-visible { outline-color: var(--accent); }
+    .game-card img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+    .game-card-copy { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: clamp(14px, 2vw, 24px); }
+    .game-card-kind { color: var(--accent); font-size: 0.76rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .game-card h2 { font-size: clamp(1.5rem, 2.6vw, 2.2rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; }
+    .game-card p { flex: 1; color: var(--text-muted); font-size: 0.94rem; line-height: 1.45; }
+    .game-card-go {
+      display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; padding: 9px 18px;
+      border-radius: 999px; background: var(--accent); color: #101712; font-size: 0.9rem; font-weight: 800;
+    }
+    @media (max-width: 700px) {
+      .game-grid { grid-template-columns: 1fr; }
+      .game-card { flex-direction: row; border-radius: 18px; }
+      .game-card img { width: 36%; aspect-ratio: 1; align-self: stretch; }
+      .game-card p { font-size: 0.84rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .game-card { transition: none; } .game-card:hover { transform: none; } }
+  </style>
 </head>
-<body class="home-page">
+<body class="menu-page">
   <header class="stream-header">
-    <a class="stream-brand" href="index.html" aria-label="МузЛото · главная">
+    <a class="stream-brand" href="index.html" aria-label="Игры для компании · главное меню">
       <span class="brand-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-      <span>МузЛото</span>
+      <span>Игры для компании</span>
     </a>
-    <nav class="stream-nav" aria-label="Навигация">
-      <a href="#home" aria-current="page">Главная</a>
-      <a href="#collections">Подборки</a>
-      <a href="#how-to">Как играть</a>
-    </nav>
-    <div class="stream-header-actions">
-      <a href="play.html" class="btn btn-secondary btn-sm">Войти игроком</a>
-      <a href="tv.html" class="btn btn-gold btn-sm">Создать игру</a>
-    </div>
   </header>
 
-  <div class="home-layout">
-    <aside class="home-sidebar" aria-label="Быстрый доступ">
-      <nav>
-        <a class="is-selected" href="#home"><span aria-hidden="true">⌂</span>Главная</a>
-        <a href="#collections"><span aria-hidden="true">▤</span>Подборки</a>
-        <a href="#how-to"><span aria-hidden="true">?</span>Как играть</a>
-      </nav>
-      <div class="sidebar-actions">
-        <a href="tv.html"><span aria-hidden="true">＋</span>Создать игру</a>
-        <a href="play.html"><span aria-hidden="true">↗</span>Войти игроком</a>
-      </div>
-    </aside>
-
-    <main class="home-main" id="home">
-      <section class="music-hero" aria-labelledby="hero-title">
-        <img class="music-hero-art" src="assets/muzloto-hero.webp" alt="" fetchpriority="high">
-        <div class="music-hero-copy">
-          <h1 id="hero-title">Угадывай треки.<br><span>Собирай бинго.</span></h1>
-          <p>Музыкальное лото для компании. Управляй треками с телефона, показывай игру на ТВ.</p>
-          <div class="hero-actions">
-            <a href="tv.html" class="btn btn-gold"><span aria-hidden="true">▶</span> Создать игру</a>
-            <a href="play.html" class="btn btn-secondary">Войти игроком</a>
-          </div>
+  <main class="game-menu">
+    <h1>Во что играем?</h1>
+    <p class="game-menu-lead">Ведущий управляет игрой с телефона, игра идёт на ТВ, участники играют со своих телефонов.</p>
+    <nav class="game-grid" aria-label="Выбор игры">
+      <a class="game-card" href="muzloto.html">
+        <img src="assets/muzloto-hero.webp" alt="" width="1672" height="941">
+        <div class="game-card-copy">
+          <span class="game-card-kind">Музыкальное лото</span>
+          <h2>МузЛото</h2>
+          <p>Слушайте треки, отмечайте их в карточке и собирайте бинго.</p>
+          <span class="game-card-go">Играть <span aria-hidden="true">→</span></span>
         </div>
-      </section>
-
-      <section class="home-search" aria-label="Поиск музыки">
-        <div class="search-input-wrap">
-          <span class="stream-search-icon" aria-hidden="true"></span>
-          <input id="demo-search" type="search" placeholder="Найти песню или артиста" aria-label="Найти песню или артиста" autocomplete="off">
-          <div class="search-spinner" id="demo-spinner" aria-hidden="true"></div>
+      </a>
+      <a class="game-card game-card-quiz" href="quiz/">
+        <img src="quiz/media/auditorium.webp" alt="" width="1280" height="946">
+        <div class="game-card-copy">
+          <span class="game-card-kind">Квиз</span>
+          <h2>Вне очереди</h2>
+          <p>Вопросы на ТВ, кнопка на телефоне, ответы вслух.</p>
+          <span class="game-card-go">Играть <span aria-hidden="true">→</span></span>
         </div>
-        <div id="demo-results" class="search-results" aria-live="polite" hidden></div>
-      </section>
-
-      <section class="home-collections" id="collections" aria-labelledby="collections-title">
-        <div class="stream-section-heading">
-          <h2 id="collections-title">Подборки для игры</h2>
-          <a href="tv.html" class="stream-text-link">Выбрать треки <span aria-hidden="true">→</span></a>
-        </div>
-        <div class="playlist-grid" id="packs-showcase"></div>
-      </section>
-
-      <section class="home-guide" id="how-to" aria-labelledby="guide-title">
-        <h2 id="guide-title">Как играть</h2>
-        <ol class="guide-grid">
-          <li><span class="guide-icon" aria-hidden="true">♫</span><div><strong>Выбери треки</strong><p>Готовая подборка или свой список.</p></div></li>
-          <li><span class="guide-icon" aria-hidden="true">▣</span><div><strong>Подключи друзей</strong><p>Они отсканируют QR-код с ТВ.</p></div></li>
-          <li><span class="guide-icon" aria-hidden="true">✓</span><div><strong>Собери бинго</strong><p>Отмечай песни на своей карточке.</p></div></li>
-        </ol>
-      </section>
-    </main>
-  </div>
-
-  <audio id="demo-player"></audio>
-  <script src="packs-data.js"></script>
-  <script>
-    const searchInput = document.getElementById('demo-search');
-    const resultsBox = document.getElementById('demo-results');
-    const spinner = document.getElementById('demo-spinner');
-    const audio = document.getElementById('demo-player');
-    let searchDebounce = null;
-    let searchRequest = null;
-    let currentPlayingBtn = null;
-
-    const packNames = {
-      muzloto: 'МузЛото',
-      new_school: 'Новая школа',
-      retro: 'Хиты 90-х и 2000-х',
-      rock: 'Русский рок',
-      charts: 'Современные чарты',
-      world: 'Мировые хиты',
-      ost: 'Кино и саундтреки'
-    };
-
-    const catalogue = window.BUILTIN_PACKS || {};
-    const gallery = document.getElementById('packs-showcase');
-    for (const [id, name] of Object.entries(packNames)) {
-      const pack = catalogue[id];
-      if (!pack) continue;
-      const link = document.createElement('a');
-      link.className = 'playlist-tile';
-      link.dataset.id = id;
-      link.href = 'tv.html?pack=' + encodeURIComponent(id);
-      link.innerHTML = `
-        <span class="playlist-tile-copy"><strong>${escapeHtml(name)}</strong><small>${pack.tracks.length} треков</small></span>
-        <span class="playlist-tile-arrow" aria-hidden="true">▶</span>`;
-      gallery.appendChild(link);
-    }
-
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchDebounce);
-      searchRequest?.abort();
-      const query = searchInput.value.trim();
-      resultsBox.hidden = true;
-      spinner.style.display = query ? 'block' : 'none';
-      if (!query) return;
-
-      searchDebounce = setTimeout(async () => {
-        const request = new AbortController();
-        searchRequest = request;
-        try {
-          const onPages = location.hostname.endsWith('.github.io') || location.protocol === 'file:';
-          const url = onPages
-            ? 'https://itunes.apple.com/search?entity=song&limit=10&term=' + encodeURIComponent(query)
-            : '/api/search?q=' + encodeURIComponent(query);
-          const response = await fetch(url, {signal:request.signal});
-          if (!response.ok) throw new Error('Поиск недоступен');
-          const data = await response.json();
-          renderResults((data.results || []).map(track => ({
-            title: track.title || track.trackName,
-            artist: track.artist || track.artistName,
-            art: track.art || track.artworkUrl100,
-            preview: track.preview || track.previewUrl
-          })).filter(track => track.preview));
-        } catch (error) {
-          if (error.name !== 'AbortError') {
-            resultsBox.innerHTML = '<p class="home-search-message">Поиск временно недоступен.</p>';
-            resultsBox.hidden = false;
-          }
-        } finally {
-          if (searchRequest === request) spinner.style.display = 'none';
-        }
-      }, 350);
-    });
-
-    function renderResults(list) {
-      stopDemoAudio();
-      resultsBox.innerHTML = list.length ? list.map((track, index) => `
-        <div class="track-item">
-          ${track.art ? `<img class="track-cover-mini" src="${escapeHtml(track.art)}" alt="">` : ''}
-          <div class="track-info">
-            <div class="track-title">${escapeHtml(track.title)}</div>
-            <div class="track-artist">${escapeHtml(track.artist)}</div>
-          </div>
-          <button type="button" class="btn-play-preview" data-result="${index}" aria-label="Слушать отрывок">▶</button>
-          <a href="tv.html" class="btn btn-secondary btn-sm">К игре</a>
-        </div>
-      `).join('') : '<p class="home-search-message">Ничего не найдено.</p>';
-      resultsBox.hidden = false;
-
-      resultsBox.querySelectorAll('[data-result]').forEach(button => {
-        button.onclick = () => {
-          if (button === currentPlayingBtn && !audio.paused) {
-            stopDemoAudio();
-            return;
-          }
-          stopDemoAudio();
-          audio.src = list[Number(button.dataset.result)].preview;
-          currentPlayingBtn = button;
-          audio.play().then(() => {
-            if (currentPlayingBtn !== button) return;
-            button.textContent = 'Ⅱ';
-            button.classList.add('playing');
-            button.setAttribute('aria-label', 'Остановить');
-          }).catch(() => {
-            if (currentPlayingBtn === button) stopDemoAudio();
-          });
-        };
-      });
-    }
-
-    function stopDemoAudio() {
-      audio.pause();
-      if (!currentPlayingBtn) return;
-      currentPlayingBtn.textContent = '▶';
-      currentPlayingBtn.classList.remove('playing');
-      currentPlayingBtn.setAttribute('aria-label', 'Слушать отрывок');
-      currentPlayingBtn = null;
-    }
-
-    audio.onended = stopDemoAudio;
-
-    function escapeHtml(value) {
-      return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-    }
-  </script>
+      </a>
+    </nav>
+  </main>
 </body>
 </html>

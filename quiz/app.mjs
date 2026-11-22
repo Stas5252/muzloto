@@ -1,8 +1,8 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
-  standings, activeRound, roundIndex, roundQuestions, remainingQuestions } from './game.mjs?v=17';
+  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=18';
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
-import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=1';
-import { read, write, photoData } from './storage.mjs';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=3';
+import { read, write, photoData } from './storage.mjs?v=2';
 
 const app = document.querySelector('#app');
 const network = document.querySelector('#network');
@@ -27,6 +27,15 @@ let noticeTimer;
 let storeTimer;
 let localFailure = false;
 let sound;
+let library = [];
+let chosenPack = stored('vne-ocheredi-pack') || 'draft';
+let raceTimer;
+let wakeLock;
+const raceWindow = 300;
+const modeNotes = {
+  buzz: 'Ведущий читает вопрос и открывает кнопки. Отвечает тот, кто нажал быстрее всех.',
+  turns: 'Игроки отвечают по кругу. Ошибся — вопрос переходит следующему.'
+};
 const correctFinal = new Set();
 const pendingPlayerTimers = new Set();
 
@@ -48,6 +57,20 @@ function setNetwork(connections) {
   network.classList.toggle('online', connections.length > 0);
   network.textContent = connections.includes('lan') ? 'Локальная сеть' :
     connections.length ? 'Сеть подключена' : 'Только этот браузер';
+}
+
+function keepAwake() {
+  if (wakeLock || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+  navigator.wakeLock.request('screen').then(lock => {
+    wakeLock = lock;
+    lock.addEventListener('release', () => { wakeLock = null; });
+  }).catch(() => {});
+}
+
+function stayAwake() {
+  keepAwake();
+  document.addEventListener('visibilitychange', keepAwake);
+  document.addEventListener('pointerdown', keepAwake);
 }
 
 function unlockSound() {
@@ -127,19 +150,38 @@ function questionPanel(question, session) {
   if (!question) return '';
   const reveal = session.phase === 'reveal';
   const announcing = session.answering && session.players[session.answering]?.name;
-  return `<article class="question panel ${question.image ? 'has-photo' : ''}" data-stage="${roundIndex(session) + 1}">
-    ${question.image ? `<figure class="question-figure"><img class="question-image" src="${escape(question.image)}" alt="Фото к вопросу"></figure>` : ''}
+  const photo = reveal && question.answerImage || question.image;
+  const waiting = question.kind === 'handoff' ? 'Ведущий выбирает игрока' :
+    session.mode === 'turns' ? 'Ждём ведущего' : 'Слушаем вопрос. Кнопки пока закрыты';
+  return `<article class="question panel ${photo ? 'has-photo' : ''}" data-stage="${roundIndex(session) + 1}">
+    ${photo ? `<figure class="question-figure"><img class="question-image" src="${escape(photo)}" alt="${reveal && question.answerImage ? 'Фото с ответом' : 'Фото к вопросу'}"></figure>` : ''}
     <div class="question-copy">
       <p class="question-category">${escape(question.category)} <span>${points(question)} очков</span></p>
       <h1>${escape(question.prompt)}</h1>
+      ${question.audio && !reveal ? '<p class="sound-note"><span aria-hidden="true">♪</span> Вопрос со звуком</p>' : ''}
       ${session.showHint && question.hint ? `<p class="hint">${escape(question.hint)}</p>` : ''}
       ${reveal ? `<div class="answer-reveal"><p class="answer-label">Ответ</p><p class="revealed">${escape(question.answer)}</p></div>` :
-        `<p class="question-state">${announcing ? 'Отвечает ' + escape(announcing) : session.opened ? 'Можно отвечать' : 'Ведущий выбирает игрока'}</p>`}
+        `<p class="question-state${session.opened && !announcing ? ' open' : ''}">${announcing ? 'Отвечает ' + escape(announcing) : session.opened ? 'Жмите кнопку!' : waiting}</p>`}
     </div>
   </article>`;
 }
 
+function finalPanel(final, note) {
+  return `<article class="question panel ${final.image ? 'has-photo' : ''}" data-stage="final">
+    ${final.image ? `<figure class="question-figure"><img class="question-image" src="${escape(final.image)}" alt="Фото к финалу"></figure>` : ''}
+    <div class="question-copy"><p class="eyebrow">Финал · ${escape(final.topic)}</p><h1>${escape(final.prompt)}</h1>
+      ${final.audio ? '<p class="sound-note"><span aria-hidden="true">♪</span> Вопрос со звуком</p>' : ''}<p class="muted">${note}</p></div></article>`;
+}
+
+function modeSwitch() {
+  const current = game.mode || 'buzz';
+  return `<div class="mode-switch"><div class="actions" role="group" aria-label="Режим ответов">${Object.entries(modes).map(([id, label]) =>
+    action('mode', label, `data-mode="${id}" aria-pressed="${id === current}"`, id === current ? 'primary' : '')).join('')}</div>
+    <p class="muted">${modeNotes[current]}</p></div>`;
+}
+
 function resultsPanel(session, source) {
+  const final = source.finals ? activeFinal(source, session) : source.final;
   const ranking = standings(session);
   const leaders = ranking.filter(player => player.score === ranking[0]?.score);
   return `<section class="panel result">
@@ -147,33 +189,51 @@ function resultsPanel(session, source) {
     <h1>${leaders.length ? escape(leaders.map(p => p.name).join(' и ')) : 'Игра окончена'}</h1>
     ${leaders.length ? `<p>${leaders[0].score} очков</p>` : ''}
     ${scoreList(ranking)}
-    ${source.final && session.verdicts.length ? `<p class="answer-label">Ответ в финале</p><p class="revealed">${escape(source.final.answer)}</p>
+    ${final && session.verdicts.length ? `<p class="answer-label">Ответ в финале</p><p class="revealed">${escape(final.answer)}</p>
+      ${final.answerImage ? `<img class="final-answer-image" src="${escape(final.answerImage)}" alt="Фото с ответом">` : ''}
       <ul class="verdicts">${session.verdicts.map(v => `<li>${escape(session.players[v.id]?.name)} · ${escape(v.answer)} · ${v.correct ? '+' : '−'}${v.wager}</li>`).join('')}</ul>` : ''}
   </section>`;
 }
 
+// validPack reads `finals` when a draft has it, so the editor edits the same list.
+const draftFinals = () => draft.finals || (draft.final ? [draft.final] : []);
+
+function packCards() {
+  const own = { id: 'draft', title: draft.title || 'Свой набор', description: 'Набор из редактора: вопросы можно менять.',
+    questions: draft.rounds.reduce((total, round) => total + roundQuestions(round).length, 0),
+    themes: draft.rounds.map(round => round.categories.map(category => category.title)), finals: draftFinals().length };
+  return [own, ...library];
+}
+
 function renderHome() {
   document.body.classList.add('home');
-  const count = draft.rounds.reduce((total, round) => total + roundQuestions(round).length, 0);
-  const photos = draft.rounds.flatMap(roundQuestions).filter(question => question.image).length;
+  const cards = packCards();
+  const chosen = cards.find(card => card.id === chosenPack) || cards[0];
+  const count = chosen.questions;
+  const photos = chosen.id === 'draft' ? draft.rounds.flatMap(roundQuestions).filter(question => question.image).length : 0;
   const menu = savedRoom
     ? `<p class="saved-room">Есть сохранённая игра</p><div class="actions">
         <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая комната')}${action('edit', 'Редактор вопросов')}</div>`
     : `<div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>`;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
+      <a class="menu-link" href="../"><span aria-hidden="true">←</span> Все игры</a>
       <p class="eyebrow">Квиз для компании</p>
       <h1>Вне очереди<span>.</span></h1>
       <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
-      <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${draft.final ? '<span>Финал со ставками</span>' : ''}</div>
+      <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${chosen.finals ? '<span>Финал со ставками</span>' : ''}</div>
       <nav class="home-menu" aria-label="Главное меню">${menu}</nav>
     </div>
     <figure class="hero-art"><img src="./media/auditorium.webp" alt="Зрительный зал, вид со сцены" fetchpriority="high"></figure>
   </section>
-  <section class="home-deck"><div class="deck-title"><h2>${escape(draft.title)}</h2><span>${draft.rounds.length} ${draft.rounds.length === 1 ? 'раунд' : 'раунда'}</span></div>
-    <div class="deck-rounds">${draft.rounds.map((round, index) => `<article class="deck-round" data-stage="${index + 1}">
-      <p class="eyebrow">Раунд ${index + 1}</p><h3>${escape(round.title)}</h3>
-      <ul>${round.categories.map(c => `<li>${escape(c.title)}</li>`).join('')}</ul>
+  <section class="pack-library"><div class="deck-title"><h2>Выберите набор вопросов</h2><span>${cards.length} ${cards.length === 1 ? 'набор' : 'наборов'}</span></div>
+    <div class="pack-list" role="radiogroup" aria-label="Набор вопросов">${cards.map(card => `<button type="button" class="pack-card" role="radio"
+      aria-checked="${card.id === chosen.id}" data-action="choose-pack" data-id="${escape(card.id)}"><strong>${escape(card.title)}</strong>
+      <span>${escape(card.description)}</span><small>${questionLabel(card.questions)}</small></button>`).join('')}</div></section>
+  <section class="home-deck"><div class="deck-title"><h2>${escape(chosen.title)}</h2><span>${chosen.themes.length} ${chosen.themes.length === 1 ? 'раунд' : 'раунда'}</span></div>
+    <div class="deck-rounds">${chosen.themes.map((titles, index) => `<article class="deck-round" data-stage="${index + 1}">
+      <p class="eyebrow">Раунд ${index + 1}</p>${chosen.id === 'draft' ? `<h3>${escape(draft.rounds[index].title)}</h3>` : ''}
+      <ul>${titles.map(title => `<li>${escape(title)}</li>`).join('')}</ul>
     </article>`).join('')}</div></section>
   <footer class="home-footer"><a href="./credits.html">Фото и лицензии</a></footer>`;
 }
@@ -187,6 +247,8 @@ function field(label, path, value, options = {}) {
 function renderEditor() {
   document.body.classList.remove('home');
   const round = draft.rounds[editorRound];
+  const finals = draft.finals = draftFinals();
+  const final = draft.final = finals[0] || null;
   const path = `rounds.${editorRound}`;
   app.innerHTML = `<section class="editor">
     <div class="section-top"><div><p class="eyebrow">Подготовка</p><h1>Редактор вопросов</h1><p class="muted">Фото и ответы сохраняются в этом браузере. Скачайте набор, чтобы перенести его на другой компьютер.</p></div>
@@ -226,11 +288,11 @@ function renderEditor() {
        ${action('add-question', '+ Вопрос', `data-i="${i}" ${c.questions.length >= 8 ? 'disabled' : ''}`)}
     </section>`).join('')}
     ${action('add-topic', '+ Добавить тему', round.categories.length >= 8 ? 'disabled' : '', 'primary')}
-    <section class="panel category-editor final-editor"><div class="category-head"><h2>Финал</h2>
-      ${draft.final ? action('remove-final', 'Убрать финал', '', 'quiet') : action('add-final', 'Добавить финал')}</div>
-      ${draft.final ? field('Тема финала', 'final.topic', draft.final.topic, { max: 60 }) +
-        field('Вопрос', 'final.prompt', draft.final.prompt, { area: true, max: 1200 }) +
-        field('Ответ', 'final.answer', draft.final.answer, { area: true, max: 650 }) : ''}</section>
+    <section class="panel category-editor final-editor"><div class="category-head"><h2>Финал${finals.length > 1 ? ` · тема 1 из ${finals.length}` : ''}</h2>
+      ${final ? action('remove-final', finals.length > 1 ? 'Убрать тему' : 'Убрать финал', '', 'quiet') : action('add-final', 'Добавить финал')}</div>
+      ${final ? field('Тема финала', 'finals.0.topic', final.topic, { max: 60 }) +
+        field('Вопрос', 'finals.0.prompt', final.prompt, { area: true, max: 1200 }) +
+        field('Ответ', 'finals.0.answer', final.answer, { area: true, max: 650 }) : ''}</section>
   </section>`;
 }
 
@@ -239,6 +301,7 @@ function lobby() {
     <section class="panel lobby-copy"><p class="eyebrow">Комната открыта</p><h1>${escape(pack.title)}</h1>
       <p class="intro">Попросите игроков отсканировать QR-код или отправьте им ссылку.</p>
       <div class="actions">${action('start', 'Начать игру', '', 'primary')}${action('copy', 'Скопировать ссылку')}</div>
+      <h2>Режим ответов</h2>${modeSwitch()}
       <h2>Игроки <span class="count">${Object.keys(game.players).length}/12</span></h2>${scoreList(standings(game))}
       <a class="text-link" href="${escape(pageLink('play'))}" target="_blank" rel="noopener">Открыть игрока в новой вкладке ↗</a>
     </section>
@@ -257,18 +320,29 @@ function renderHost() {
   if (phase === 'lobby') content = lobby();
   if (phase === 'board') content = `<section class="panel round-board" data-stage="${stage}">
     <div class="section-top"><div><p class="eyebrow">Раунд ${stage} · осталось ${remaining} из ${roundQuestions(round).length}</p><h1>${escape(round.title)}</h1></div>
+    <div class="actions">${isLastRound && pack.finals?.length > 1 ? `<label class="final-topic"><span>Тема финала</span><select id="final-topic">${pack.finals.map((final, index) =>
+      `<option value="${index}">${escape(final.topic)}</option>`).join('')}</select></label>` : ''}
     ${isLastRound ? action('final', pack.final ? 'Перейти в финал' : 'Завершить игру', '', remaining ? '' : 'primary') :
-      action('next-round', `К раунду ${stage + 1}`, '', remaining ? '' : 'primary')}</div>
-    ${cardGrid(round, game.used, true)}</section>`;
+      action('next-round', `К раунду ${stage + 1}`, '', remaining ? '' : 'primary')}</div></div>
+    ${turnPlayer(game) ? `<p class="turn-note">Выбирает и отвечает первым: <strong>${escape(game.players[turnPlayer(game)].name)}</strong></p>` : ''}
+    ${cardGrid(round, game.used, true)}${modeSwitch()}</section>`;
   if (phase === 'intermission') content = intermission(pack, game, true);
   if (phase === 'question' || phase === 'reveal') {
     const queue = game.queue.map(id => game.players[id].name);
-    const handoff = current?.kind === 'handoff' && !game.opened && !game.answering && Object.keys(game.players).length;
+    const turns = game.mode === 'turns';
+    const idle = phase === 'question' && !game.opened && !game.answering;
+    const handoff = current?.kind === 'handoff' && idle && !game.buzzed.length && Object.keys(game.players).length;
+    const track = phase === 'reveal' ? current?.answerAudio : current?.audio;
+    const status = game.race?.length ? 'Фиксируем, кто первый…' : game.opened && !game.answering ? 'Кнопки открыты. Ждём нажатия' :
+      idle && turns && !handoff ? 'Все игроки ответили' : '';
     content = `<div class="question-layout">${questionPanel(current, game)}
       <aside class="panel host-actions"><h2>Пульт ведущего</h2>
+        ${track ? `<div class="host-sound"><audio controls preload="none" src="${escape(track)}"></audio>${action('replay', 'Повторить звук на ТВ')}</div>` : ''}
         ${phase === 'reveal' ? action('board', 'К табло', '', 'primary') : `
         <details class="answer-detail"><summary>Посмотреть ответ</summary><p>${escape(current?.answer)}</p></details>
-        ${handoff ? `<label><span>Передать вопрос</span><select id="handoff">${standings(game).map(p => `<option value="${p.id}">${escape(p.name)}</option>`).join('')}</select></label>${action('assign', 'Передать право ответа')}${action('open', 'Дать ответить всем')}` : ''}
+        ${idle && !turns && !handoff ? action('open', 'Принимать ответы', '', 'primary') + '<p class="muted">Прочитайте вопрос и откройте кнопки. Кто нажмёт раньше, получит блокировку на секунду.</p>' : ''}
+        ${status ? `<p class="answering">${status}</p>` : ''}
+        ${handoff ? `<label><span>Передать вопрос</span><select id="handoff">${standings(game).map(p => `<option value="${p.id}">${escape(p.name)}</option>`).join('')}</select></label>${action('assign', 'Передать право ответа')}${action('open', turns ? 'Отвечает тот, чей ход' : 'Дать ответить всем')}` : ''}
         ${game.answering ? `<p class="answering">${escape(game.players[game.answering].name)}</p>
           <div class="decisions">${action('judge', '+' + points(current) + ' · Верно', 'data-verdict="correct"', 'primary')}${action('judge', '−' + points(current) + ' · Неверно', 'data-verdict="wrong"')}${action('judge', '0 · Без штрафа', 'data-verdict="neutral"')}</div>` : ''}
         ${queue.length ? `<p class="muted">Следом: ${escape(queue.join(', '))}</p>` : ''}
@@ -276,39 +350,48 @@ function renderHost() {
         ${action('reveal', 'Открыть ответ')}`}
       </aside></div>`;
   }
-  if (phase === 'final') content = `<div class="question-layout"><article class="question panel" data-stage="final"><p class="eyebrow">Финал · ${escape(pack.final.topic)}</p>
-    <h1>${escape(pack.final.prompt)}</h1><p class="muted">Все отвечают на телефонах и ставят от нуля до своих очков.</p></article>
+  const final = activeFinal(pack, game);
+  if (phase === 'final') content = `<div class="question-layout">${finalPanel(final, 'Все отвечают на телефонах и ставят от нуля до своих очков.')}
     <aside class="panel host-actions"><h2>Принятые ответы <span class="count">${Object.keys(game.finalAnswers).length}/${Object.keys(game.players).length}</span></h2>
-    <details class="answer-detail"><summary>Посмотреть правильный ответ</summary><p>${escape(pack.final.answer)}</p></details>
+    ${final.audio ? `<div class="host-sound"><audio controls preload="none" src="${escape(final.audio)}"></audio>${action('replay', 'Повторить звук на ТВ')}</div>` : ''}
+    <details class="answer-detail"><summary>Посмотреть правильный ответ</summary><p>${escape(final.answer)}</p></details>
     ${Object.entries(game.finalAnswers).map(([id, entry]) => `<label class="final-entry"><input type="checkbox" data-correct="${id}" ${correctFinal.has(id) ? 'checked' : ''}><span><strong>${escape(game.players[id].name)}</strong> · ставка ${entry.wager}<br>${escape(entry.answer)}</span></label>`).join('')}
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
   if (phase === 'results') content = resultsPanel(game, pack);
+  const heard = app.querySelector('.host-sound audio');
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
     <div class="actions"><a class="button" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy-tv', 'Скопировать ссылку ТВ')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
+  // A redraw for a buzz or a hint must not cut off the track the host is listening to.
+  const fresh = app.querySelector('.host-sound audio');
+  if (heard && fresh?.getAttribute('src') === heard.getAttribute('src')) fresh.replaceWith(heard);
   if (phase === 'lobby' && window.QRCode) {
     try { new window.QRCode(document.querySelector('#join-qr'), { text: invite, width: 176, height: 176, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
   }
 }
 
 let lastPublicSend = 0;
-function presentation(session, source, question) {
+function presentation(session, source, question, invite = '') {
   const round = activeRound(source, session);
   const stage = roundIndex(session) + 1;
   let content;
-  if (session.phase === 'lobby') content = `<section class="panel center"><p class="eyebrow">Собираем игроков</p><h1>${escape(source.title)}</h1>${scoreList(standings(session))}</section>`;
+  if (session.phase === 'lobby') content = `<section class="panel tv-lobby">
+    ${invite ? `<div class="invite"><div id="join-qr"></div><p class="join-link">${escape(invite.replace(/^https?:\/\//, ''))}</p></div>` : ''}
+    <div class="center"><p class="eyebrow">Собираем игроков</p><h1>${escape(source.title)}</h1>
+    ${invite ? '<p class="intro">Наведите камеру телефона на QR-код, чтобы войти в игру.</p>' : ''}${scoreList(standings(session))}</div></section>`;
   else if (session.phase === 'board') content = `<section class="panel round-board" data-stage="${stage}"><div class="section-top"><div>
-    <p class="eyebrow">Раунд ${stage}</p><h1>${escape(round.title)}</h1></div><p class="muted">Осталось ${remainingQuestions(source, session)} из ${roundQuestions(round).length}</p></div>
+    <p class="eyebrow">Раунд ${stage}</p><h1>${escape(round.title)}</h1></div>
+    <p class="muted">${session.turn ? `<span class="turn-note">Выбирает и отвечает первым: <strong>${escape(session.players[session.turn].name)}</strong></span> · ` : ''}Осталось ${remainingQuestions(source, session)} из ${roundQuestions(round).length}</p></div>
     ${cardGrid(round, session.used)}</section>`;
   else if (session.phase === 'intermission') content = intermission(source, session, false);
   else if (session.phase === 'question' || session.phase === 'reveal') content = questionPanel(question, session);
-  else if (session.phase === 'final') content = `<article class="question panel" data-stage="final"><p class="eyebrow">Финал · ${escape(source.final.topic)}</p><h1>${escape(source.final.prompt)}</h1><p class="muted">Ответьте на телефоне.</p></article>`;
+  else if (session.phase === 'final') content = finalPanel(source.final, 'Ответьте на телефоне.');
   else content = resultsPanel(session, source);
   return `${roundRail(source, session)}${content}${session.phase !== 'lobby' && session.phase !== 'results' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(session))}</section>` : ''}`;
 }
 
 function sendScreen() {
-  screenConnection?.send({ type: 'screen', event: 'state', view: screenState(game, pack) });
+  screenConnection?.send({ type: 'screen', event: 'state', view: screenState(game, pack, invite) });
 }
 
 function syncHost(changed = false, force = false) {
@@ -324,15 +407,28 @@ function syncHost(changed = false, force = false) {
   }
 }
 
+// Buzzes that arrive close together are ranked by the reaction time each phone measured.
+function armRace() {
+  if (raceTimer || !game?.race?.length) return;
+  raceTimer = setTimeout(() => {
+    raceTimer = null;
+    if (game && settle(game)) {
+      playSignal();
+      syncHost(true);
+    }
+  }, raceWindow);
+}
+
 function startHost() {
   document.body.classList.remove('home');
+  stayAwake();
+  armRace();
   invite = pageLink('play').href;
   screen = 'room';
   connection = connectRoom(room, frame => {
     if (frame.type !== 'player') return;
-    const hadSpeaker = Boolean(game.answering);
     const changed = command(game, pack, frame.action);
-    if (changed && frame.action.type === 'buzz' && !hadSpeaker && game.answering) playSignal();
+    if (changed) armRace();
     syncHost(changed);
   }, links => {
     setNetwork(links);
@@ -367,6 +463,7 @@ function startHost() {
       const link = pageLink('play');
       link.hostname = info.lan;
       invite = link.href;
+      sendScreen();
       if (game.phase === 'lobby') renderHost();
       else app.querySelector('[data-tv]')?.setAttribute('href', tvLink().href);
     }).catch(() => {});
@@ -380,10 +477,15 @@ async function launch() {
   const previous = screen;
   screen = 'launching';
   try {
-    pack = validPack(draft);
+    const bundled = previous === 'home' && library.find(item => item.id === chosenPack);
+    if (bundled) {
+      const response = await fetch(`./packs/${bundled.id}.json`);
+      if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
+      pack = validPack({ ...await response.json(), title: bundled.title });
+    } else pack = validPack(draft);
     room = token();
     tvRoom = token();
-    game = createGame();
+    game = createGame(stored('vne-ocheredi-mode'));
     correctFinal.clear();
     await storeDraftNow();
     try {
@@ -408,6 +510,8 @@ async function leaveHost() {
   connection?.close();
   screenConnection = null;
   setTimeout(() => closingScreen?.close(), 300);
+  clearTimeout(raceTimer);
+  raceTimer = null;
   screen = 'closing';
   game = pack = room = tvRoom = savedRoom = null;
   // Release the room pack while preserving the independent editor draft.
@@ -454,6 +558,14 @@ async function hostButton(button) {
   const { action: type, i, j, id, verdict, path } = button.dataset;
   try {
     if (type === 'launch') return await launch();
+    if (type === 'choose-pack') {
+      chosenPack = id;
+      remember('vne-ocheredi-pack', id);
+      const top = scrollY;
+      renderHome();
+      scrollTo(0, top);
+      return;
+    }
     if (type === 'edit' || type === 'home') {
       if (screen === 'editor') await storeDraftNow();
       screen = type === 'edit' ? 'editor' : 'home';
@@ -491,8 +603,8 @@ async function hostButton(button) {
       if (type === 'add-question' && categories[i].questions.length < 8) categories[i].questions.push({ ...blank, value: (categories[i].questions.length + 1) * unit });
       if (type === 'delete-question' && categories[i].questions.length > 1 && confirm('Удалить вопрос?')) categories[i].questions.splice(Number(j), 1);
       if (type === 'remove-photo') setField(path, '');
-      if (type === 'add-final') draft.final = { topic: '', prompt: '', answer: '' };
-      if (type === 'remove-final') draft.final = null;
+      if (type === 'add-final') draft.finals = [{ topic: '', prompt: '', answer: '' }];
+      if (type === 'remove-final') draft.finals = draftFinals().slice(1);
       saveDraft();
       renderEditor();
       return;
@@ -504,6 +616,12 @@ async function hostButton(button) {
       catch { window.prompt(type === 'copy-tv' ? 'Ссылка для экрана ТВ' : 'Ссылка для игроков', link); }
       return;
     }
+    if (type === 'replay') {
+      screenConnection?.send({ type: 'screen', event: 'replay' });
+      message('Звук запущен на ТВ.');
+      return;
+    }
+    if (type === 'mode') remember('vne-ocheredi-mode', button.dataset.mode);
     if (type === 'close') {
       if (confirm('Закрыть эту комнату? Счёт текущей игры будет сброшен.')) await leaveHost();
       return;
@@ -514,7 +632,8 @@ async function hostButton(button) {
         !confirm('Ответили не все игроки. Подвести итоги?')) return;
     if (type === 'final') correctFinal.clear();
     if (type === 'start' || type === 'pick' || type === 'open') unlockSound();
-    if (command(game, pack, { type, question: id, verdict, skip, player: document.querySelector('#handoff')?.value, correct: [...correctFinal] }, true)) {
+    if (command(game, pack, { type, question: id, verdict, skip, mode: button.dataset.mode, topic: Number(document.querySelector('#final-topic')?.value || 0),
+      player: document.querySelector('#handoff')?.value, correct: [...correctFinal] }, true)) {
       syncHost(true);
     }
   } catch (error) { message(error.message); }
@@ -598,6 +717,10 @@ function initHost() {
     if (params.has('host')) history.replaceState(null, '', './');
     renderHome();
   })();
+  fetch('./packs/index.json').then(response => response.json()).then(list => {
+    library = list.filter(item => /^[a-z0-9-]{1,24}$/.test(item?.id) && typeof item.title === 'string' && Array.isArray(item.themes));
+    if (screen === 'home' && app.querySelector('.pack-library')) renderHome();
+  }).catch(() => {});
 }
 
 function initPlayer() {
@@ -614,6 +737,61 @@ function initPlayer() {
   let finalDraft = { answer: '', wager: '0' };
   let attempted = 0;
   let hostSeen = 0;
+  let litAt = 0;
+  let wasLit = false;
+  let lockedUntil = 0;
+  let lockTimer;
+  const falseStart = 1000;
+  stayAwake();
+
+  // The reaction clock starts when this phone shows the open button, whatever the network delay was.
+  function watchButton() {
+    const lit = state.phase === 'question' && state.opened && !state.answering && state.mode !== 'turns' &&
+      Boolean(player) && !state.buzzed.includes(player.id);
+    if (lit && !wasLit) litAt = performance.now();
+    wasLit = lit;
+  }
+
+  function buzzer(me) {
+    const sent = state.buzzed.includes(me.id);
+    const turns = state.mode === 'turns';
+    const speaker = state.players.find(person => person.id === state.answering)?.name;
+    const early = !turns && !sent && !state.opened && !state.answering;
+    const blocked = performance.now() < lockedUntil;
+    const waiting = pending?.type === 'buzz';
+    const label = state.answering === me.id ? 'Отвечай вслух' :
+      sent ? (state.queue.includes(me.id) ? 'Ты в очереди' : state.racing && !state.answering ? 'Нажато!' : 'Ход прошёл') :
+      waiting ? 'Нажато!' : turns ? (speaker ? `Отвечает ${speaker}` : 'Ждём ведущего') :
+      blocked ? 'Рано! Подожди' : state.opened ? 'Ответить' : early ? 'Жди сигнала' : 'Отвечает другой игрок';
+    const pressable = !sent && !waiting && !turns && (state.opened || early);
+    return { label, disabled: !pressable, held: pressable && (early || blocked), early, mine: state.answering === me.id };
+  }
+
+  function paintBuzzer(button, view) {
+    button.disabled = view.disabled;
+    button.classList.toggle('held', view.held);
+    button.classList.toggle('mine', view.mine);
+    button.setAttribute('aria-disabled', String(view.disabled || view.held));
+    button.querySelector('.buzzer-caption').textContent = view.label;
+  }
+
+  function press() {
+    const me = player && state?.players.find(person => person.id === player.id);
+    if (!me || state.phase !== 'question') return;
+    const view = buzzer(me);
+    if (view.disabled) return;
+    const now = performance.now();
+    if (view.early) {
+      lockedUntil = now + falseStart;
+      clearTimeout(lockTimer);
+      lockTimer = setTimeout(renderPlayer, falseStart + 20);
+      renderPlayer();
+      return;
+    }
+    if (now < lockedUntil) return;
+    navigator.vibrate?.(35);
+    reliable({ type: 'buzz', ms: Math.max(0, Math.round(now - litAt)) });
+  }
 
   function renderPlayer() {
     const me = player && state?.players.find(person => person.id === player.id);
@@ -633,21 +811,17 @@ function initPlayer() {
     const sameStep = previousPanel?.dataset.phase === state.phase && previousPanel.dataset.ticket === state.ticket;
     let content;
     if (state.phase === 'question') {
-      const sent = state.buzzed.includes(me.id);
-      const locked = !state.opened || sent || pending?.type === 'buzz';
-      const label = state.answering === me.id ? 'Отвечай вслух' : sent ? (state.queue.includes(me.id) ? 'Ты в очереди' : 'Ход прошёл') :
-        pending?.type === 'buzz' ? 'Отправляем…' : state.opened ? 'Ответить' : state.answering ? 'Отвечает другой игрок' : 'Ведущий выбирает игрока';
+      const view = buzzer(me);
       if (sameStep) {
         // Another player's buzz can arrive while a finger is still pressing this button.
-        const buzzer = previousPanel.querySelector('.buzzer');
-        buzzer.disabled = locked;
-        buzzer.querySelector('.buzzer-caption').textContent = label;
+        paintBuzzer(previousPanel.querySelector('.buzzer'), view);
         previousPanel.querySelector('.player-seat span').textContent = `${me.score} очков`;
         return;
       }
       content = `<p class="eyebrow">${escape(state.category)} · ${escape(state.value)} очков</p>
-        <button type="button" data-action="buzz" class="buzzer" ${locked ? 'disabled' : ''}><span aria-hidden="true">↯</span><strong class="buzzer-caption">${label}</strong></button>
-        <p class="muted">Вопрос и фото на экране ведущего.</p>`;
+        <button type="button" data-action="buzz" class="buzzer"><span aria-hidden="true">↯</span><strong class="buzzer-caption"></strong></button>
+        <p class="muted">${state.mode === 'turns' ? 'Игра по очереди: отвечайте вслух, когда назовут ваше имя.' :
+          'Жмите после сигнала ведущего. Нажмёте раньше — кнопка заблокируется на секунду.'}</p>`;
     } else if (state.phase === 'final') {
       const submitted = state.submitted.includes(me.id);
       const sending = pending?.type === 'final-answer';
@@ -668,9 +842,11 @@ function initPlayer() {
           <button class="button primary" type="submit" ${sending ? 'disabled' : ''}>${submitLabel}</button>
         </form>`;
     } else {
+      const turn = state.players.find(person => person.id === state.turn);
       const copy = {
         lobby: ['Ты в игре', 'Ведущий скоро начнёт.'],
-        board: ['Выбирают вопрос', 'Следи за табло.'],
+        board: turn ? [turn.id === me.id ? 'Твой ход' : `Ход: ${turn.name}`, turn.id === me.id ? 'Выбери вопрос вслух и отвечай первым.' : 'Следи за табло.'] :
+          ['Выбирают вопрос', 'Следи за табло.'],
         intermission: ['Перерыв', state.roundTitle ? `Дальше — ${state.roundTitle}` : 'Ведущий скоро начнёт следующий раунд.'],
         reveal: ['Ответ на ТВ', 'Скоро следующий вопрос.'],
         results: ['Игра окончена', 'Итоговый счёт ниже.']
@@ -681,6 +857,7 @@ function initPlayer() {
     }
     app.innerHTML = `<section class="panel player-panel" data-phase="${state.phase}" data-ticket="${escape(state.ticket)}"><div class="player-seat"><strong>${escape(me.name)}</strong><span>${me.score} очков</span></div>${content}</section>
       ${state.phase !== 'question' ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(state.players)}</section>` : ''}`;
+    if (state.phase === 'question') paintBuzzer(app.querySelector('.buzzer'), buzzer(me));
   }
 
   function sendPlayer(body) {
@@ -733,14 +910,19 @@ function initPlayer() {
       (pending.type === 'final-answer' && (next.submitted.includes(player.id) || next.phase !== 'final')))) pending = null;
     if (next.ticket !== state?.ticket) finalDraft = { answer: '', wager: '0' };
     state = next;
+    watchButton();
     if (player) renderPlayer();
   }
 
   connection = connectRoom(room, receive, active => { setNetwork(active); ping(); });
   setNetwork(currentNetwork);
+  // A touch counts the moment the finger lands; a click event arrives only after it lifts.
+  app.addEventListener('pointerdown', event => {
+    if (event.target.closest('.buzzer')) press();
+  });
   app.addEventListener('click', event => {
     const type = event.target.closest('[data-action]')?.dataset.action;
-    if (type === 'buzz') reliable({ type });
+    if (type === 'buzz' && event.detail === 0) press();
     if (type === 'change-name') {
       player = null;
       remember(storageKey, null);
@@ -790,15 +972,49 @@ function initTv() {
   let lastRequest = 0;
   let ended = false;
   let tv;
+  let playing = '';
+  const speaker = new Audio();
+  const unlock = document.createElement('button');
+  unlock.className = 'button primary sound-unlock';
+  unlock.type = 'button';
+  unlock.textContent = 'Включить звук';
+  unlock.hidden = true;
+  unlock.addEventListener('click', () => { if (playing) startTrack(); else unlock.hidden = true; });
+  document.body.append(unlock);
+  stayAwake();
   tv = connectRoom(code, receive, request);
+
+  function startTrack() {
+    speaker.currentTime = 0;
+    speaker.play().then(() => { unlock.hidden = true; }, () => { unlock.hidden = !playing; });
+  }
+
+  function tune() {
+    const { session, question, source } = snapshot;
+    const track = session.phase === 'question' ? question?.audio : session.phase === 'reveal' ? question?.answerAudio :
+      session.phase === 'final' ? source.final?.audio : '';
+    if ((track || '') !== playing) {
+      playing = track || '';
+      speaker.pause();
+      unlock.hidden = true;
+      if (playing) {
+        speaker.src = playing;
+        startTrack();
+      }
+    } else if (playing && session.phase === 'question' && session.mode === 'buzz' && session.answering) speaker.pause();
+  }
 
   function render() {
     const question = snapshot.question;
     const shown = photo?.url && question ? { ...question, image: photo.url } : question;
-    const html = presentation(snapshot.session, snapshot.source, shown);
+    const html = presentation(snapshot.session, snapshot.source, shown, snapshot.invite);
     if (html !== lastHtml) {
       lastHtml = html;
       app.innerHTML = html;
+      const qr = app.querySelector('#join-qr');
+      if (qr && window.QRCode) {
+        try { new window.QRCode(qr, { text: snapshot.invite, width: 320, height: 320, correctLevel: window.QRCode.CorrectLevel.M }); } catch {}
+      }
     }
   }
 
@@ -808,6 +1024,8 @@ function initTv() {
       ended = true;
       clearInterval(poll);
       tv.close();
+      speaker.pause();
+      unlock.hidden = true;
       network.hidden = true;
       waiting('Комната закрыта.');
     } else if (frame.event === 'state' && validScreenState(frame.view)) {
@@ -815,7 +1033,8 @@ function initTv() {
       network.hidden = false;
       network.classList.add('online');
       network.textContent = 'Связь с ведущим';
-      if (snapshot && frame.view.revision <= snapshot.revision) return;
+      if (snapshot && (frame.view.revision < snapshot.revision ||
+          (frame.view.revision === snapshot.revision && frame.view.invite === snapshot.invite))) return;
       snapshot = frame.view;
       const id = snapshot.question?.id;
       const length = snapshot.photoLength;
@@ -824,6 +1043,9 @@ function initTv() {
         photo = { id, length, chunks: Array(Math.ceil(length / photoChunkSize)).fill(''), received: 0, url: '' };
       }
       render();
+      tune();
+    } else if (frame.event === 'replay' && playing) {
+      startTrack();
     } else if (frame.event === 'photo' && photo && frame.id === photo.id && !photo.url) {
       const { index, chunk } = frame;
       if (!Number.isInteger(index) || index < 0 || index >= photo.chunks.length || photo.chunks[index] ||

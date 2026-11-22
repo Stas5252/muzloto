@@ -2,7 +2,9 @@
 
 Интерактивное музыкальное лото с бочонками, живым поиском любых песен из интернета и автоматической проверкой карточек. Играйте на большом экране ТВ или компьютера, а игроки участвуют со своих смартфонов!
 
-🌐 **Играть онлайн (GitHub Pages)**: [https://stas5252.github.io/muzloto/](https://stas5252.github.io/muzloto/)  
+🌐 **Главное меню с выбором игры (GitHub Pages)**: [https://stas5252.github.io/muzloto/](https://stas5252.github.io/muzloto/)  
+🎵 **МузЛото**: [https://stas5252.github.io/muzloto/muzloto.html](https://stas5252.github.io/muzloto/muzloto.html)  
+❓ **Квиз «Вне очереди»**: [https://stas5252.github.io/muzloto/quiz/](https://stas5252.github.io/muzloto/quiz/)  
 📱 **Пульт ведущего**: [https://stas5252.github.io/muzloto/tv.html](https://stas5252.github.io/muzloto/tv.html)
 📱 **Карточка игрока**: [https://stas5252.github.io/muzloto/play.html](https://stas5252.github.io/muzloto/play.html)
 

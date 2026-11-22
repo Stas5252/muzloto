@@ -4,12 +4,23 @@ export { demoPack };
 export const kinds = { normal: 'Обычный вопрос', handoff: 'Передача хода', double: 'Двойная цена' };
 const own = (object, key) => Object.hasOwn(object, key);
 const clean = (value, limit) => typeof value === 'string' ? value.trim().slice(0, limit) : '';
+const packMedia = /^packs\/media\/[a-f0-9]{12}\.(webp|mp3)$/;
+export const packImage = value => typeof value === 'string' && packMedia.test(value) && value.endsWith('.webp');
+export const packSound = value => typeof value === 'string' && packMedia.test(value) && value.endsWith('.mp3');
+const sound = value => packSound(value) ? value : '';
 const image = value => {
   if (!value) return '';
-  if (bundledImages.has(value)) return value;
+  if (bundledImages.has(value) || packImage(value)) return value;
   if (typeof value !== 'string' || value.length > 1_250_000 ||
       !/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(value)) throw new Error('Фото в пакете имеет неподдерживаемый формат.');
   return value;
+};
+
+// Answer and final pictures reach the TV inside the state frame, which carries paths only.
+const stock = value => {
+  if (!value) return '';
+  if (bundledImages.has(value) || packImage(value)) return value;
+  throw new Error('Фото ответа и фото финала можно брать только из готовых наборов.');
 };
 
 export function validPack(input) {
@@ -42,23 +53,27 @@ export function validPack(input) {
         return {
           id: `${r === 0 ? '' : 'r' + r}c${i}q${j}`, prompt: legacyZodiac ? zodiacPrompt : prompt, answer, value,
           hint: clean(question.hint, 380),
-          image: photo,
+          image: photo, answerImage: stock(question.answerImage),
+          audio: sound(question.audio), answerAudio: sound(question.answerAudio),
           kind: own(kinds, question.kind) ? question.kind : 'normal'
         };
       }) };
     });
     return { title: name, note: clean(round.note, 160), categories };
   });
-  let final = null;
-  if (input.final) {
-    const topic = clean(input.final.topic, 60);
-    const prompt = clean(input.final.prompt, 1200);
-    const answer = clean(input.final.answer, 650);
+  const finalSource = Array.isArray(input.finals) ? input.finals : input.final ? [input.final] : [];
+  if (finalSource.length > 16) throw new Error('В наборе может быть не больше 16 тем финала.');
+  const finals = finalSource.map(item => {
+    const topic = clean(item?.topic, 60);
+    const prompt = clean(item?.prompt, 1200);
+    const answer = clean(item?.answer, 650);
     if (!topic || !prompt || !answer) throw new Error('У финала должны быть тема, вопрос и ответ.');
-    final = { topic, prompt, answer };
-  }
-  return { title, rounds, final };
+    return { topic, prompt, answer, image: stock(item.image), answerImage: stock(item.answerImage), audio: sound(item.audio) };
+  });
+  return { title, rounds, final: finals[0] || null, finals };
 }
+
+export const activeFinal = (pack, game) => pack.finals?.[game.finalIndex || 0] || pack.final;
 
 function roundList(input) {
   if (Array.isArray(input?.rounds)) return input.rounds;
@@ -84,8 +99,11 @@ export function restoreDraft(input) {
   return saved;
 }
 
-export function createGame() {
+export const modes = { buzz: 'Кто быстрее', turns: 'По очереди' };
+
+export function createGame(mode = 'buzz') {
   return {
+    mode: own(modes, mode) ? mode : 'buzz', turn: 0, finalIndex: 0, race: [],
     phase: 'lobby', roundIndex: 0, players: {}, used: [], current: null, revision: 0, ticket: '',
     answering: null, queue: [], buzzed: [], showHint: false, opened: false,
     finalAnswers: {}, verdicts: [], previous: null
@@ -116,11 +134,22 @@ const getPlayer = (game, id) => own(game.players, id) ? game.players[id] : null;
 const nextTicket = game => String(game.revision + 1);
 const offersHandoff = (game, question) => question.kind === 'handoff' && Object.keys(game.players).length > 0;
 
-export function restoreGame(game, pack) {
-  if (game.phase !== 'question' || game.opened || game.answering) return game;
-  const question = findQuestion(pack, game.current);
-  if (!question || offersHandoff(game, question)) return game;
-  return { ...game, opened: true, revision: game.revision + 1 };
+const byTurns = game => game.mode === 'turns';
+const order = game => Object.keys(game.players);
+export const turnPlayer = game => byTurns(game) && order(game).length ? order(game)[(game.turn || 0) % order(game).length] : null;
+
+// The button opens only when the host has read the question, so a restored game stays as it was saved.
+export const restoreGame = game => game;
+
+// Phones report their own reaction time, so a slow connection does not lose to a fast one.
+export function settle(game) {
+  if (!game.race?.length) return false;
+  const ranked = [...game.race].sort((a, b) => a.ms - b.ms).map(entry => entry.id);
+  game.race = [];
+  if (!game.answering) game.answering = ranked.shift();
+  game.queue.push(...ranked);
+  game.revision++;
+  return true;
 }
 
 function resolveQuestion(game) {
@@ -128,6 +157,8 @@ function resolveQuestion(game) {
   game.askedBy = game.answering;
   game.answering = null;
   game.opened = false;
+  game.race = [];
+  if (byTurns(game) && order(game).length) game.turn = ((game.turn || 0) + 1) % order(game).length;
   if (!game.used.includes(game.current)) game.used.push(game.current);
 }
 
@@ -142,15 +173,25 @@ function applyHost(game, pack, action) {
       if (phase !== 'board' || game.used.includes(action.question)) return false;
       const question = roundQuestions(activeRound(pack, game)).find(q => q.id === action.question);
       if (!question) return false;
+      const first = offersHandoff(game, question) ? null : turnPlayer(game);
       Object.assign(game, {
-        current: question.id, ticket: nextTicket(game), phase: 'question',
-        answering: null, queue: [], buzzed: [], opened: !offersHandoff(game, question), showHint: false, askedBy: null
+        current: question.id, ticket: nextTicket(game), phase: 'question', race: [],
+        answering: first, queue: [], buzzed: first ? [first] : [], opened: false, showHint: false, askedBy: null
       });
       return true;
     }
+    case 'mode':
+      if (!['lobby', 'board', 'intermission'].includes(phase) || !own(modes, action.mode) || action.mode === game.mode) return false;
+      game.mode = action.mode;
+      return true;
     case 'open':
       if (phase !== 'question' || game.opened || game.answering) return false;
-      game.opened = true;
+      if (byTurns(game)) {
+        // A handoff the host decides not to hand over goes to the player whose turn it is.
+        if (game.buzzed.length || !turnPlayer(game)) return false;
+        game.answering = turnPlayer(game);
+        game.buzzed.push(game.answering);
+      } else game.opened = true;
       return true;
     case 'assign':
       if (phase !== 'question' || game.opened || game.answering || !getPlayer(game, action.player) ||
@@ -172,8 +213,16 @@ function applyHost(game, pack, action) {
         resolveQuestion(game);
       } else {
         if (action.verdict === 'wrong') player.score -= value;
-        game.answering = game.queue.shift() || null;
-        game.opened = true;
+        if (byTurns(game)) {
+          // Everyone gets one try, in seating order, starting after the player who has just answered.
+          const seats = order(game);
+          const from = seats.indexOf(game.answering);
+          game.answering = seats.map((_, i) => seats[(from + 1 + i) % seats.length]).find(id => !game.buzzed.includes(id)) || null;
+          if (game.answering) game.buzzed.push(game.answering);
+        } else {
+          game.answering = game.queue.shift() || null;
+          game.opened = true;
+        }
       }
       return true;
     }
@@ -202,6 +251,7 @@ function applyHost(game, pack, action) {
       if (phase !== 'board' || roundIndex(game) !== pack.rounds.length - 1 ||
           (remainingQuestions(pack, game) && action.skip !== true)) return false;
       game.phase = pack.final ? 'final' : 'results';
+      game.finalIndex = Number.isInteger(action.topic) && pack.finals?.[action.topic] ? action.topic : 0;
       game.ticket = nextTicket(game);
       game.finalAnswers = {};
       return true;
@@ -237,7 +287,7 @@ function applyPlayer(game, action) {
   if (action.type === 'buzz' && game.phase === 'question' && game.opened && !game.buzzed.includes(id)) {
     game.buzzed.push(id);
     if (game.answering) game.queue.push(id);
-    else game.answering = id;
+    else (game.race ||= []).push({ id, ms: Number.isInteger(action.ms) && action.ms >= 0 && action.ms < 60000 ? action.ms : 60000 });
     return true;
   }
   if (action.type === 'final-answer' && game.phase === 'final' && !own(game.finalAnswers, id)) {
@@ -277,6 +327,7 @@ export function publicState(game, pack) {
     roundNumber: roundIndex(game) + 1, roundTotal: pack.rounds.length, roundTitle: activeRound(pack, game).title,
     answering: game.answering, queue: [...game.queue], buzzed: [...game.buzzed], opened: game.opened,
     category: question?.category || '', value: question ? points(question) : null,
-    title: pack.title, finalTopic: pack.final?.topic || '', submitted: Object.keys(game.finalAnswers)
+    title: pack.title, finalTopic: activeFinal(pack, game)?.topic || '', submitted: Object.keys(game.finalAnswers),
+    mode: game.mode || 'buzz', turn: turnPlayer(game), racing: (game.race || []).length > 0
   };
 }

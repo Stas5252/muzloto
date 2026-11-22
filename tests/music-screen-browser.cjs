@@ -118,11 +118,28 @@ async function run() {
         won = true;
         break;
       }
+      await host.waitForFunction(() => document.querySelector('#main-audio').muted);
+      const previous = await tv.evaluate(() => document.querySelector('#music-audio').src);
+      await host.evaluate(() => {
+        window.audibleOnPhone = 0;
+        window.phoneProbe = setInterval(() => {
+          const audio = document.querySelector('#main-audio');
+          if (!audio.paused && !audio.muted) window.audibleOnPhone++;
+        }, 20);
+      });
       await host.locator('#btn-next-keg').click();
+      await tv.waitForFunction(src => {
+        const audio = document.querySelector('#music-audio');
+        return audio.src !== src && !audio.paused && audio.currentTime > 0.2;
+      }, previous);
+      assert.equal(await host.evaluate(() => {
+        clearInterval(window.phoneProbe);
+        return window.audibleOnPhone;
+      }), 0, 'The phone stays silent while the TV loads the next track');
     }
     assert.ok(won, 'The detached TV shows the confirmed winner');
     assert.deepEqual(errors, []);
-    console.log('PASS TV and host reconnect, track history, Bingo and winning card');
+    console.log('PASS TV and host reconnect, silent phone on track change, track history, Bingo and winning card');
   } finally {
     await browser.close();
   }

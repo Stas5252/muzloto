@@ -469,8 +469,12 @@ input[type="text"], input[type="search"], input[type="number"], select {
 .lobby-guest-panel { display: flex; flex-direction: column; }
 .lobby-guest-panel h2 { font-size: 1.44rem; }
 .lobby-guest-panel .players-pill-wrap { justify-content: flex-start; min-height: 55px; }
-.player-pill { border-color: #394d3f; background: #202e24; }
-.player-pill .p-dot { background: var(--primary); box-shadow: none; }
+.players-pill-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.player-pill {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 13px;
+  border: 1px solid #394d3f; border-radius: 999px; background: #202e24; font-weight: 600; overflow-wrap: anywhere;
+}
+.player-pill .p-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: none; }
 .player-pill.offline .p-dot { background: #ff9b87; }
 .panel-empty { color: var(--text-faint); padding: 6px 0; }
 .lobby-estimate {

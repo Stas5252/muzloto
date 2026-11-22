@@ -65,6 +65,9 @@ async function main() {
       assert.equal((await ack(player, 'player:bingo', { marks: joined.card.map(t => t.id) })).ok, true);
       assert.equal((await ack(player, 'player:bingo', { marks: joined.card.map(t => t.id) })).ok, false,
         'Duplicate claim in one round must not count as another victory');
+      assert.equal((await ack(host, 'host:resume')).ok, true);
+      assert.equal((await ack(player, 'player:bingo', { marks: joined.card.map(t => t.id) })).ok, false,
+        'A winner must not win the continued round again');
     }
     let stats = await (await fetch(url + '/api/stats')).json();
     assert.equal(stats.history.length, 2, 'Two fast rounds by the same winner must both be recorded');
