@@ -71,6 +71,10 @@ const memoryBucket = require('./own-music-bucket.cjs');
   assert.equal((await get())[1].packs.length, 2);
 
   assert.equal((await post({ action: 'delete', id: 'nope' }))[0], 400);
+  bucket.failRemove(true);
+  assert.equal((await post({ action: 'delete', id: pack }))[0], 502);
+  assert.equal((await get())[1].packs.length, 2, 'A pack whose recordings were not removed stays listed, to delete it again');
+  bucket.failRemove(false);
   assert.deepEqual(await post({ action: 'delete', id: pack }), [200, { ok: true }]);
   [status, catalogue] = await get();
   assert.deepEqual(catalogue.packs.map(item => item.title), ['Второй']);

@@ -138,11 +138,15 @@ async function remove(bucket: any, id: unknown): Promise<Response> {
   if (typeof id !== "string" || !packId.test(id)) return respond({ error: "Bad pack id" }, 400);
   const packs = await readIndex(bucket);
   if (!packs) return respond({ error: "Music catalog unavailable" }, 502);
+  // Recordings go first: if that fails the pack stays listed and can be deleted again.
+  const files = await stored(bucket, id);
+  if (!files) return respond({ error: "Music storage unavailable" }, 502);
+  if (files.length && (await bucket.remove(files.map(name => `${folder(id)}/${name}`))).error) {
+    return respond({ error: "Pack was not deleted" }, 502);
+  }
   if (!(await writeIndex(bucket, packs.filter(pack => pack.id !== id)))) {
     return respond({ error: "Pack was not deleted" }, 502);
   }
-  const files = await stored(bucket, id);
-  if (files?.length) await bucket.remove(files.map(name => `${folder(id)}/${name}`));
   return respond({ ok: true });
 }
 

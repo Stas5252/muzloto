@@ -2,9 +2,11 @@
 module.exports = function memoryBucket() {
   const files = new Map();
   let broken = false;
+  let keeps = false;
   return {
     files,
     fail(value) { broken = value; },
+    failRemove(value) { keeps = value; },
     async list(path, options = {}) {
       if (broken) return { data: null, error: new Error('down') };
       const prefix = path + '/';
@@ -21,7 +23,11 @@ module.exports = function memoryBucket() {
       files.set(path, Buffer.from(await body.arrayBuffer()));
       return { error: null };
     },
-    async remove(paths) { for (const path of paths) files.delete(path); return { error: null }; },
+    async remove(paths) {
+      if (keeps) return { data: null, error: new Error('down') };
+      for (const path of paths) files.delete(path);
+      return { data: [], error: null };
+    },
     async createSignedUrls(paths) {
       return { data: paths.map(path => files.has(path)
         ? { path, signedUrl: 'https://storage.test/sign/' + path, error: null } : { path, signedUrl: null, error: 'missing' }), error: null };
