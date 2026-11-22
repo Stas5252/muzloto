@@ -23,7 +23,7 @@ async function run() {
     await bigScreen.addInitScript(() => { delete window.BroadcastChannel; });
     const host = await open(phoneHost, site);
     await host.evaluate(async image => {
-      const { demoPack } = await import('./game.mjs?v=21');
+      const { demoPack } = await import('./game.mjs?v=22');
       const { write } = await import('./storage.mjs');
       const draft = structuredClone(demoPack);
       draft.rounds[0].categories[0].questions[3].image = image;
@@ -293,7 +293,7 @@ async function run() {
     await host.locator('#join-qr canvas').waitFor({ state: 'attached' });
     assert.equal(await host.locator('.lobby-copy h1').textContent(), 'Проверка редактора', 'The room uses the deck shown in the editor');
     assert.equal(await host.evaluate(async () => {
-      const { validPack } = await import('./game.mjs?v=21');
+      const { validPack } = await import('./game.mjs?v=22');
       const { read } = await import('./storage.mjs?v=2');
       return validPack(await read('draft')).finals.length;
     }), 0, 'A final removed in the editor stays removed');

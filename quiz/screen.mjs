@@ -1,10 +1,10 @@
-import { activeRound, activeFinal, findQuestion, roundIndex, turnPlayer, packImage, packSound, modes } from './game.mjs?v=21';
+import { activeRound, activeFinal, findQuestion, roundIndex, chooser, awaitingHandoff, finalTopics, remover, packImage, packSound, modes } from './game.mjs?v=22';
 import { bundledImages } from './starter.mjs?v=17';
 
 export const photoChunkSize = 16_000;
 export const photoBatchSize = 6;
 const maxPhotoLength = 1_250_000;
-const phases = ['lobby', 'board', 'question', 'reveal', 'intermission', 'final', 'results'];
+const phases = ['lobby', 'board', 'question', 'reveal', 'intermission', 'themes', 'final', 'showdown', 'results'];
 const questionId = /^(?:r[12])?c[0-7]q[0-7]$/;
 const roomCode = /^[a-f0-9]{24}$/;
 const playerId = /^p[a-zA-Z0-9_-]{1,48}$/;
@@ -15,7 +15,7 @@ const picture = value => value === '' || bundledImages.has(value) || packImage(v
 const track = value => value === '' || packSound(value);
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
-export function screenState(game, pack, invite = '') {
+export function screenState(game, pack, invite = '', timer = null) {
   const displayingQuestion = game.phase === 'question' || game.phase === 'reveal';
   const question = displayingQuestion ? findQuestion(pack, game.current) : null;
   const round = activeRound(pack, game);
@@ -24,16 +24,22 @@ export function screenState(game, pack, invite = '') {
   const final = activeFinal(pack, game);
   const inFinal = game.phase === 'final';
   const reveal = game.phase === 'reveal';
+  const showdown = game.phase === 'showdown';
+  const verdicts = finished ? game.verdicts : showdown ? game.verdicts.slice(0, game.revealed) : [];
+  // The right answer of the final is shown once every stake is open.
+  const settled = finished || (showdown && game.revealed >= game.verdicts.length);
   return {
     revision: game.revision,
     invite: game.phase === 'lobby' ? invite : '',
     session: {
       phase: game.phase, roundIndex: roundIndex(game), players: game.players, answering: game.answering,
       used: board ? game.used : [], showHint: game.showHint, opened: game.opened,
-      verdicts: finished ? game.verdicts : [], mode: game.mode || 'buzz', turn: turnPlayer(game)
+      verdicts, mode: game.mode || 'buzz', turn: chooser(game), handoff: awaitingHandoff(game, pack),
+      paused: Boolean(game.paused), timer, remover: remover(game), stakes: showdown ? game.verdicts.length : 0
     },
     source: {
       title: pack.title,
+      themes: game.phase === 'themes' ? finalTopics(pack, game) : [],
       rounds: pack.rounds.map(({ title }, index) => index === roundIndex(game) ? {
         title, note: game.phase === 'intermission' ? round.note : '',
         categories: board ? round.categories.map(category => ({
@@ -43,12 +49,12 @@ export function screenState(game, pack, invite = '') {
         })) : []
       } : { title, note: '', categories: [] }),
       final: final ? {
-        topic: inFinal ? final.topic : '',
+        topic: inFinal || showdown ? final.topic : '',
         prompt: inFinal ? final.prompt : '',
-        answer: finished ? final.answer : '',
+        answer: settled ? final.answer : '',
         image: inFinal && final.image || '',
         audio: inFinal && final.audio || '',
-        answerImage: finished && final.answerImage || ''
+        answerImage: settled && final.answerImage || ''
       } : null
     },
     question: question && {
@@ -90,7 +96,13 @@ export function validScreenState(frame) {
         text(v.answer, 180) && integer(v.wager, 0, Number.MAX_SAFE_INTEGER) && typeof v.correct === 'boolean') ||
       (session.answering !== null && (typeof session.answering !== 'string' || !own(players, session.answering))) ||
       typeof session.showHint !== 'boolean' || typeof session.opened !== 'boolean' ||
-      !own(modes, session.mode) || (session.turn !== null && !own(players, session.turn))) return false;
+      !own(modes, session.mode) || (session.turn !== null && !own(players, session.turn)) ||
+      typeof session.handoff !== 'boolean' || typeof session.paused !== 'boolean' ||
+      (session.remover !== null && !own(players, session.remover)) || !integer(session.stakes, 0, 12) ||
+      (session.timer !== null && (!['buzz', 'answer'].includes(session.timer?.kind) ||
+        !integer(session.timer.left, 0, 120_000) || !integer(session.timer.total, 1000, 120_000))) ||
+      !Array.isArray(source.themes) || source.themes.length > 16 ||
+      !source.themes.every(theme => text(theme?.topic, 60) && typeof theme.out === 'boolean')) return false;
 
   if (!source.rounds.every(round => text(round?.title, 48) && text(round.note, 160) &&
       Array.isArray(round.categories) && round.categories.length <= 8 &&
