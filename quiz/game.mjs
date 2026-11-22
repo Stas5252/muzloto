@@ -165,6 +165,12 @@ function resolveQuestion(game) {
 function applyHost(game, pack, action) {
   const phase = game.phase;
   switch (action.type) {
+    case 'again':
+      // Same room and players, a fresh score: nobody has to scan the code again.
+      if (phase !== 'results') return false;
+      Object.assign(game, createGame(game.mode), { revision: game.revision,
+        players: Object.fromEntries(Object.entries(game.players).map(([id, player]) => [id, { name: player.name, score: 0 }])) });
+      return true;
     case 'start':
       if (phase !== 'lobby') return false;
       game.phase = 'board';
@@ -315,7 +321,7 @@ export function command(game, pack, action, host = false) {
   }
   const before = host ? structuredClone({ ...game, previous: null }) : null;
   if (!(host ? applyHost(game, pack, action) : applyPlayer(game, action))) return false;
-  if (host) game.previous = before;
+  if (host) game.previous = action.type === 'again' ? null : before;
   game.revision++;
   return true;
 }

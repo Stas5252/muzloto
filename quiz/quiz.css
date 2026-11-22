@@ -370,3 +370,7 @@ html, .values { scrollbar-color: #6c7793 #242b39; scrollbar-width: thin; }
   .tv .value { min-height: clamp(38px, 5.9vh, 54px); }
   .tv .score-panel { gap: 7px; }
 }
+
+.again { display: grid; gap: 10px; margin-top: 12px; }
+.again p { color: var(--muted); }
+.again label { display: grid; gap: 4px; }

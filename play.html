@@ -94,6 +94,7 @@
 
       <div class="card player-join-card">
         <div style="display:flex; flex-direction:column; gap: 16px;">
+          <p id="join-notice" role="status" hidden style="padding:12px 14px; border-radius:12px; border:1px solid var(--primary); color:#fff; font-weight:600; line-height:1.4;"></p>
           <label>
             Имя или ник
             <input id="input-name" type="text" placeholder="Ваше имя" maxlength="20" autocomplete="name" style="margin-top:6px;">
@@ -167,7 +168,7 @@
   <script src="mqtt.min.js"></script>
   <script src="room-mqtt.js?v=2"></script>
   <script src="peerjs.min.js"></script>
-  <script src="comm.js?v=9"></script>
+  <script src="comm.js?v=10"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -286,6 +287,7 @@
         joinBtn.querySelector('span').textContent = 'Войти в игру';
 
         if (res.error) return toast(res.error);
+        $('join-notice').hidden = true;
 
         localStorage.setItem(playerKey, res.pid);
         localStorage.setItem('muzloto_player_name', name);
@@ -434,7 +436,23 @@
 
     comm.on('state', state => {
       if (!joinedCode) return;
+      if (state.state === 'closed') {
+        // The host ended the game: forget the room so this phone does not try to return to it.
+        comm.playerLeave();
+        sessionStorage.setItem(activePlayerKey, 'null');
+        if (localStorage.getItem('muzloto_joined_room') === joinedCode) localStorage.removeItem('muzloto_joined_room');
+        joinedCode = null;
+        stopConfetti();
+        $('input-room').value = '';
+        $('join-notice').textContent = 'Игра завершена. Спасибо за игру! Чтобы сыграть ещё, введите новый код от ведущего.';
+        $('join-notice').hidden = false;
+        $('sec-join').style.display = 'block';
+        $('sec-play').style.display = 'none';
+        $('btn-leave-room').style.display = 'none';
+        return;
+      }
       currentGameState = state.state;
+      currentMode = state.mode || currentMode;
 
       if (state.called && Array.isArray(state.called)) {
         calledTrackIds = new Set(state.called);

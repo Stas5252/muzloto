@@ -1,7 +1,7 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
-  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=18';
+  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=19';
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
-import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=3';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=4';
 import { read, write, photoData } from './storage.mjs?v=2';
 import { listenForHost, pairHost, askPin, validPin, waitingUrl } from '../tv-pair.mjs?v=1';
 
@@ -208,6 +208,27 @@ function resultsPanel(session, source) {
   </section>`;
 }
 
+// After the results the host starts the next game in the same room: players and the TV stay.
+function againPanel() {
+  const cards = packCards();
+  const current = cards.findIndex(card => card.title === pack.title);
+  const next = cards[(current + 1) % cards.length].id;
+  return `<section class="panel again"><h2>Сыграть ещё</h2>
+    <p>Игроки и ТВ остаются в этой комнате, счёт начнётся с нуля.</p>
+    <label><span>Набор вопросов</span><select id="again-pack">${cards.map(card =>
+      `<option value="${escape(card.id)}"${card.id === next ? ' selected' : ''}>${escape(card.title)}</option>`).join('')}</select></label>
+    <div class="actions">${action('again', 'Сыграть ещё', '', 'primary')}${action('close', 'Закончить вечер', '', 'quiet')}</div>
+  </section>`;
+}
+
+async function loadPack(id) {
+  const bundled = library.find(item => item.id === id);
+  if (!bundled) return validPack(draft);
+  const response = await fetch(`./packs/${bundled.id}.json`);
+  if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
+  return validPack({ ...await response.json(), title: bundled.title });
+}
+
 // validPack reads `finals` when a draft has it, so the editor edits the same list.
 const draftFinals = () => draft.finals || (draft.final ? [draft.final] : []);
 
@@ -370,7 +391,7 @@ function renderHost() {
     <details class="answer-detail"><summary>Посмотреть правильный ответ</summary><p>${escape(final.answer)}</p></details>
     ${Object.entries(game.finalAnswers).map(([id, entry]) => `<label class="final-entry"><input type="checkbox" data-correct="${id}" ${correctFinal.has(id) ? 'checked' : ''}><span><strong>${escape(game.players[id].name)}</strong> · ставка ${entry.wager}<br>${escape(entry.answer)}</span></label>`).join('')}
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
-  if (phase === 'results') content = resultsPanel(game, pack);
+  if (phase === 'results') content = resultsPanel(game, pack) + againPanel();
   const heard = app.querySelector('.host-sound audio');
   app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
     <div class="actions">${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
@@ -491,17 +512,22 @@ async function retire(code) {
     const source = validPack(await read('live-pack-' + code));
     if (live?.room !== code || !live.game) return;
     const old = restoreGame(live.game, source);
-    const view = { ...publicState(old, source), revision: old.revision + 1, closed: true };
-    const screenCode = validRoom(live.tvRoom) ? live.tvRoom : code;
-    const tell = () => {
-      players.send({ type: 'state', state: view });
-      screens.send({ type: 'screen', event: 'closed' });
-    };
-    const players = connectRoom(code, () => {}, tell);
-    const screens = connectRoom(screenCode, () => {}, tell);
-    tell();
-    setTimeout(() => { players.close(); screens.close(); }, 5000);
+    announceClosed(code, validRoom(live.tvRoom) ? live.tvRoom : code,
+      { ...publicState(old, source), revision: old.revision + 1, closed: true });
   } catch {}
+}
+
+// Repeats "room closed" for a few seconds, so it also arrives when a link was still connecting.
+function announceClosed(code, screenCode, view) {
+  const tell = () => {
+    players.send({ type: 'state', state: view });
+    screens.send({ type: 'screen', event: 'closed' });
+  };
+  const players = connectRoom(code, () => {}, tell);
+  const screens = connectRoom(screenCode, () => {}, tell);
+  const repeat = setInterval(tell, 1000);
+  tell();
+  setTimeout(() => { clearInterval(repeat); players.close(); screens.close(); }, 5000);
 }
 
 async function launch() {
@@ -511,12 +537,7 @@ async function launch() {
   const previous = screen;
   screen = 'launching';
   try {
-    const bundled = previous === 'home' && library.find(item => item.id === chosenPack);
-    if (bundled) {
-      const response = await fetch(`./packs/${bundled.id}.json`);
-      if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
-      pack = validPack({ ...await response.json(), title: bundled.title });
-    } else pack = validPack(draft);
+    pack = await loadPack(previous === 'home' ? chosenPack : 'draft');
     if (previousRoom) await retire(previousRoom);
     room = token();
     tvRoom = token();
@@ -541,7 +562,9 @@ async function launch() {
 async function leaveHost() {
   const oldRoom = room;
   pair.idle(tvRoom);
-  connection?.send({ type: 'state', state: { ...publicState(game, pack), revision: game.revision + 1, closed: true } });
+  const closedView = { ...publicState(game, pack), revision: game.revision + 1, closed: true };
+  announceClosed(room, tvRoom, closedView);
+  connection?.send({ type: 'state', state: closedView });
   const closingScreen = screenConnection;
   closingScreen?.send({ type: 'screen', event: 'closed' });
   connection?.close();
@@ -665,6 +688,21 @@ async function hostButton(button) {
       message('Звук запущен на ТВ.');
       return;
     }
+    if (type === 'again') {
+      if (button.disabled) return;
+      button.disabled = true;
+      let next;
+      try { next = await loadPack(document.querySelector('#again-pack')?.value); }
+      catch (error) { button.disabled = false; throw error; }
+      if (!command(game, next, { type }, true)) return;
+      pack = next;
+      correctFinal.clear();
+      await write('live-pack-' + room, pack).catch(localError);
+      savedInfo = describeSaved(pack.title, game);
+      syncHost(true);
+      message('Новая игра: ' + pack.title + '. Игроки уже в комнате.');
+      return;
+    }
     if (type === 'mode') remember('vne-ocheredi-mode', button.dataset.mode);
     if (type === 'close') {
       if (confirm('Закрыть эту комнату? Счёт текущей игры будет сброшен.')) await leaveHost();
@@ -772,6 +810,7 @@ function initHost() {
   fetch('./packs/index.json').then(response => response.json()).then(list => {
     library = list.filter(item => /^[a-z0-9-]{1,24}$/.test(item?.id) && typeof item.title === 'string' && Array.isArray(item.themes));
     if (screen === 'home' && app.querySelector('.pack-library')) renderHome();
+    if (screen === 'room' && game?.phase === 'results') renderHost();
   }).catch(() => {});
 }
 
@@ -856,7 +895,8 @@ function initPlayer() {
       return;
     }
     if (!me) {
-      app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">Подключение</p><h1>Привет, ${escape(player.name)}</h1><p>Ждём комнату ведущего.</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
+      app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">Подключение</p><h1>Привет, ${escape(player.name)}</h1><p>${state?.phase === 'results' ?
+        'Эта игра уже закончилась. Вы войдёте, как только ведущий начнёт следующую.' : 'Ждём комнату ведущего.'}</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
       return;
     }
     const previousPanel = app.querySelector('.player-panel');
@@ -921,7 +961,8 @@ function initPlayer() {
     sendPlayer({ type: 'join' });
     const note = document.querySelector('#join-note');
     if (note && Date.now() - attempted > 6500) {
-      note.textContent = currentNetwork.length ? 'Проверьте, что вкладка ведущего открыта.' :
+      note.textContent = state?.phase === 'results' ? '' : currentNetwork.length ?
+        'Ведущий не отвечает. Проверьте, что его вкладка открыта. Если игра уже завершена, попросите новый QR-код.' :
         'Связь пока не появилась. Если вы в одном Wi‑Fi, ведущий может запустить локальную версию.';
     }
     if (hostSeen && Date.now() - hostSeen > 14000) network.textContent = 'Ждём ведущего';

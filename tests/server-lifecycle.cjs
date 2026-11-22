@@ -83,12 +83,34 @@ async function main() {
       assert.equal(stats.leaderboard.find(item => item.name === name)?.wins, 1,
         'Special player names must be recorded as ordinary names: ' + name);
     }
+    // Lobby settings keep the room and its players; an ended game refuses new players.
+    {
+      const guest = await connect();
+      const stranger = await connect();
+      const party = await ack(host, 'host:create', { tracks, mode: 'full', size: 3 });
+      const seat = await ack(guest, 'player:join', { code: party.code, name: 'Гость' });
+      assert.equal(seat.card.length, 9);
+      const dealt = new Promise(resolve => guest.once('card', resolve));
+      assert.equal((await ack(stranger, 'host:update', { tracks, mode: 'line', size: 4 })).ok, undefined, 'Only the host changes settings');
+      const longer = Array.from({ length: 16 }, (_, i) => ({ id: 'u' + i, title: 'Песня ' + i, artist: 'Артист' }));
+      const updated = await ack(host, 'host:update', { tracks: longer, mode: 'line', size: 4 });
+      assert.deepEqual([updated.ok, updated.code], [true, party.code], 'New settings keep the room code');
+      assert.equal((await dealt).card.length, 16, 'A player in the lobby gets a card for the new settings');
+      assert.match((await ack(host, 'host:update', { tracks: longer.slice(0, 5), size: 3 })).error, /минимум 9/);
+      await ack(host, 'host:start');
+      assert.ok((await ack(host, 'host:update', { tracks: longer, size: 4 })).error, 'Settings are fixed once the round starts');
+      const closed = new Promise(resolve => guest.on('state', state => state.state === 'closed' && resolve(state)));
+      assert.equal((await ack(stranger, 'host:close')).ok, undefined, 'Only the host ends the game');
+      assert.equal((await ack(host, 'host:close')).ok, true);
+      assert.equal((await closed).code, party.code, 'Players are told that the game has ended');
+      assert.match((await ack(stranger, 'player:join', { code: party.code, name: 'Поздно' })).error, /уже завершена/);
+    }
     clients.forEach(client => client.disconnect());
     await new Promise(resolve => { server.once('exit', resolve); server.kill(); });
     await start();
     stats = await (await fetch(url + '/api/stats')).json();
     assert.equal(stats.history.length, 4, 'Restart must retain distinct rounds with the same room, winner and draw');
-    console.log('PASS server: host authentication, duplicate bingo rejected, consecutive victories and restart persistence');
+    console.log('PASS server: host authentication, duplicate bingo rejected, consecutive victories, lobby settings, ended game and restart persistence');
   } finally {
     clients.forEach(client => client.disconnect());
     if (server && server.exitCode === null) await new Promise(resolve => { server.once('exit', resolve); server.kill(); });

@@ -248,6 +248,8 @@ app.get('/qr.svg', async (req, res) => {
 
 // Game state & rooms
 const rooms = Object.create(null);
+// Codes of games the host has ended, kept for a while to tell late players why they cannot join.
+const closedRooms = new Map();
 
 function matchesSecret(candidate, secret) {
   if (typeof candidate !== 'string') return false;
@@ -384,10 +386,11 @@ io.on('connection', s => {
     return room?.host === s.id ? room : null;
   };
 
-  s.on('host:create', (d, ack) => {
-    const size = d.size === 4 ? 4 : 3;
-    const rawTracks = Array.isArray(d.tracks) ? d.tracks.slice(0, 300) : [];
-    
+  // Tracks, card size and win rule of a room, as the host set them up.
+  const roomSetup = d => {
+    const size = d?.size === 4 ? 4 : 3;
+    const rawTracks = Array.isArray(d?.tracks) ? d.tracks.slice(0, 300) : [];
+
     // Assign each track its unique, fixed Keg Number (Бочонок № 1, № 2, № 3 ...)
     const tracks = rawTracks.map((t, i) => ({
       id: String(t.id || 't' + i),
@@ -400,19 +403,62 @@ io.on('connection', s => {
     }));
 
     if (tracks.length < size * size) {
-      return ack({ error: `Нужно минимум ${size * size} треков для сетки ${size}×${size}` });
+      return { error: `Нужно минимум ${size * size} треков для сетки ${size}×${size}` };
     }
+    return { tracks, size, mode: (d.mode === 'line' || d.mode === 'two_lines') ? d.mode : 'full' };
+  };
+
+  const dealCards = r => {
+    for (const p of r.players.values()) {
+      p.card = newCard(r);
+      p.marks = new Set();
+      p.won = false;
+      if (p.sid) io.to(p.sid).emit('card', cardOut(r, p));
+    }
+  };
+
+  // New settings in the lobby keep the room: players stay and get new cards.
+  s.on('host:update', (d, ack) => {
+    if (typeof ack !== 'function') ack = () => {};
+    const r = hostRoom();
+    if (!r || r.state !== 'lobby') return ack({ error: 'Настройки можно менять только до старта раунда' });
+    const setup = roomSetup(d);
+    if (setup.error) return ack(setup);
+    Object.assign(r, setup);
+    dealCards(r);
+    push(r);
+    ack({ ok: true, code: r.code });
+  });
+
+  // The host ended the game: players see it, and the code stops accepting new ones.
+  s.on('host:close', (_, ack) => {
+    if (typeof _ === 'function') ack = _;
+    if (typeof ack !== 'function') ack = () => {};
+    const r = hostRoom();
+    if (!r) return ack({ error: 'no room' });
+    r.state = 'closed';
+    push(r);
+    delete rooms[r.code];
+    closedRooms.set(r.code, Date.now());
+    s.data.host = null;
+    ack({ ok: true });
+  });
+
+  s.on('host:create', (d, ack) => {
+    const setup = roomSetup(d);
+    if (setup.error) return ack(setup);
+    const { tracks, size } = setup;
 
     let code;
     do {
       code = String(1000 + Math.random() * 9000 | 0);
-    } while (rooms[code]);
+    } while (rooms[code] || closedRooms.has(code));
 
     rooms[code] = {
       code,
       tracks,
       size,
-      mode: (d.mode === 'line' || d.mode === 'two_lines') ? d.mode : 'full',
+      mode: setup.mode,
       state: 'lobby',
       order: [],
       called: [],
@@ -518,12 +564,7 @@ io.on('connection', s => {
     r.winner = null;
     r.winnerPid = null;
     r.winnerDetails = null;
-    for (const p of r.players.values()) {
-      p.card = newCard(r);
-      p.marks = new Set();
-      p.won = false;
-      if (p.sid) io.to(p.sid).emit('card', cardOut(r, p));
-    }
+    dealCards(r);
     push(r);
     ack({ ok: true });
   });
@@ -544,6 +585,7 @@ io.on('connection', s => {
   s.on('player:join', (d, ack) => {
     if (!ack) ack = () => {};
     const r = rooms[String(d && d.code)];
+    if (!r && closedRooms.has(String(d && d.code))) return ack({ error: 'Эта игра уже завершена. Попросите у ведущего новый код.' });
     if (!r) return ack({ error: 'Комната не найдена. Проверьте 4-значный код.' });
     const name = String((d && d.name) || '').trim().slice(0, 20);
     if (!name) return ack({ error: 'Пожалуйста, введите ваше имя' });
@@ -714,6 +756,9 @@ setInterval(() => {
     if (now - rooms[c].created > 12 * 3600 * 1000) {
       delete rooms[c];
     }
+  }
+  for (const [code, closed] of closedRooms) {
+    if (now - closed > 12 * 3600 * 1000) closedRooms.delete(code);
   }
 }, 600 * 1000);
 

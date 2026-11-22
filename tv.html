@@ -367,7 +367,7 @@
   <script src="room-mqtt.js?v=2"></script>
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
-  <script src="comm.js?v=9"></script>
+  <script src="comm.js?v=10"></script>
   <script src="packs-data.js"></script>
   <script src="cloud-audio-config.js?v=3"></script>
   <script src="cloud-audio.js?v=3"></script>
@@ -2539,10 +2539,27 @@
     };
 
     // CREATE ROOM
+    // "Настройки" in the lobby edit the same room: players stay in it and get new cards.
+    let editingLobby = false;
+    function setEditingLobby(on) {
+      editingLobby = on;
+      $('btn-create-room').firstElementChild.textContent = on ? 'Сохранить настройки' : 'Создать комнату';
+    }
+
     $('btn-create-room').onclick = async () => {
       stopSetupAudio();
       const size = parseInt($('opt-size').value, 10);
       const mode = $('opt-mode').value;
+
+      if (editingLobby && currentRoomCode && comm.hostUpdate) {
+        comm.hostUpdate({ tracks: selectedTracks, size, mode }, r => {
+          if (r?.error) return alert(r.error);
+          setEditingLobby(false);
+          $('sec-setup').style.display = 'none';
+          $('sec-lobby').style.display = 'block';
+        });
+        return;
+      }
 
       comm.hostCreate({ tracks: selectedTracks, size, mode }, async r => {
         if (r.error) return alert(r.error);
@@ -2583,12 +2600,14 @@
     };
 
     $('btn-back-setup').onclick = () => {
+      setEditingLobby(true);
       $('sec-lobby').style.display = 'none';
       $('sec-setup').style.display = 'block';
     };
 
     function endSession() {
       {
+        comm.hostClose?.();
         tvDisplay?.close();
         tvScreenCode = null;
         localStorage.removeItem('muzloto_active_host_code');
