@@ -122,7 +122,8 @@
       async function call(body) {
         const response = await fetch(config.ownUrl, {
           method: 'POST',
-          headers: { apikey: config.key, 'content-type': 'application/json', 'x-muzloto-key': key },
+          // Percent-encoded: a header cannot carry Cyrillic.
+          headers: { apikey: config.key, 'content-type': 'application/json', 'x-muzloto-key': encodeURIComponent(key) },
           body: JSON.stringify(body)
         });
         if (response.status === 403) {

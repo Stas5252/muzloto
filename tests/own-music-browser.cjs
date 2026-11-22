@@ -7,7 +7,7 @@ const memoryBucket = require('./own-music-bucket.cjs');
 
 const site = process.env.MUZLOTO_AUDIT_SITE || 'http://localhost:3000/';
 const chrome = process.env.MUZLOTO_CHROME || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
-const password = 'party-password';
+const password = 'пароль вечеринки 2026';
 const cover = 'https://is1-ssl.mzstatic.com/image/thumb/Music/v4/aa/cover.jpg/100x100bb.jpg';
 const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 

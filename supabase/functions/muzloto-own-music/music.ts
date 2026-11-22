@@ -31,8 +31,15 @@ async function digest(value: string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
 }
 
-async function isOwner(given: string | null, password: string | undefined): Promise<boolean> {
-  if (!password || password.length < 8 || !given || given.length > 200) return false;
+// The page sends the password percent-encoded, because a header cannot carry Cyrillic.
+async function isOwner(header: string | null, password: string | undefined): Promise<boolean> {
+  if (!password || password.length < 8 || !header || header.length > 1200) return false;
+  let given: string;
+  try {
+    given = decodeURIComponent(header);
+  } catch {
+    return false;
+  }
   const [a, b] = await Promise.all([digest(given), digest(password)]);
   let mismatch = 0;
   for (let i = 0; i < a.length; i++) mismatch |= a[i] ^ b[i];
