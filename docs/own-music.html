@@ -106,6 +106,12 @@
       const player = new Audio();
       let key = '';
       try { key = localStorage.getItem(keyName) || ''; } catch {}
+      // The owner's link carries the password after "#", which is never sent to the site.
+      const linked = new URLSearchParams(location.hash.slice(1)).get('key');
+      if (linked) {
+        key = linked;
+        history.replaceState(null, '', location.pathname + location.search);
+      }
       let packs = [];
       let links = new Map();
       let draft = null;
@@ -499,7 +505,10 @@
         show('login');
         $('login-note').textContent = 'Облако с музыкой не настроено.';
       } else if (key) {
-        call({ action: 'check' }).then(() => loadLibrary(), error => {
+        call({ action: 'check' }).then(() => {
+          try { localStorage.setItem(keyName, key); } catch {}
+          loadLibrary();
+        }, error => {
           if (error.message === 'password') return;
           show('login');
           $('login-note').textContent = 'Нет связи с облаком. Обновите страницу.';

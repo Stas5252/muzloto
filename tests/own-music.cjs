@@ -6,7 +6,7 @@ const memoryBucket = require('./own-music-bucket.cjs');
 (async () => {
   const { handle } = await import('../supabase/functions/muzloto-own-music/music.ts');
   const bucket = memoryBucket();
-  const password = 'party-password';
+  const password = 'party-password-2026';
   const url = 'https://project.test/functions/v1/muzloto-own-music';
   const get = async () => { const r = await handle(new Request(url), bucket, password); return [r.status, await r.json()]; };
   const post = async (body, key = password) => {
@@ -27,7 +27,8 @@ const memoryBucket = require('./own-music-bucket.cjs');
   assert.equal((await handle(cyrillic, bucket, 'пароль вечеринки')).status, 200, 'A Cyrillic password is accepted');
   const r = await handle(new Request(url, { method: 'POST', headers: { 'x-muzloto-key': password }, body: '{}' }), bucket, undefined);
   assert.equal(r.status, 403, 'No configured password means nobody is the owner');
-  assert.equal((await handle(new Request(url, { method: 'POST', headers: { 'x-muzloto-key': 'short' }, body: '{}' }), bucket, 'short')).status, 403);
+  const weak = new Request(url, { method: 'POST', headers: { 'x-muzloto-key': 'fifteen-letters' }, body: '{"action":"check"}' });
+  assert.equal((await handle(weak, bucket, 'fifteen-letters')).status, 403, 'A password that can be guessed is not accepted at all');
 
   assert.equal((await post({ action: 'upload', pack: '../x', track: tracks[0].id, ext: 'mp3' }))[0], 400);
   assert.equal((await post({ action: 'upload', pack, track: tracks[0].id, ext: 'exe' }))[0], 400);

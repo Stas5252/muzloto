@@ -1,4 +1,4 @@
-// Deploy: supabase secrets set MUZLOTO_OWNER_PASSWORD=<8+ characters>, then
+// Deploy: supabase secrets set MUZLOTO_OWNER_PASSWORD=<16+ random characters>, then
 // supabase functions deploy muzloto-own-music --no-verify-jwt
 import { withSupabase } from "jsr:@supabase/server@^1";
 import { handle, headers } from "./music.ts";

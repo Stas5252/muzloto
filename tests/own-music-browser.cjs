@@ -206,7 +206,13 @@ async function run() {
     await owner.locator('#logout').click();
     await owner.reload({ waitUntil: 'domcontentloaded' });
     await owner.locator('#login').waitFor();
-    console.log('PASS a track is removed, the pack is deleted with its recordings, the owner logs out');
+    await owner.goto(new URL('own-music.html#key=' + encodeURIComponent(password), site).href);
+    await owner.reload({ waitUntil: 'domcontentloaded' });
+    await owner.locator('#library').waitFor();
+    assert.ok(!owner.url().includes('key='), 'The password does not stay in the address bar');
+    await owner.reload({ waitUntil: 'domcontentloaded' });
+    await owner.locator('#library').waitFor();
+    console.log('PASS a track is removed, the pack is deleted with its recordings, the owner logs out and back in by link');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
