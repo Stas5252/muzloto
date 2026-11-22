@@ -32,6 +32,8 @@
       .host-page .wrap { padding-bottom: 8px; }
       .stage-history .board-keg-left { min-height: 76px; }
     }
+    /* Nobody scrolls the TV and the newest kegs come first: a scrollbar row would push the page below a 720p screen. */
+    #music-history { scrollbar-width: none; }
     #music-placeholder:not([hidden]) { display: flex; }
     #tv-stage-cover:not([hidden]) { display: block; }
   </style>

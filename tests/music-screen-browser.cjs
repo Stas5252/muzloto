@@ -26,7 +26,7 @@ function testAudio() {
 }
 
 async function run() {
-  const browser = await chromium.launch({ executablePath: chrome });
+  const browser = await chromium.launch({ executablePath: chrome, ignoreDefaultArgs: ['--hide-scrollbars'] });
   const errors = [];
   const body = testAudio();
   const mobile = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
@@ -119,6 +119,11 @@ async function run() {
         await tv.getByText('Победитель: Игрок ТВ', { exact: true }).waitFor();
         assert.ok(await tv.locator('#music-winning-card .win-highlight').count() >= 3);
         assert.ok(await tv.evaluate(() => document.documentElement.scrollHeight) <= 720, 'Bingo fits a 720p TV');
+        assert.ok(await tv.evaluate(() => {
+          const drawn = document.querySelector('#music-history');
+          while (drawn.children.length < 12) drawn.append(drawn.lastElementChild.cloneNode(true));
+          return drawn.scrollWidth > drawn.clientWidth && document.documentElement.scrollHeight <= 720;
+        }), 'More drawn kegs than a 720p TV is wide do not add a scrollbar under them');
         await tv.waitForFunction(() => document.querySelector('#music-audio').paused);
         won = true;
         break;
