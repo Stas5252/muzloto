@@ -473,7 +473,7 @@ async function launch() {
   const previous = screen;
   screen = 'launching';
   try {
-    const bundled = library.find(item => item.id === chosenPack);
+    const bundled = previous === 'home' && library.find(item => item.id === chosenPack);
     if (bundled) {
       const response = await fetch(`./packs/${bundled.id}.json`);
       if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
