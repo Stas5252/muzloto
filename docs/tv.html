@@ -102,6 +102,7 @@
         <aside class="card setup-library" aria-labelledby="packs-heading">
           <h2 id="packs-heading">Подборки</h2>
           <div class="packs-grid" id="curated-packs-list"></div>
+          <a class="stream-text-link own-music-link" href="own-music.html">Своя музыка: добавить пак <span aria-hidden="true">→</span></a>
           <details class="setup-local-details">
             <summary>Свои MP3</summary>
             <input type="file" id="local-files" accept="audio/*" multiple>
@@ -381,8 +382,8 @@
   <script src="qrcode.min.js"></script>
   <script src="comm.js?v=10"></script>
   <script src="packs-data.js"></script>
-  <script src="cloud-audio-config.js?v=3"></script>
-  <script src="cloud-audio.js?v=3"></script>
+  <script src="cloud-audio-config.js?v=4"></script>
+  <script src="cloud-audio.js?v=4"></script>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -2036,7 +2037,11 @@
   }
 };
 
-    let allPacks = window.BUILTIN_PACKS;
+    let builtInPacks = window.BUILTIN_PACKS;
+    // Packs uploaded on the "Своя музыка" page: they have full recordings only, no previews.
+    let ownPacks = {};
+    let ownPackOpened = false;
+    let allPacks = builtInPacks;
     const requestedPack = new URLSearchParams(location.search).get('pack');
     let activePackId = Object.keys(allPacks).includes(requestedPack)
       ? requestedPack : (allPacks.muzloto?.id || allPacks.new_school?.id || Object.keys(allPacks)[0]);
@@ -2177,7 +2182,8 @@
 
     function renderPacksUI(packs) {
       if (!packs || !Object.keys(packs).length) return;
-      allPacks = packs;
+      builtInPacks = packs;
+      allPacks = { ...ownPacks, ...builtInPacks };
       for (const track of recordedTracks()) recordedTrackIds.add(String(track.id));
       const container = $('curated-packs-list');
       if (!container) return;
@@ -2187,7 +2193,7 @@
         return `
           <div class="pack-card library-tile ${chosen ? 'active' : ''}" data-id="${escapeAttr(pack.id)}">
             <div class="playlist-tile-copy">
-              <strong>${escapeHtml(pack.title.replace(/^[^\w\u0400-\u04FF]+\s*/, '').split(/[:(]/)[0].trim())}</strong>
+              <strong>${escapeHtml(ownPacks[pack.id] ? pack.title : pack.title.replace(/^[^\w\u0400-\u04FF]+\s*/, '').split(/[:(]/)[0].trim())}</strong>
               <small>${pack.tracks.length} треков</small>
             </div>
             <button class="library-pick" type="button" aria-pressed="${chosen}" aria-label="Выбрать ${escapeAttr(pack.title)}">
@@ -2719,17 +2725,35 @@
       updatePlaybackControls();
     }
 
+    function showOwnPacks(packs) {
+      const shown = JSON.stringify(Object.values(ownPacks));
+      ownPacks = Object.fromEntries(packs.map(pack => ['own_' + pack.id, {
+        id: 'own_' + pack.id,
+        title: pack.title,
+        tracks: pack.tracks.map(track => ({
+          id: track.id, artist: track.artist, title: track.title, art: track.art, preview: '', fullFile: track.id + '.' + track.ext
+        }))
+      }]));
+      if (JSON.stringify(Object.values(ownPacks)) !== shown) renderPacksUI(builtInPacks);
+      // "Играть" on the "Своя музыка" page opens the setup with that pack.
+      if (ownPacks[requestedPack] && !ownPackOpened && !currentRoomCode) {
+        ownPackOpened = true;
+        $('curated-packs-list').querySelector(`[data-id="${CSS.escape(requestedPack)}"]`)?.click();
+      }
+    }
+
     function refreshCloudAudio() {
       if (!cloudCatalog || cloudRefresh) return;
-      const ids = [...new Set(recordedTracks().map(track => String(track.id)))];
+      const recorded = () => [...new Set(recordedTracks().map(track => String(track.id)))];
       $('cloud-audio-status').textContent = 'Подключаем музыку…';
-      const previousCount = ids.filter(id => cloudCatalog.get(id)).length;
-      const request = cloudCatalog.load(ids);
+      const previousCount = recorded().filter(id => cloudCatalog.get(id)).length;
+      const request = cloudCatalog.load(recorded());
       cloudRefresh = request;
       request.then(count => {
         if (cloudRefresh !== request) return;
+        showOwnPacks(cloudCatalog.ownPacks());
         $('cloud-audio-status').textContent = count
-          ? `Музыка в облаке: ${count}/${ids.length}`
+          ? `Музыка в облаке: ${count}/${recorded().length}`
           : 'В облаке нет записей для выбранного пака';
         if (count !== previousCount || (count && !roundAudio && currentCallingTrack)) updateRecordingAvailability();
       }).catch(() => {
