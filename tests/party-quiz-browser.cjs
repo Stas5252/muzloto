@@ -104,7 +104,8 @@ async function run() {
     await Promise.all(players.slice(1).map(phone => phone.evaluate(() => document.querySelector('.buzzer').click())));
     await Promise.all(players.slice(1).map(phone => phone.getByRole('button', { name: /^(Отвечай вслух|Ты в очереди)$/ }).waitFor()));
     assert.equal(await held.evaluate(element => element === window.heldBuzzer), true, 'A press in progress must survive other players buzzing');
-    assert.equal(await button(players[0], 'Отвечай вслух').count(), 1, 'The touch counts when the finger lands, before it lifts');
+    // Over a real network another press may reach the host first: the held one is then queued, but still counted.
+    assert.equal(await players[0].getByRole('button', { name: /^(Отвечай вслух|Ты в очереди)$/ }).count(), 1, 'The touch counts when the finger lands, before it lifts');
     await players[0].mouse.up();
     await Promise.all(players.map(phone => phone.getByRole('button', { name: /^(Отвечай вслух|Ты в очереди)$/ }).waitFor()));
     const labels = await Promise.all(players.map(phone => phone.locator('.buzzer').textContent()));
