@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="stream-theme.css?v=3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
+  <style>.saved-game { margin: 0 0 10px; color: var(--primary); font-weight: 700; } .saved-game b { font-family: var(--font-mono, monospace); }</style>
 </head>
 <body class="home-page">
   <header class="stream-header">
@@ -48,10 +49,27 @@
         <div class="music-hero-copy">
           <h1 id="hero-title">Угадывай треки.<br><span>Собирай бинго.</span></h1>
           <p>Музыкальное лото для компании. Управляй треками с телефона, показывай игру на ТВ.</p>
+          <p id="saved-game" class="saved-game" hidden>Игра идёт: комната <b id="saved-game-code"></b></p>
           <div class="hero-actions">
-            <a href="tv.html" class="btn btn-gold"><span aria-hidden="true">▶</span> Создать игру</a>
+            <a href="tv.html" class="btn btn-gold" id="hero-create"><span aria-hidden="true">▶</span> Создать игру</a>
+            <a href="tv.html?new=1" class="btn btn-secondary" id="hero-new" hidden>Новая игра</a>
             <a href="play.html" class="btn btn-secondary">Войти игроком</a>
           </div>
+          <script>
+            (() => {
+              let code = '';
+              try { code = localStorage.getItem('muzloto_active_host_code') || ''; } catch {}
+              if (!/^\d{4,6}$/.test(code)) return;
+              document.getElementById('saved-game-code').textContent = '#' + code;
+              document.getElementById('saved-game').hidden = false;
+              document.getElementById('hero-create').innerHTML = '<span aria-hidden="true">▶</span> Продолжить игру';
+              const fresh = document.getElementById('hero-new');
+              fresh.hidden = false;
+              fresh.onclick = event => {
+                if (!confirm('Завершить игру в комнате #' + code + ' и начать новую? Игроки и ТВ выйдут из комнаты.')) event.preventDefault();
+              };
+            })();
+          </script>
         </div>
       </section>
 

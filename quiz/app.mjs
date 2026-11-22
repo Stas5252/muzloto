@@ -1,8 +1,9 @@
 import { demoPack, validPack, restoreDraft, createGame, restoreGame, command, publicState, findQuestion, kinds, points,
-  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=18';
+  standings, activeRound, roundIndex, roundQuestions, remainingQuestions, activeFinal, settle, modes, turnPlayer } from './game.mjs?v=19';
 import { connectRoom, token, validRoom } from './relay.mjs?v=3';
-import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=3';
+import { screenState, validScreenState, photoChunkSize, photoBatchSize, screenPhotoChunk, validScreenPhoto } from './screen.mjs?v=4';
 import { read, write, photoData } from './storage.mjs?v=2';
+import { listenForHost, pairHost, askPin, validPin, waitingUrl } from '../tv-pair.mjs?v=1';
 
 const app = document.querySelector('#app');
 const network = document.querySelector('#network');
@@ -20,6 +21,16 @@ let screen = 'home';
 let draft = mode === 'host' ? structuredClone(demoPack) : null;
 let editorRound = 0;
 let savedRoom = null;
+let savedInfo = '';
+const plural = (count, one, few, many) => `${count} ${count % 10 === 1 && count % 100 !== 11 ? one :
+  count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? few : many}`;
+const playersLabel = count => plural(count, 'игрок', 'игрока', 'игроков');
+// What the saved room is, so the host can tell "continue" from "new game" at a glance.
+function describeSaved(title, session) {
+  const stage = session.phase === 'lobby' ? 'сбор игроков' : session.phase === 'final' ? 'финал' :
+    session.phase === 'results' ? 'итоги' : `раунд ${roundIndex(session) + 1}`;
+  return `${title} · ${stage} · ${playersLabel(Object.keys(session.players || {}).length)}`;
+}
 let game, pack, room, connection, tvRoom, screenConnection;
 let invite = '';
 let currentNetwork = [];
@@ -31,6 +42,8 @@ let library = [];
 let chosenPack = stored('vne-ocheredi-pack') || 'draft';
 let raceTimer;
 let wakeLock;
+let pair;
+const pairLabel = () => ({ attached: 'ТВ подключён ✓', waiting: `ТВ ${pair.pin()}: ждём экран…` })[pair?.state()] || 'Подключить ТВ';
 const raceWindow = 300;
 const modeNotes = {
   buzz: 'Ведущий читает вопрос и открывает кнопки. Отвечает тот, кто нажал быстрее всех.',
@@ -195,6 +208,27 @@ function resultsPanel(session, source) {
   </section>`;
 }
 
+// After the results the host starts the next game in the same room: players and the TV stay.
+function againPanel() {
+  const cards = packCards();
+  const current = cards.findIndex(card => card.title === pack.title);
+  const next = cards[(current + 1) % cards.length].id;
+  return `<section class="panel again"><h2>Сыграть ещё</h2>
+    <p>Игроки и ТВ остаются в этой комнате, счёт начнётся с нуля.</p>
+    <label><span>Набор вопросов</span><select id="again-pack">${cards.map(card =>
+      `<option value="${escape(card.id)}"${card.id === next ? ' selected' : ''}>${escape(card.title)}</option>`).join('')}</select></label>
+    <div class="actions">${action('again', 'Сыграть ещё', '', 'primary')}${action('close', 'Закончить вечер', '', 'quiet')}</div>
+  </section>`;
+}
+
+async function loadPack(id) {
+  const bundled = library.find(item => item.id === id);
+  if (!bundled) return validPack(draft);
+  const response = await fetch(`./packs/${bundled.id}.json`);
+  if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
+  return validPack({ ...await response.json(), title: bundled.title });
+}
+
 // validPack reads `finals` when a draft has it, so the editor edits the same list.
 const draftFinals = () => draft.finals || (draft.final ? [draft.final] : []);
 
@@ -212,9 +246,10 @@ function renderHome() {
   const count = chosen.questions;
   const photos = chosen.id === 'draft' ? draft.rounds.flatMap(roundQuestions).filter(question => question.image).length : 0;
   const menu = savedRoom
-    ? `<p class="saved-room">Есть сохранённая игра</p><div class="actions">
-        <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая комната')}${action('edit', 'Редактор вопросов')}</div>`
+    ? `<p class="saved-room">Игра идёт${savedInfo ? ': ' + escape(savedInfo) : ''}</p><div class="actions">
+        <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая игра')}${action('edit', 'Редактор вопросов')}</div>`
     : `<div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>`;
+  const picked = `<p class="picked-pack">Набор: <strong>${escape(chosen.title)}</strong> · <a href="#packs">выбрать другой</a></p>`;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
       <a class="menu-link" href="../"><span aria-hidden="true">←</span> Все игры</a>
@@ -222,14 +257,15 @@ function renderHome() {
       <h1>Вне очереди<span>.</span></h1>
       <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
       <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${chosen.finals ? '<span>Финал со ставками</span>' : ''}</div>
-      <nav class="home-menu" aria-label="Главное меню">${menu}</nav>
+      <nav class="home-menu" aria-label="Главное меню">${picked}${menu}</nav>
     </div>
     <figure class="hero-art"><img src="./media/auditorium.webp" alt="Зрительный зал, вид со сцены" fetchpriority="high"></figure>
   </section>
-  <section class="pack-library"><div class="deck-title"><h2>Выберите набор вопросов</h2><span>${cards.length} ${cards.length === 1 ? 'набор' : 'наборов'}</span></div>
+  <section class="pack-library" id="packs"><div class="deck-title"><h2>Выберите набор вопросов</h2><span>${cards.length} ${cards.length === 1 ? 'набор' : 'наборов'}</span></div>
     <div class="pack-list" role="radiogroup" aria-label="Набор вопросов">${cards.map(card => `<button type="button" class="pack-card" role="radio"
       aria-checked="${card.id === chosen.id}" data-action="choose-pack" data-id="${escape(card.id)}"><strong>${escape(card.title)}</strong>
-      <span>${escape(card.description)}</span><small>${questionLabel(card.questions)}</small></button>`).join('')}</div></section>
+      <span>${escape(card.description)}</span><small>${questionLabel(card.questions)}</small></button>`).join('')}</div>
+    <div class="actions pack-go">${action('launch', savedRoom ? 'Новая игра с этим набором' : 'Создать комнату с этим набором', '', 'primary')}</div></section>
   <section class="home-deck"><div class="deck-title"><h2>${escape(chosen.title)}</h2><span>${chosen.themes.length} ${chosen.themes.length === 1 ? 'раунд' : 'раунда'}</span></div>
     <div class="deck-rounds">${chosen.themes.map((titles, index) => `<article class="deck-round" data-stage="${index + 1}">
       <p class="eyebrow">Раунд ${index + 1}</p>${chosen.id === 'draft' ? `<h3>${escape(draft.rounds[index].title)}</h3>` : ''}
@@ -296,10 +332,22 @@ function renderEditor() {
   </section>`;
 }
 
+function lobbySteps() {
+  const attached = pair?.state() === 'attached';
+  const count = Object.keys(game.players).length;
+  return `<ol class="steps">
+    <li${attached ? ' class="done"' : ''}><strong>Экран</strong><span>${attached ? 'ТВ подключён и показывает комнату.'
+      : 'На ТВ или ноутбуке с проектором откройте этот сайт и выберите «Это экран ТВ». Потом нажмите «Подключить ТВ» вверху и введите код с экрана.'}</span></li>
+    <li${count ? ' class="done"' : ''}><strong>Игроки</strong><span>${count ? 'В комнате ' + playersLabel(count) + '. Остальные могут войти и после старта.'
+      : 'Игроки сканируют QR-код с экрана или открывают ссылку, которую вы им отправите.'}</span></li>
+    <li><strong>Старт</strong><span>Выберите режим ответов и нажмите «Начать игру».</span></li>
+  </ol>`;
+}
+
 function lobby() {
   return `<div class="dashboard">
     <section class="panel lobby-copy"><p class="eyebrow">Комната открыта</p><h1>${escape(pack.title)}</h1>
-      <p class="intro">Попросите игроков отсканировать QR-код или отправьте им ссылку.</p>
+      ${lobbySteps()}
       <div class="actions">${action('start', 'Начать игру', '', 'primary')}${action('copy', 'Скопировать ссылку')}</div>
       <h2>Режим ответов</h2>${modeSwitch()}
       <h2>Игроки <span class="count">${Object.keys(game.players).length}/12</span></h2>${scoreList(standings(game))}
@@ -357,10 +405,10 @@ function renderHost() {
     <details class="answer-detail"><summary>Посмотреть правильный ответ</summary><p>${escape(final.answer)}</p></details>
     ${Object.entries(game.finalAnswers).map(([id, entry]) => `<label class="final-entry"><input type="checkbox" data-correct="${id}" ${correctFinal.has(id) ? 'checked' : ''}><span><strong>${escape(game.players[id].name)}</strong> · ставка ${entry.wager}<br>${escape(entry.answer)}</span></label>`).join('')}
     <p class="muted">Отметьте верные ответы, затем откройте результаты.</p>${action('finish', 'Подвести итоги', '', 'primary')}</aside></div>`;
-  if (phase === 'results') content = resultsPanel(game, pack);
+  if (phase === 'results') content = resultsPanel(game, pack) + againPanel();
   const heard = app.querySelector('.host-sound audio');
-  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${Object.keys(game.players).length} игроков</small></div>
-    <div class="actions"><a class="button" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ ↗</a>${action('copy-tv', 'Скопировать ссылку ТВ')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
+  app.innerHTML = `<div class="room-bar"><div><a class="menu-link" href="./"><span aria-hidden="true">←</span> Главное меню</a><strong>${escape(pack.title)}</strong><small>${playersLabel(Object.keys(game.players).length)}</small></div>
+    <div class="actions">${action('pair', pairLabel(), '', pair?.state() === 'attached' ? '' : 'primary')}<a class="button quiet" href="${escape(tvLink())}" data-tv target="_blank" rel="noopener">Экран ТВ здесь ↗</a>${action('copy-tv', 'Ссылка ТВ', '', 'quiet')}${action('copy', 'Пригласить')}${action('undo', 'Отмена', game.previous ? '' : 'disabled', 'quiet')}${action('close', 'Закрыть комнату', '', 'quiet')}</div></div>
     ${roundRail(pack, game)}${content}${!['lobby', 'results'].includes(phase) ? `<section class="panel score-panel"><h2>Счёт</h2>${scoreList(standings(game))}</section>` : ''}`;
   // A redraw for a buzz or a hint must not cut off the track the host is listening to.
   const fresh = app.querySelector('.host-sound audio');
@@ -402,7 +450,7 @@ function syncHost(changed = false, force = false) {
   }
   if (changed) {
     sendScreen();
-    write('live', { room, game, tvRoom }).catch(localError);
+    write('live', { room, game, tvRoom, title: pack.title }).catch(localError);
     renderHost();
   }
 }
@@ -456,6 +504,7 @@ function startHost() {
   }, () => { if (tvRoom === activeTvRoom) sendScreen(); });
   setNetwork(currentNetwork);
   renderHost();
+  pair.show();
   if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
     const activeRoom = room;
     fetch('/api/info').then(r => r.json()).then(info => {
@@ -470,6 +519,31 @@ function startHost() {
   }
 }
 
+// A room replaced by a new one: its players and its TV must not stay on a dead screen.
+async function retire(code) {
+  try {
+    const live = await read('live');
+    const source = validPack(await read('live-pack-' + code));
+    if (live?.room !== code || !live.game) return;
+    const old = restoreGame(live.game, source);
+    announceClosed(code, validRoom(live.tvRoom) ? live.tvRoom : code,
+      { ...publicState(old, source), revision: old.revision + 1, closed: true });
+  } catch {}
+}
+
+// Repeats "room closed" for a few seconds, so it also arrives when a link was still connecting.
+function announceClosed(code, screenCode, view) {
+  const tell = () => {
+    players.send({ type: 'state', state: view });
+    screens.send({ type: 'screen', event: 'closed' });
+  };
+  const players = connectRoom(code, () => {}, tell);
+  const screens = connectRoom(screenCode, () => {}, tell);
+  const repeat = setInterval(tell, 1000);
+  tell();
+  setTimeout(() => { clearInterval(repeat); players.close(); screens.close(); }, 5000);
+}
+
 async function launch() {
   if (screen === 'launching') return;
   const previousRoom = savedRoom;
@@ -477,12 +551,8 @@ async function launch() {
   const previous = screen;
   screen = 'launching';
   try {
-    const bundled = previous === 'home' && library.find(item => item.id === chosenPack);
-    if (bundled) {
-      const response = await fetch(`./packs/${bundled.id}.json`);
-      if (!response.ok) throw new Error('Набор не загрузился. Проверьте связь и попробуйте ещё раз.');
-      pack = validPack({ ...await response.json(), title: bundled.title });
-    } else pack = validPack(draft);
+    pack = await loadPack(previous === 'home' ? chosenPack : 'draft');
+    if (previousRoom) await retire(previousRoom);
     room = token();
     tvRoom = token();
     game = createGame(stored('vne-ocheredi-mode'));
@@ -490,10 +560,11 @@ async function launch() {
     await storeDraftNow();
     try {
       await write('live-pack-' + room, pack);
-      await write('live', { room, game, tvRoom });
+      await write('live', { room, game, tvRoom, title: pack.title });
       if (previousRoom) await write('live-pack-' + previousRoom, null);
     } catch { localError(); }
     savedRoom = room;
+    savedInfo = describeSaved(pack.title, game);
     history.pushState(null, '', pageLink('host'));
     startHost();
   } catch (error) {
@@ -504,7 +575,10 @@ async function launch() {
 
 async function leaveHost() {
   const oldRoom = room;
-  connection?.send({ type: 'state', state: { ...publicState(game, pack), revision: game.revision + 1, closed: true } });
+  pair.idle(tvRoom);
+  const closedView = { ...publicState(game, pack), revision: game.revision + 1, closed: true };
+  announceClosed(room, tvRoom, closedView);
+  connection?.send({ type: 'state', state: closedView });
   const closingScreen = screenConnection;
   closingScreen?.send({ type: 'screen', event: 'closed' });
   connection?.close();
@@ -616,9 +690,31 @@ async function hostButton(button) {
       catch { window.prompt(type === 'copy-tv' ? 'Ссылка для экрана ТВ' : 'Ссылка для игроков', link); }
       return;
     }
+    if (type === 'pair') {
+      const pin = await askPin(pair.pin());
+      if (pin === null) return;
+      pair.connect(pin);
+      message(pin ? 'Ищем экран с кодом ' + pin + '…' : 'ТВ отключён.');
+      return;
+    }
     if (type === 'replay') {
       screenConnection?.send({ type: 'screen', event: 'replay' });
       message('Звук запущен на ТВ.');
+      return;
+    }
+    if (type === 'again') {
+      if (button.disabled) return;
+      button.disabled = true;
+      let next;
+      try { next = await loadPack(document.querySelector('#again-pack')?.value); }
+      catch (error) { button.disabled = false; throw error; }
+      if (!command(game, next, { type }, true)) return;
+      pack = next;
+      correctFinal.clear();
+      await write('live-pack-' + room, pack).catch(localError);
+      savedInfo = describeSaved(pack.title, game);
+      syncHost(true);
+      message('Новая игра: ' + pack.title + '. Игроки уже в комнате.');
       return;
     }
     if (type === 'mode') remember('vne-ocheredi-mode', button.dataset.mode);
@@ -640,6 +736,15 @@ async function hostButton(button) {
 }
 
 function initHost() {
+  pair = pairHost(() => game && tvRoom && screen === 'room' ? { game: 'quiz', code: tvRoom } : null, state => {
+    const button = app.querySelector('[data-action="pair"]');
+    if (!button) return;
+    button.textContent = pairLabel();
+    button.classList.toggle('primary', state !== 'attached');
+    const steps = app.querySelector('.steps');
+    if (steps && game?.phase === 'lobby') steps.outerHTML = lobbySteps();
+    if (state === 'attached') message('ТВ подключён.');
+  });
   app.addEventListener('click', event => {
     const button = event.target.closest('[data-action]');
     if (button && !button.disabled) hostButton(button);
@@ -702,12 +807,13 @@ function initHost() {
         const savedPack = await read('live-pack-' + live.room);
         if (savedPack) {
           savedRoom = live.room;
+          savedInfo = describeSaved(savedPack.title || 'Квиз', live.game);
           if (params.get('host') === savedRoom) {
             pack = validPack(savedPack);
             room = savedRoom;
             tvRoom = validRoom(live.tvRoom) ? live.tvRoom : room;
             game = restoreGame(live.game, pack);
-            if (game !== live.game) await write('live', { room, game, tvRoom }).catch(localError);
+            if (game !== live.game) await write('live', { room, game, tvRoom, title: pack.title }).catch(localError);
             startHost();
             return;
           }
@@ -720,6 +826,7 @@ function initHost() {
   fetch('./packs/index.json').then(response => response.json()).then(list => {
     library = list.filter(item => /^[a-z0-9-]{1,24}$/.test(item?.id) && typeof item.title === 'string' && Array.isArray(item.themes));
     if (screen === 'home' && app.querySelector('.pack-library')) renderHome();
+    if (screen === 'room' && game?.phase === 'results') renderHost();
   }).catch(() => {});
 }
 
@@ -804,7 +911,8 @@ function initPlayer() {
       return;
     }
     if (!me) {
-      app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">Подключение</p><h1>Привет, ${escape(player.name)}</h1><p>Ждём комнату ведущего.</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
+      app.innerHTML = `<section class="panel player-panel"><p class="eyebrow">Подключение</p><h1>Привет, ${escape(player.name)}</h1><p>${state?.phase === 'results' ?
+        'Эта игра уже закончилась. Вы войдёте, как только ведущий начнёт следующую.' : 'Ждём комнату ведущего.'}</p><p id="join-note" class="muted"></p>${action('change-name', 'Сменить имя')}</section>`;
       return;
     }
     const previousPanel = app.querySelector('.player-panel');
@@ -869,7 +977,8 @@ function initPlayer() {
     sendPlayer({ type: 'join' });
     const note = document.querySelector('#join-note');
     if (note && Date.now() - attempted > 6500) {
-      note.textContent = currentNetwork.length ? 'Проверьте, что вкладка ведущего открыта.' :
+      note.textContent = state?.phase === 'results' ? '' : currentNetwork.length ?
+        'Ведущий не отвечает. Проверьте, что его вкладка открыта. Если игра уже завершена, попросите новый QR-код.' :
         'Связь пока не появилась. Если вы в одном Wi‑Fi, ведущий может запустить локальную версию.';
     }
     if (hostSeen && Date.now() - hostSeen > 14000) network.textContent = 'Ждём ведущего';
@@ -983,6 +1092,7 @@ function initTv() {
   document.body.append(unlock);
   stayAwake();
   tv = connectRoom(code, receive, request);
+  listenForHost(params.get('pair'), code);
 
   function startTrack() {
     speaker.currentTime = 0;
@@ -1028,6 +1138,8 @@ function initTv() {
       unlock.hidden = true;
       network.hidden = true;
       waiting('Комната закрыта.');
+      // A paired TV goes back to its code and waits for the next game.
+      if (validPin(params.get('pair'))) setTimeout(() => location.replace(waitingUrl(params.get('pair'))), 1500);
     } else if (frame.event === 'state' && validScreenState(frame.view)) {
       lastSeen = Date.now();
       network.hidden = false;

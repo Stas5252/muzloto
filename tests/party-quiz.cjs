@@ -200,6 +200,20 @@ ${zodiacPrompt}`, answer: 'Близнецы' }
   assert.equal(game.players.p1.score, 575);
   assert.equal(host('finish', { correct: ['p1'] }), false, 'A final wager is calculated once');
 
+  // Play again: the same room and players, a clean score, no way back into the old results.
+  const revisionBefore = game.revision;
+  assert.equal(host('again'), true);
+  assert.equal(game.phase, 'lobby');
+  assert.deepEqual(Object.keys(game.players), ['p1', 'p2'].filter(id => game.players[id]));
+  assert.ok(Object.values(game.players).every(player => player.score === 0), 'Scores start from zero');
+  assert.ok(Object.keys(game.players).length > 0, 'Players stay in the room');
+  assert.equal(game.revision, revisionBefore + 1, 'Phones accept the new lobby as a newer state');
+  assert.deepEqual([game.used, game.verdicts, game.finalAnswers, game.previous], [[], [], {}, null]);
+  assert.equal(host('undo'), false, 'The finished game cannot be restored over the new one');
+  assert.equal(host('again'), false, 'Play again is offered only after the results');
+  assert.equal(send('p7', 'join', { name: 'Новенький' }), true, 'New players can join the next game');
+  assert.equal(host('start'), true);
+
   const legacy = validPack({ title: 'Старый набор', categories: [{ title: 'Тема', questions: [{ prompt: 'Вопрос?', answer: 'Ответ', value: 100 }] }] });
   assert.equal(legacy.rounds.length, 1);
   assert.equal(legacy.rounds[0].categories[0].questions[0].id, 'c0q0');

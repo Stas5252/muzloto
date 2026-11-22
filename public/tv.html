@@ -44,6 +44,13 @@
       font-size: 0.85rem;
       text-transform: uppercase;
     }
+    .lobby-steps { display: grid; gap: 10px; margin: 0 0 18px; padding: 0; list-style: none; counter-reset: step; }
+    .lobby-steps li { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; counter-increment: step; line-height: 1.35; }
+    .lobby-steps li::before { content: counter(step); grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px;
+      border-radius: 50%; border: 2px solid var(--border-subtle); color: var(--text-muted); font-weight: 800; font-size: .9rem; }
+    .lobby-steps li.done::before { content: '✓'; border-color: #34d399; color: #34d399; }
+    .lobby-steps span { grid-column: 2; color: var(--text-muted); font-size: .9rem; }
+    @media (min-width: 900px) { .lobby-steps { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
   </style>
   <link rel="stylesheet" href="stream-theme.css?v=6">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
@@ -74,11 +81,12 @@
           </svg>
           <span>Зал славы</span>
         </button>
-        <button id="btn-copy-tv-screen" class="btn btn-secondary btn-sm" type="button" hidden>Скопировать ссылку ТВ</button>
-        <a id="open-tv-screen" class="btn btn-secondary btn-sm" target="_blank" rel="noopener" hidden>Экран ТВ ↗</a>
+        <button id="btn-pair-tv" class="btn btn-gold btn-sm" type="button">Подключить ТВ</button>
+        <button id="btn-copy-tv-screen" class="btn btn-secondary btn-sm" type="button" hidden>Ссылка ТВ</button>
+        <a id="open-tv-screen" class="btn btn-secondary btn-sm" target="_blank" rel="noopener" hidden>Экран ТВ здесь ↗</a>
         <span id="tv-output-status" role="status"></span>
         <button id="btn-reset-session" class="btn btn-secondary btn-sm" style="display:none;" title="Завершить текущую игру и выйти в меню">
-          <span>Выйти в меню</span>
+          <span>Завершить игру</span>
         </button>
         <a href="muzloto.html" class="btn btn-secondary btn-sm">На главную</a>
       </div>
@@ -146,6 +154,11 @@
 
     <section id="sec-lobby" style="display:none;">
       <div class="host-heading"><h1>Лобби</h1></div>
+      <ol class="lobby-steps" aria-label="Что делать дальше">
+        <li id="step-tv"><strong>Экран</strong><span id="step-tv-text"></span></li>
+        <li id="step-players"><strong>Игроки</strong><span id="step-players-text"></span></li>
+        <li><strong>Старт</strong><span>Нажмите «Начать игру». Музыка заиграет на ТВ.</span></li>
+      </ol>
       <div class="tv-lobby-grid stream-lobby-grid">
         <section class="card lobby-invite" aria-labelledby="invite-heading">
           <div class="lobby-code-copy">
@@ -366,7 +379,7 @@
   <script src="room-mqtt.js?v=2"></script>
   <script src="peerjs.min.js"></script>
   <script src="qrcode.min.js"></script>
-  <script src="comm.js?v=9"></script>
+  <script src="comm.js?v=10"></script>
   <script src="packs-data.js"></script>
   <script src="cloud-audio-config.js?v=3"></script>
   <script src="cloud-audio.js?v=3"></script>
@@ -2445,6 +2458,36 @@
 
     previewAudio.onended = stopSetupAudio;
 
+    let lobbyTv = false;
+    let lobbyPlayers = 0;
+    function showLobbySteps(tv = lobbyTv, players = lobbyPlayers) {
+      lobbyTv = tv;
+      lobbyPlayers = players;
+      $('step-tv').classList.toggle('done', tv);
+      $('step-tv-text').textContent = tv ? 'ТВ подключён и показывает комнату.'
+        : 'На ТВ или ноутбуке с проектором откройте этот сайт и выберите «Это экран ТВ». Потом нажмите «Подключить ТВ» вверху и введите код с экрана.';
+      $('step-players').classList.toggle('done', players > 0);
+      $('step-players-text').textContent = players ? `В комнате: ${players}. Остальные могут войти и после старта.`
+        : 'Игроки сканируют QR-код или вводят код комнаты на своих телефонах.';
+    }
+    showLobbySteps();
+
+    // One TV for the evening: the host enters the code shown on the TV once.
+    const tvPairReady = import('./tv-pair.mjs?v=1').then(api => {
+      const pair = api.pairHost(() => tvScreenCode ? { game: 'music', code: tvScreenCode } : null, (state, pin) => {
+        const button = $('btn-pair-tv');
+        button.textContent = state === 'attached' ? 'ТВ подключён ✓' : state === 'waiting' ? `ТВ ${pin}: ждём экран…` : 'Подключить ТВ';
+        button.classList.toggle('btn-gold', state !== 'attached');
+        button.classList.toggle('btn-secondary', state === 'attached');
+        showLobbySteps(state === 'attached');
+      });
+      $('btn-pair-tv').onclick = async () => {
+        const pin = await api.askPin(pair.pin());
+        if (pin !== null) pair.connect(pin);
+      };
+      return pair;
+    }).catch(() => null);
+
     function connectTvScreen(code, joinLink, restored = false) {
       const storageKey = 'muzloto_tv_screen_' + code;
       try { tvScreenCode = restored ? localStorage.getItem(storageKey) : null; } catch {}
@@ -2459,8 +2502,9 @@
       $('open-tv-screen').href = tvScreenLink;
       $('open-tv-screen').hidden = $('btn-copy-tv-screen').hidden = false;
       tvDisplay?.close();
+      tvPairReady.then(pair => { if (tvScreenCode === displayCode) pair?.show(); });
 
-      import('./music-screen.mjs?v=2').then(({ openMusicScreen, assetUrl }) => {
+      import('./music-screen.mjs?v=4').then(({ openMusicScreen, assetUrl }) => {
         if (tvScreenCode !== displayCode) return;
         const projectTrack = track => {
           const art = assetUrl(track.art, joinLink);
@@ -2522,10 +2566,27 @@
     };
 
     // CREATE ROOM
+    // "Настройки" in the lobby edit the same room: players stay in it and get new cards.
+    let editingLobby = false;
+    function setEditingLobby(on) {
+      editingLobby = on;
+      $('btn-create-room').firstElementChild.textContent = on ? 'Сохранить настройки' : 'Создать комнату';
+    }
+
     $('btn-create-room').onclick = async () => {
       stopSetupAudio();
       const size = parseInt($('opt-size').value, 10);
       const mode = $('opt-mode').value;
+
+      if (editingLobby && currentRoomCode && comm.hostUpdate) {
+        comm.hostUpdate({ tracks: selectedTracks, size, mode }, r => {
+          if (r?.error) return alert(r.error);
+          setEditingLobby(false);
+          $('sec-setup').style.display = 'none';
+          $('sec-lobby').style.display = 'block';
+        });
+        return;
+      }
 
       comm.hostCreate({ tracks: selectedTracks, size, mode }, async r => {
         if (r.error) return alert(r.error);
@@ -2566,13 +2627,24 @@
     };
 
     $('btn-back-setup').onclick = () => {
+      setEditingLobby(true);
       $('sec-lobby').style.display = 'none';
       $('sec-setup').style.display = 'block';
     };
 
-    $('btn-reset-session').onclick = () => {
-      if (confirm('Завершить текущую игру и выйти в меню выбора треков?')) {
+    const closedScreenKey = 'muzloto_closed_screen';
+    try {
+      const closedScreen = localStorage.getItem(closedScreenKey);
+      localStorage.removeItem(closedScreenKey);
+      if (/^[a-f0-9]{24}$/.test(closedScreen || '')) import('./music-screen.mjs?v=4').then(api => api.closeMusicScreen(closedScreen));
+    } catch {}
+
+    function endSession() {
+      {
+        comm.hostClose?.();
         tvDisplay?.close();
+        // The page reloads right away, and with "Новая игра" the TV link is not up yet: the reloaded page repeats the notice.
+        try { if (tvScreenCode) localStorage.setItem(closedScreenKey, tvScreenCode); } catch {}
         tvScreenCode = null;
         localStorage.removeItem('muzloto_active_host_code');
         localStorage.removeItem('muzloto_last_keg');
@@ -2580,9 +2652,18 @@
         if (currentRoomCode) {
           localStorage.removeItem('muzloto_mesh_room_' + currentRoomCode);
         }
-        location.reload();
+        // Give the "room closed" notice for the TV time to leave before the page reloads.
+        setTimeout(() => location.reload(), 400);
       }
+    }
+
+    $('btn-reset-session').onclick = () => {
+      if (confirm('Завершить текущую игру? Игроки и ТВ выйдут из комнаты.')) endSession();
     };
+
+    // "Новая игра" on the landing page: tv.html?new=1 ends the saved game and opens the track setup.
+    const startFresh = new URLSearchParams(location.search).has('new');
+    if (startFresh) history.replaceState(null, '', 'tv.html');
 
     function unlockHostAudio() {
       if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
@@ -3169,6 +3250,7 @@
       }
       updatePlaybackControls();
       $('lobby-players-count').textContent = state.players.length;
+      showLobbySteps(lobbyTv, state.players.length);
       if (state.players.length) {
         $('lobby-players-wrap').innerHTML = state.players.map(p => `
           <div class="player-pill ${p.online ? '' : 'offline'}">
@@ -3417,6 +3499,7 @@
           $('sec-lobby').style.display = 'block';
           $('sec-game').style.display = 'none';
         }
+        if (startFresh) endSession();
       });
     }
 

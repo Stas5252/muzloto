@@ -56,6 +56,8 @@ window.createComm = function(role) {
       adapter.hostStart = cb => socket.emit('host:start', {}, cb);
       adapter.hostNext = cb => socket.emit('host:next', {}, cb);
       adapter.hostNewRound = cb => socket.emit('host:newround', {}, cb);
+      adapter.hostUpdate = (data, cb) => socket.emit('host:update', data, cb);
+      adapter.hostClose = cb => socket.emit('host:close', {}, cb || (() => {}));
       adapter.hostResume = cb => socket.emit('host:resume', {}, cb);
     } else {
       adapter.playerJoin = (data, cb) => socket.emit('player:join', data, cb);
@@ -278,6 +280,14 @@ window.createComm = function(role) {
 
   function saveMeshHostLocally() {
     if (!roomCode || typeof localStorage === 'undefined') return;
+    // An ended game must not come back after the host page reloads.
+    if (roomState?.state === 'closed') {
+      try {
+        localStorage.removeItem('muzloto_mesh_room_' + roomCode);
+        if (localStorage.getItem('muzloto_active_host_code') === roomCode) localStorage.removeItem('muzloto_active_host_code');
+      } catch(e) {}
+      return;
+    }
     try {
       const serializablePlayers = [...players.entries()].map(([pid, p]) => [pid, {
         name: p.name,
@@ -315,7 +325,7 @@ window.createComm = function(role) {
 
   // Common message handler for Host
   function handleHostMessage(msg, senderConn) {
-    if (!msg || !msg.type) return;
+    if (!msg || !msg.type || !roomState || roomState.state === 'closed') return;
 
     if (msg.type === 'join') {
       const { name, pid } = msg;
@@ -454,19 +464,56 @@ window.createComm = function(role) {
   // HOST IMPLEMENTATION
   // ==========================================
   if (role === 'host') {
+    const numberTracks = rawTracks => (rawTracks || []).map((t, i) => ({
+      id: String(t.id || 't' + i),
+      kegNum: i + 1,
+      title: String(t.title || 'Песня ' + (i + 1)),
+      artist: String(t.artist || ''),
+      displayTitle: String(t.displayTitle || `${t.artist || ''} — ${t.title || ''}`),
+      preview: t.preview || '',
+      art: t.art || ''
+    }));
+
+    const dealCards = () => {
+      for (const p of players.values()) {
+        p.card = newCard(roomState);
+        p.marks = new Set();
+        p.markSequence?.clear();
+        p.won = false;
+        if (p.left) continue;
+        sendToPlayer(p.pid, {
+          type: 'card',
+          targetPid: p.pid,
+          data: cardOut(roomState, p)
+        });
+      }
+    };
+
+    // New settings in the lobby keep the room: players stay and get new cards.
+    adapter.hostUpdate = (data, cb) => {
+      if (!roomState || roomState.state !== 'lobby') return cb && cb({ error: 'Настройки можно менять только до старта раунда' });
+      const tracks = numberTracks(data.tracks);
+      const size = data.size || 3;
+      if (tracks.length < size * size) return cb && cb({ error: `Нужно минимум ${size * size} треков для сетки ${size}×${size}` });
+      Object.assign(roomState, { tracks, size, mode: data.mode || 'full', roundId: Math.max(Date.now(), roomState.roundId + 1) });
+      dealCards();
+      broadcastState();
+      if (cb) cb({ ok: true, code: roomState.code });
+    };
+
+    // The host ended the game: players see it instead of waiting forever.
+    adapter.hostClose = cb => {
+      if (roomState) {
+        roomState.state = 'closed';
+        broadcastState();
+      }
+      if (cb) cb({ ok: true });
+    };
+
     adapter.hostCreate = (data, cb) => {
       const code = String(1000 + Math.random() * 9000 | 0);
       roomCode = code;
-      const rawTracks = data.tracks || [];
-      const tracks = rawTracks.map((t, i) => ({
-        id: String(t.id || 't' + i),
-        kegNum: i + 1,
-        title: String(t.title || 'Песня ' + (i + 1)),
-        artist: String(t.artist || ''),
-        displayTitle: String(t.displayTitle || `${t.artist || ''} — ${t.title || ''}`),
-        preview: t.preview || '',
-        art: t.art || ''
-      }));
+      const tracks = numberTracks(data.tracks);
 
       roomState = {
         code,
@@ -610,18 +657,7 @@ window.createComm = function(role) {
       roomState.winnerPid = null;
       roomState.winnerRequest = null;
       roomState.winnerDetails = null;
-      for (const p of players.values()) {
-        p.card = newCard(roomState);
-        p.marks = new Set();
-        p.markSequence?.clear();
-        p.won = false;
-        if (p.left) continue;
-        sendToPlayer(p.pid, {
-          type: 'card',
-          targetPid: p.pid,
-          data: cardOut(roomState, p)
-        });
-      }
+      dealCards();
       broadcastState();
       if (cb) cb();
     };
@@ -886,7 +922,7 @@ window.createComm = function(role) {
       joinTimer = setTimeout(() => {
         if (pendingJoinCb) {
           const error = roomMqtt?.connected || playerConn?.open
-            ? 'Ведущий не ответил для комнаты #' + code + '. Проверьте код и держите вкладку ведущего открытой.'
+            ? 'Ведущий не ответил для комнаты #' + code + '. Проверьте код: возможно, эта игра уже завершена. Вкладка ведущего должна быть открыта.'
             : 'Нет связи со службой комнат. Обновите страницу на ПК ведущего и на телефоне, затем повторите вход.';
           pendingJoinCb({ error });
           pendingJoinCb = null;

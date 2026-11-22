@@ -1,4 +1,4 @@
-import { activeRound, activeFinal, findQuestion, roundIndex, turnPlayer, packImage, packSound, modes } from './game.mjs?v=18';
+import { activeRound, activeFinal, findQuestion, roundIndex, turnPlayer, packImage, packSound, modes } from './game.mjs?v=19';
 import { bundledImages } from './starter.mjs?v=17';
 
 export const photoChunkSize = 16_000;

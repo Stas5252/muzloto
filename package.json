@@ -11,6 +11,7 @@
     "test:quiz:browser": "node tests/party-quiz-browser.cjs",
     "test:browser": "node tests/browser-lifecycle.cjs",
     "test:music-screen": "node tests/music-screen-browser.cjs",
+    "test:host-flow": "node tests/host-flow-browser.cjs",
     "test:cloud": "node tests/cloud-recovery.cjs"
   },
   "dependencies": {

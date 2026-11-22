@@ -33,7 +33,17 @@
       display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 6px; padding: 9px 18px;
       border-radius: 999px; background: var(--accent); color: #101712; font-size: 0.9rem; font-weight: 800;
     }
+    .game-card-live { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: 0.8rem; font-weight: 700; }
+    .game-card-live[hidden] { display: none; }
+    .tv-entry { display: flex; align-items: center; gap: 14px; margin-top: clamp(12px, 2vw, 24px); padding: 14px clamp(14px, 2vw, 24px);
+      border: 1px dashed #3a4a3f; border-radius: 18px; color: var(--text-main); text-decoration: none; --accent: #e9ece9; }
+    .tv-entry:hover { border-color: var(--text-main); }
+    .tv-entry > span:nth-child(2) { flex: 1; display: grid; gap: 3px; }
+    .tv-entry small { color: var(--text-muted); font-size: 0.84rem; line-height: 1.35; }
+    .tv-entry-icon { font-size: 1.8rem; line-height: 1; color: var(--text-muted); }
+    .tv-entry .game-card-go { margin-top: 0; white-space: nowrap; }
     @media (max-width: 700px) {
+      .tv-entry { flex-wrap: wrap; }
       .game-grid { grid-template-columns: 1fr; }
       .game-card { flex-direction: row; border-radius: 18px; }
       .game-card img { width: 36%; aspect-ratio: 1; align-self: stretch; }
@@ -60,6 +70,7 @@
           <span class="game-card-kind">Музыкальное лото</span>
           <h2>МузЛото</h2>
           <p>Слушайте треки, отмечайте их в карточке и собирайте бинго.</p>
+          <span class="game-card-live" id="live-music" hidden></span>
           <span class="game-card-go">Играть <span aria-hidden="true">→</span></span>
         </div>
       </a>
@@ -69,10 +80,37 @@
           <span class="game-card-kind">Квиз</span>
           <h2>Вне очереди</h2>
           <p>Вопросы на ТВ, кнопка на телефоне, ответы вслух.</p>
+          <span class="game-card-live" id="live-quiz" hidden></span>
           <span class="game-card-go">Играть <span aria-hidden="true">→</span></span>
         </div>
       </a>
     </nav>
+    <a class="tv-entry" href="screen.html">
+      <span class="tv-entry-icon" aria-hidden="true">▭</span>
+      <span><strong>Это экран ТВ или проектор?</strong><small>Откройте здесь экран и подключите телефон ведущего по коду.</small></span>
+      <span class="game-card-go">Это экран ТВ <span aria-hidden="true">→</span></span>
+    </a>
   </main>
+  <script type="module">
+    // A game left open on this phone: the card says so and leads straight back into it.
+    const mark = (id, text, href) => {
+      const badge = document.getElementById(id);
+      const card = badge.closest('a');
+      badge.textContent = text;
+      badge.hidden = false;
+      card.href = href;
+      card.querySelector('.game-card-go').firstChild.textContent = 'Продолжить ';
+    };
+    let code = '';
+    try { code = localStorage.getItem('muzloto_active_host_code') || ''; } catch {}
+    if (/^\d{4,6}$/.test(code)) mark('live-music', 'Игра идёт: комната #' + code, 'tv.html');
+    try {
+      const { read } = await import('./quiz/storage.mjs?v=2');
+      const live = await read('live');
+      if (/^[a-f0-9]{24}$/.test(live?.room || '') && live.game) {
+        mark('live-quiz', 'Игра идёт' + (live.title ? ': ' + String(live.title).slice(0, 60) : ''), 'quiz/?host=' + live.room);
+      }
+    } catch {}
+  </script>
 </body>
 </html>

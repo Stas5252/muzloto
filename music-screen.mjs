@@ -1,4 +1,5 @@
 import { connectRoom, validRoom } from './quiz/relay.mjs?v=3';
+import { listenForHost, validPin, waitingUrl } from './tv-pair.mjs?v=1';
 
 const eventType = 'screen';
 const handoverLimit = 4000;
@@ -14,6 +15,15 @@ export function assetUrl(value, base = location.href) {
     return url.protocol === 'https:' || (url.protocol === 'http:' && url.origin === new URL(base).origin)
       ? url.href : '';
   } catch { return ''; }
+}
+
+// Tells the TV of an ended game to leave it. The notice is repeated: right after a page load the link is still connecting.
+export function closeMusicScreen(code) {
+  const tell = () => link.send({ type: eventType, event: 'music-closed' });
+  const link = connectRoom(code, () => {}, tell);
+  const timer = setInterval(tell, 1000);
+  tell();
+  setTimeout(() => { clearInterval(timer); link.close(); }, 5000);
 }
 
 export function openMusicScreen(code, capture, setOutput) {
@@ -273,6 +283,8 @@ function startViewer(code) {
       $('music-waiting').hidden = false;
       $('music-waiting').textContent = 'Комната закрыта';
       enable.hidden = true;
+      // A paired TV goes back to its code and waits for the next game.
+      if (validPin(pairPin)) setTimeout(() => location.replace(waitingUrl(pairPin)), 1500);
       return;
     }
     if (frame.event !== 'music-state' || !Number.isSafeInteger(frame.sequence) || frame.sequence <= sequence ||
@@ -329,8 +341,12 @@ function startViewer(code) {
 }
 
 const code = new URLSearchParams(location.search).get('screen');
+const pairPin = new URLSearchParams(location.search).get('pair');
 if ($('music-waiting')) {
-  if (validRoom(code)) startViewer(code);
+  if (validRoom(code)) {
+    startViewer(code);
+    listenForHost(pairPin, code);
+  }
   else {
     $('music-waiting').textContent = 'Откройте ссылку ТВ из комнаты ведущего.';
     $('music-enable').hidden = true;

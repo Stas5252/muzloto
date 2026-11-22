@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Экран ТВ — игры для компании</title>
+  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="stream-theme.css?v=6">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
+  <style>
+    .pair-page { min-height: 100vh; display: flex; flex-direction: column; }
+    .pair-stage { flex: 1; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: clamp(20px, 4vw, 64px);
+      max-width: 1500px; width: 100%; margin: 0 auto; padding: clamp(16px, 3vw, 48px); }
+    .pair-kind { color: var(--primary); font-size: clamp(0.8rem, 1.2vw, 1.1rem); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .pair-stage h1 { margin: 8px 0 clamp(14px, 2vw, 28px); font-size: clamp(2rem, 4.4vw, 4.4rem); font-weight: 900; letter-spacing: -0.05em; line-height: 1.04; }
+    .pair-steps { display: grid; gap: clamp(8px, 1.2vw, 16px); padding: 0; list-style: none; counter-reset: step; font-size: clamp(1rem, 1.7vw, 1.7rem); line-height: 1.3; color: #d7dbd8; }
+    .pair-steps li { display: grid; grid-template-columns: auto 1fr; gap: 0.7em; align-items: baseline; counter-increment: step; }
+    .pair-steps li::before { content: counter(step); display: grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%;
+      background: #1d2a21; color: var(--primary); font-weight: 800; font-size: 0.85em; }
+    .pair-steps b { color: #fff; overflow-wrap: anywhere; }
+    .pair-card { display: grid; justify-items: center; gap: clamp(10px, 1.4vw, 20px); padding: clamp(18px, 2.6vw, 40px);
+      border: 1px solid #29362d; border-radius: 28px; background: var(--bg-card); text-align: center; }
+    .pair-card small { color: var(--text-muted); font-size: clamp(0.85rem, 1.2vw, 1.15rem); }
+    .pair-code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: clamp(3.4rem, 9vw, 9rem); font-weight: 700; line-height: 1;
+      letter-spacing: 0.12em; margin-right: -0.12em; color: var(--primary); }
+    .pair-qr { padding: 12px; border-radius: 16px; background: #fff; line-height: 0; }
+    .pair-qr img, .pair-qr canvas { width: clamp(120px, 15vw, 220px) !important; height: auto !important; }
+    .pair-status { font-size: clamp(0.9rem, 1.3vw, 1.2rem); color: var(--text-muted); }
+    .pair-done { max-width: 520px; margin: auto; padding: 24px 16px; display: grid; gap: 14px; text-align: center; }
+    .pair-done h1 { font-size: 2rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; }
+    .pair-done p { color: #d7dbd8; line-height: 1.45; }
+    @media (max-width: 760px) { .pair-stage { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="pair-page">
+  <header class="stream-header">
+    <a class="stream-brand" href="index.html" aria-label="Игры для компании · главное меню">
+      <span class="brand-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <span>Игры для компании</span>
+    </a>
+  </header>
+  <main id="pair-tv" class="pair-stage" hidden>
+    <section>
+      <p class="pair-kind">Экран ТВ</p>
+      <h1>Подключите телефон ведущего</h1>
+      <ol class="pair-steps">
+        <li><span>На телефоне откройте <b id="pair-site"></b> и создайте игру</span></li>
+        <li><span>Нажмите <b>«Подключить ТВ»</b> и введите код</span></li>
+        <li><span>Игра появится здесь сама. Этот экран можно не трогать весь вечер</span></li>
+      </ol>
+    </section>
+    <section class="pair-card" aria-live="polite">
+      <small>Код этого экрана</small>
+      <div class="pair-code" id="pair-code"></div>
+      <div class="pair-qr" id="pair-qr" aria-label="QR-код для телефона ведущего"></div>
+      <small>или наведите камеру телефона ведущего на QR-код</small>
+      <p class="pair-status" id="pair-status" role="status">Ждём игру…</p>
+    </section>
+  </main>
+  <main id="pair-phone" class="pair-done" hidden>
+    <h1>ТВ подключён к этому телефону</h1>
+    <p>Код экрана <b id="pair-linked"></b> сохранён. Создайте или продолжите игру: она сама появится на ТВ.</p>
+    <a class="btn btn-gold" href="index.html">К играм</a>
+  </main>
+  <script src="mqtt.min.js"></script>
+  <script src="room-mqtt.js?v=2"></script>
+  <script src="qrcode.min.js"></script>
+  <script src="cloud-audio-config.js?v=3"></script>
+  <script type="module">
+    import { listenForHost, validPin, rememberTv, siteLabel } from './tv-pair.mjs?v=1';
+    const params = new URLSearchParams(location.search);
+    const $ = id => document.getElementById(id);
+    if (validPin(params.get('link'))) {
+      rememberTv(params.get('link'));
+      $('pair-linked').textContent = params.get('link');
+      $('pair-phone').hidden = false;
+    } else {
+      const ownKey = 'party-tv-own-pin';
+      let pin = params.get('pair');
+      try { if (!validPin(pin)) pin = localStorage.getItem(ownKey); } catch {}
+      if (!validPin(pin)) pin = String(crypto.getRandomValues(new Uint16Array(1))[0] % 10000).padStart(4, '0');
+      try { localStorage.setItem(ownKey, pin); } catch {}
+      if (params.get('pair') !== pin) history.replaceState(null, '', 'screen.html?pair=' + pin);
+      $('pair-code').textContent = pin;
+      $('pair-site').textContent = siteLabel();
+      $('pair-tv').hidden = false;
+      const draw = base => {
+        $('pair-qr').innerHTML = '';
+        new QRCode($('pair-qr'), { text: new URL('screen.html?link=' + pin, base).href, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      };
+      draw(location.href);
+      // On the home server the phone cannot open "localhost": show the address in the local network.
+      if (['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
+        fetch('/api/info').then(r => r.json()).then(info => {
+          if (!info.lan || info.lan === '127.0.0.1') return;
+          const base = `http://${info.lan}:${info.port || location.port || 3000}/`;
+          $('pair-site').textContent = base.replace(/^http:\/\/|\/$/g, '');
+          draw(base);
+        }).catch(() => {});
+      }
+      listenForHost(pin);
+      navigator.wakeLock?.request('screen').catch(() => {});
+    }
+  </script>
+</body>
+</html>
