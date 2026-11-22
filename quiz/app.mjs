@@ -195,10 +195,13 @@ function resultsPanel(session, source) {
   </section>`;
 }
 
+// validPack reads `finals` when a draft has it, so the editor edits the same list.
+const draftFinals = () => draft.finals || (draft.final ? [draft.final] : []);
+
 function packCards() {
   const own = { id: 'draft', title: draft.title || 'Свой набор', description: 'Набор из редактора: вопросы можно менять.',
     questions: draft.rounds.reduce((total, round) => total + roundQuestions(round).length, 0),
-    themes: draft.rounds.map(round => round.categories.map(category => category.title)), finals: draft.final ? 1 : 0 };
+    themes: draft.rounds.map(round => round.categories.map(category => category.title)), finals: draftFinals().length };
   return [own, ...library];
 }
 
@@ -244,6 +247,8 @@ function field(label, path, value, options = {}) {
 function renderEditor() {
   document.body.classList.remove('home');
   const round = draft.rounds[editorRound];
+  const finals = draft.finals = draftFinals();
+  const final = draft.final = finals[0] || null;
   const path = `rounds.${editorRound}`;
   app.innerHTML = `<section class="editor">
     <div class="section-top"><div><p class="eyebrow">Подготовка</p><h1>Редактор вопросов</h1><p class="muted">Фото и ответы сохраняются в этом браузере. Скачайте набор, чтобы перенести его на другой компьютер.</p></div>
@@ -283,11 +288,11 @@ function renderEditor() {
        ${action('add-question', '+ Вопрос', `data-i="${i}" ${c.questions.length >= 8 ? 'disabled' : ''}`)}
     </section>`).join('')}
     ${action('add-topic', '+ Добавить тему', round.categories.length >= 8 ? 'disabled' : '', 'primary')}
-    <section class="panel category-editor final-editor"><div class="category-head"><h2>Финал</h2>
-      ${draft.final ? action('remove-final', 'Убрать финал', '', 'quiet') : action('add-final', 'Добавить финал')}</div>
-      ${draft.final ? field('Тема финала', 'final.topic', draft.final.topic, { max: 60 }) +
-        field('Вопрос', 'final.prompt', draft.final.prompt, { area: true, max: 1200 }) +
-        field('Ответ', 'final.answer', draft.final.answer, { area: true, max: 650 }) : ''}</section>
+    <section class="panel category-editor final-editor"><div class="category-head"><h2>Финал${finals.length > 1 ? ` · тема 1 из ${finals.length}` : ''}</h2>
+      ${final ? action('remove-final', finals.length > 1 ? 'Убрать тему' : 'Убрать финал', '', 'quiet') : action('add-final', 'Добавить финал')}</div>
+      ${final ? field('Тема финала', 'finals.0.topic', final.topic, { max: 60 }) +
+        field('Вопрос', 'finals.0.prompt', final.prompt, { area: true, max: 1200 }) +
+        field('Ответ', 'finals.0.answer', final.answer, { area: true, max: 650 }) : ''}</section>
   </section>`;
 }
 
@@ -594,8 +599,8 @@ async function hostButton(button) {
       if (type === 'add-question' && categories[i].questions.length < 8) categories[i].questions.push({ ...blank, value: (categories[i].questions.length + 1) * unit });
       if (type === 'delete-question' && categories[i].questions.length > 1 && confirm('Удалить вопрос?')) categories[i].questions.splice(Number(j), 1);
       if (type === 'remove-photo') setField(path, '');
-      if (type === 'add-final') draft.final = { topic: '', prompt: '', answer: '' };
-      if (type === 'remove-final') draft.final = null;
+      if (type === 'add-final') draft.finals = [{ topic: '', prompt: '', answer: '' }];
+      if (type === 'remove-final') draft.finals = draftFinals().slice(1);
       saveDraft();
       renderEditor();
       return;
