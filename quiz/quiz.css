@@ -306,6 +306,16 @@ textarea { resize: vertical; }
 .pack-card small { color: var(--muted); font-size: .78rem; font-weight: 700; }
 .pack-card[aria-checked="true"] { border-color: var(--brand); background: var(--raised); }
 .pack-card[aria-checked="true"] strong::before { content: '✓ '; color: var(--brand); }
+.pack-go { margin-top: 14px; }
+.picked-pack { margin-bottom: 10px; color: var(--muted); font-size: .9rem; line-height: 1.35; }
+.picked-pack strong { color: inherit; }
+.picked-pack a { color: var(--brand); white-space: nowrap; }
+.steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.steps li { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; align-items: start; counter-increment: step; line-height: 1.35; }
+.steps li::before { content: counter(step); grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid var(--line); color: var(--muted); font-weight: 800; font-size: .9rem; }
+.steps li.done::before { content: '✓'; border-color: var(--green); color: var(--green); }
+.steps span { grid-column: 2; color: var(--muted); font-size: .9rem; }
 .center { text-align: center; display: grid; gap: 15px; justify-items: center; }
 .tv main { width: min(1500px, calc(100% - 48px)); }
 .tv-lobby { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: clamp(22px, 5vw, 80px); min-height: min(62vh, 640px); }

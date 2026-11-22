@@ -44,6 +44,13 @@
       font-size: 0.85rem;
       text-transform: uppercase;
     }
+    .lobby-steps { display: grid; gap: 10px; margin: 0 0 18px; padding: 0; list-style: none; counter-reset: step; }
+    .lobby-steps li { display: grid; grid-template-columns: 30px 1fr; column-gap: 10px; counter-increment: step; line-height: 1.35; }
+    .lobby-steps li::before { content: counter(step); grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px;
+      border-radius: 50%; border: 2px solid var(--border-subtle); color: var(--text-muted); font-weight: 800; font-size: .9rem; }
+    .lobby-steps li.done::before { content: '✓'; border-color: #34d399; color: #34d399; }
+    .lobby-steps span { grid-column: 2; color: var(--text-muted); font-size: .9rem; }
+    @media (min-width: 900px) { .lobby-steps { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
   </style>
   <link rel="stylesheet" href="stream-theme.css?v=6">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@600;700&amp;display=swap" media="print" onload="this.media='all'">
@@ -147,6 +154,11 @@
 
     <section id="sec-lobby" style="display:none;">
       <div class="host-heading"><h1>Лобби</h1></div>
+      <ol class="lobby-steps" aria-label="Что делать дальше">
+        <li id="step-tv"><strong>Экран</strong><span id="step-tv-text"></span></li>
+        <li id="step-players"><strong>Игроки</strong><span id="step-players-text"></span></li>
+        <li><strong>Старт</strong><span>Нажмите «Начать игру». Музыка заиграет на ТВ.</span></li>
+      </ol>
       <div class="tv-lobby-grid stream-lobby-grid">
         <section class="card lobby-invite" aria-labelledby="invite-heading">
           <div class="lobby-code-copy">
@@ -2446,6 +2458,20 @@
 
     previewAudio.onended = stopSetupAudio;
 
+    let lobbyTv = false;
+    let lobbyPlayers = 0;
+    function showLobbySteps(tv = lobbyTv, players = lobbyPlayers) {
+      lobbyTv = tv;
+      lobbyPlayers = players;
+      $('step-tv').classList.toggle('done', tv);
+      $('step-tv-text').textContent = tv ? 'ТВ подключён и показывает комнату.'
+        : 'На ТВ или ноутбуке с проектором откройте этот сайт и выберите «Это экран ТВ». Потом нажмите «Подключить ТВ» вверху и введите код с экрана.';
+      $('step-players').classList.toggle('done', players > 0);
+      $('step-players-text').textContent = players ? `В комнате: ${players}. Остальные могут войти и после старта.`
+        : 'Игроки сканируют QR-код или вводят код комнаты на своих телефонах.';
+    }
+    showLobbySteps();
+
     // One TV for the evening: the host enters the code shown on the TV once.
     const tvPairReady = import('./tv-pair.mjs?v=1').then(api => {
       const pair = api.pairHost(() => tvScreenCode ? { game: 'music', code: tvScreenCode } : null, (state, pin) => {
@@ -2453,6 +2479,7 @@
         button.textContent = state === 'attached' ? 'ТВ подключён ✓' : state === 'waiting' ? `ТВ ${pin}: ждём экран…` : 'Подключить ТВ';
         button.classList.toggle('btn-gold', state !== 'attached');
         button.classList.toggle('btn-secondary', state === 'attached');
+        showLobbySteps(state === 'attached');
       });
       $('btn-pair-tv').onclick = async () => {
         const pin = await api.askPin(pair.pin());
@@ -3214,6 +3241,7 @@
       }
       updatePlaybackControls();
       $('lobby-players-count').textContent = state.players.length;
+      showLobbySteps(lobbyTv, state.players.length);
       if (state.players.length) {
         $('lobby-players-wrap').innerHTML = state.players.map(p => `
           <div class="player-pill ${p.online ? '' : 'offline'}">

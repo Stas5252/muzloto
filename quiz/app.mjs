@@ -249,6 +249,7 @@ function renderHome() {
     ? `<p class="saved-room">Игра идёт${savedInfo ? ': ' + escape(savedInfo) : ''}</p><div class="actions">
         <a class="button primary" href="${escape(pageLink('host', savedRoom))}">Продолжить игру</a>${action('launch', 'Новая игра')}${action('edit', 'Редактор вопросов')}</div>`
     : `<div class="actions">${action('launch', 'Создать комнату', '', 'primary')}${action('edit', 'Редактор вопросов')}</div>`;
+  const picked = `<p class="picked-pack">Набор: <strong>${escape(chosen.title)}</strong> · <a href="#packs">выбрать другой</a></p>`;
   app.innerHTML = `<section class="hero">
     <div class="hero-copy">
       <a class="menu-link" href="../"><span aria-hidden="true">←</span> Все игры</a>
@@ -256,14 +257,15 @@ function renderHome() {
       <h1>Вне очереди<span>.</span></h1>
       <p class="intro">Вопросы на ТВ. Кнопка на телефоне. Ответы вслух.</p>
       <div class="hero-facts"><strong>${questionLabel(count)}</strong>${photos ? `<span>${questionLabel(photos)} с фото</span>` : ''}${chosen.finals ? '<span>Финал со ставками</span>' : ''}</div>
-      <nav class="home-menu" aria-label="Главное меню">${menu}</nav>
+      <nav class="home-menu" aria-label="Главное меню">${picked}${menu}</nav>
     </div>
     <figure class="hero-art"><img src="./media/auditorium.webp" alt="Зрительный зал, вид со сцены" fetchpriority="high"></figure>
   </section>
-  <section class="pack-library"><div class="deck-title"><h2>Выберите набор вопросов</h2><span>${cards.length} ${cards.length === 1 ? 'набор' : 'наборов'}</span></div>
+  <section class="pack-library" id="packs"><div class="deck-title"><h2>Выберите набор вопросов</h2><span>${cards.length} ${cards.length === 1 ? 'набор' : 'наборов'}</span></div>
     <div class="pack-list" role="radiogroup" aria-label="Набор вопросов">${cards.map(card => `<button type="button" class="pack-card" role="radio"
       aria-checked="${card.id === chosen.id}" data-action="choose-pack" data-id="${escape(card.id)}"><strong>${escape(card.title)}</strong>
-      <span>${escape(card.description)}</span><small>${questionLabel(card.questions)}</small></button>`).join('')}</div></section>
+      <span>${escape(card.description)}</span><small>${questionLabel(card.questions)}</small></button>`).join('')}</div>
+    <div class="actions pack-go">${action('launch', savedRoom ? 'Новая игра с этим набором' : 'Создать комнату с этим набором', '', 'primary')}</div></section>
   <section class="home-deck"><div class="deck-title"><h2>${escape(chosen.title)}</h2><span>${chosen.themes.length} ${chosen.themes.length === 1 ? 'раунд' : 'раунда'}</span></div>
     <div class="deck-rounds">${chosen.themes.map((titles, index) => `<article class="deck-round" data-stage="${index + 1}">
       <p class="eyebrow">Раунд ${index + 1}</p>${chosen.id === 'draft' ? `<h3>${escape(draft.rounds[index].title)}</h3>` : ''}
@@ -330,10 +332,22 @@ function renderEditor() {
   </section>`;
 }
 
+function lobbySteps() {
+  const attached = pair?.state() === 'attached';
+  const count = Object.keys(game.players).length;
+  return `<ol class="steps">
+    <li${attached ? ' class="done"' : ''}><strong>Экран</strong><span>${attached ? 'ТВ подключён и показывает комнату.'
+      : 'На ТВ или ноутбуке с проектором откройте этот сайт и выберите «Это экран ТВ». Потом нажмите «Подключить ТВ» вверху и введите код с экрана.'}</span></li>
+    <li${count ? ' class="done"' : ''}><strong>Игроки</strong><span>${count ? 'В комнате ' + playersLabel(count) + '. Остальные могут войти и после старта.'
+      : 'Игроки сканируют QR-код с экрана или открывают ссылку, которую вы им отправите.'}</span></li>
+    <li><strong>Старт</strong><span>Выберите режим ответов и нажмите «Начать игру».</span></li>
+  </ol>`;
+}
+
 function lobby() {
   return `<div class="dashboard">
     <section class="panel lobby-copy"><p class="eyebrow">Комната открыта</p><h1>${escape(pack.title)}</h1>
-      <p class="intro">Попросите игроков отсканировать QR-код или отправьте им ссылку.</p>
+      ${lobbySteps()}
       <div class="actions">${action('start', 'Начать игру', '', 'primary')}${action('copy', 'Скопировать ссылку')}</div>
       <h2>Режим ответов</h2>${modeSwitch()}
       <h2>Игроки <span class="count">${Object.keys(game.players).length}/12</span></h2>${scoreList(standings(game))}
@@ -727,6 +741,8 @@ function initHost() {
     if (!button) return;
     button.textContent = pairLabel();
     button.classList.toggle('primary', state !== 'attached');
+    const steps = app.querySelector('.steps');
+    if (steps && game?.phase === 'lobby') steps.outerHTML = lobbySteps();
     if (state === 'attached') message('ТВ подключён.');
   });
   app.addEventListener('click', event => {

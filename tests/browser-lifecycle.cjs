@@ -253,7 +253,7 @@ async function quizMenu() {
     const resume = page.getByRole('link', { name: 'Продолжить игру' });
     const board = page.getByRole('button', { name: 'К табло' });
     await page.goto(home, nav);
-    await page.getByRole('button', { name: 'Создать комнату' }).click();
+    await page.getByRole('button', { name: 'Создать комнату', exact: true }).click();
     await start.click();
     const roomUrl = page.url();
     assert.match(new URL(roomUrl).searchParams.get('host'), /^[a-f0-9]{24}$/);
@@ -290,7 +290,7 @@ async function gameMenu() {
     await back.click();
     await menu.waitFor();
     await page.getByRole('link', { name: /Вне очереди/ }).click();
-    await page.getByRole('button', { name: 'Создать комнату' }).waitFor();
+    await page.getByRole('button', { name: 'Создать комнату', exact: true }).waitFor();
     assert.equal(page.url(), new URL('quiz/', root).href);
     await back.click();
     await menu.waitFor();
